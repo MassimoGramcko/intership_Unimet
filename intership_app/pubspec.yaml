@@ -17,9 +17,9 @@ dependencies:
   # --- LIBRERÍAS ACTUALIZADAS (FIX ERROR) ---
   
   # Firebase (Versiones estables más recientes)
-  firebase_core: ^3.0.0
-  firebase_auth: ^5.0.0
-  cloud_firestore: ^5.0.0
+  firebase_core: ^3.15.2
+  firebase_auth: ^5.7.0
+  cloud_firestore: ^5.6.12
   firebase_storage: ^12.0.0
 
   # Diseño y Tipografía

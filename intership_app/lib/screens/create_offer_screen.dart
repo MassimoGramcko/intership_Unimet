@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
-import '../config/theme.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CreateOfferScreen extends StatefulWidget {
-  // Variables opcionales para cuando queremos EDITAR
+  // Variables opcionales: si llegan, estamos EDITANDO. Si no, estamos CREANDO.
+  final String? docId; 
   final String? currentTitle;
   final String? currentCompany;
   final String? currentDescription;
 
   const CreateOfferScreen({
-    super.key, 
-    this.currentTitle, 
+    super.key,
+    this.docId,
+    this.currentTitle,
     this.currentCompany,
-    this.currentDescription
+    this.currentDescription,
   });
 
   @override
@@ -19,131 +21,165 @@ class CreateOfferScreen extends StatefulWidget {
 }
 
 class _CreateOfferScreenState extends State<CreateOfferScreen> {
-  // Controladores para manejar el texto
+  final _formKey = GlobalKey<FormState>();
+  
+  // Controladores de texto
   late TextEditingController _titleController;
   late TextEditingController _companyController;
-  late TextEditingController _descController;
+  late TextEditingController _descriptionController;
+  
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    // Si recibimos datos (Editar), los ponemos en el controlador. Si no, texto vacío (Crear).
-    _titleController = TextEditingController(text: widget.currentTitle ?? "");
-    _companyController = TextEditingController(text: widget.currentCompany ?? "");
-    _descController = TextEditingController(text: widget.currentDescription ?? "");
+    // Si recibimos datos (Modo Edición), rellenamos los campos. Si no, los dejamos vacíos.
+    _titleController = TextEditingController(text: widget.currentTitle ?? '');
+    _companyController = TextEditingController(text: widget.currentCompany ?? '');
+    _descriptionController = TextEditingController(text: widget.currentDescription ?? '');
   }
 
   @override
   void dispose() {
     _titleController.dispose();
     _companyController.dispose();
-    _descController.dispose();
+    _descriptionController.dispose();
     super.dispose();
+  }
+
+  void _saveOffer() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        if (widget.docId == null) {
+          // --- MODO CREAR: Usamos .add() ---
+          await FirebaseFirestore.instance.collection('offers').add({
+            'title': _titleController.text.trim(),
+            'company': _companyController.text.trim(),
+            'description': _descriptionController.text.trim(),
+            'createdAt': FieldValue.serverTimestamp(),
+            'isActive': true,
+          });
+        } else {
+          // --- MODO EDITAR: Usamos .update() ---
+          await FirebaseFirestore.instance.collection('offers').doc(widget.docId).update({
+            'title': _titleController.text.trim(),
+            'company': _companyController.text.trim(),
+            'description': _descriptionController.text.trim(),
+            // No actualizamos createdAt para mantener la fecha original
+          });
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(widget.docId == null ? '¡Oferta creada!' : '¡Oferta actualizada!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context); // Volver atrás
+        }
+      } catch (e) {
+        setState(() {
+          _isLoading = false;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Si tenemos título, estamos EDITANDO. Si no, estamos CREANDO.
-    final isEditing = widget.currentTitle != null;
+    // Cambiamos el título de la barra según el modo
+    final isEditing = widget.docId != null;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        // Título dinámico
-        title: Text(
-          isEditing ? "Editar Oferta" : "Nueva Oferta", 
-          style: const TextStyle(fontWeight: FontWeight.bold)
-        ),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
+        title: Text(isEditing ? "Editar Pasantía" : "Nueva Pasantía"),
+        backgroundColor: Colors.indigo,
+        foregroundColor: Colors.white,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Información de la Pasantía", 
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)
-            ),
-            const SizedBox(height: 20),
-            
-            // Usamos los controladores en cada campo
-            _buildTextField("Título del Puesto", "Ej: Auditor Junior", controller: _titleController),
-            const SizedBox(height: 16),
-            _buildTextField("Empresa", "Ej: KPMG", controller: _companyController),
-            const SizedBox(height: 16),
-            _buildTextField("Ubicación", "Ej: Caracas - Las Mercedes"), // Podrías agregar controlador aquí también
-            const SizedBox(height: 16),
-            
-            Row(
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            child: Column(
               children: [
-                Expanded(child: _buildTextField("Modalidad", "Ej: Híbrido")),
-                const SizedBox(width: 16),
-                Expanded(child: _buildTextField("Duración", "Ej: 6 meses")),
+                Text(
+                  isEditing ? "Editar Detalles" : "Detalles de la Oferta",
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.indigo),
+                ),
+                const SizedBox(height: 20),
+                
+                // Título
+                TextFormField(
+                  controller: _titleController,
+                  decoration: const InputDecoration(
+                    labelText: "Título del Puesto",
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.work),
+                  ),
+                  validator: (value) => value!.isEmpty ? "Campo obligatorio" : null,
+                ),
+                const SizedBox(height: 15),
+
+                // Empresa
+                TextFormField(
+                  controller: _companyController,
+                  decoration: const InputDecoration(
+                    labelText: "Empresa",
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.business),
+                  ),
+                  validator: (value) => value!.isEmpty ? "Campo obligatorio" : null,
+                ),
+                const SizedBox(height: 15),
+
+                // Descripción
+                TextFormField(
+                  controller: _descriptionController,
+                  maxLines: 5,
+                  decoration: const InputDecoration(
+                    labelText: "Descripción y Requisitos",
+                    border: OutlineInputBorder(),
+                    alignLabelWithHint: true,
+                  ),
+                  validator: (value) => value!.isEmpty ? "Campo obligatorio" : null,
+                ),
+                const SizedBox(height: 30),
+
+                // Botón Guardar
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: _isLoading 
+                    ? const Center(child: CircularProgressIndicator())
+                    : ElevatedButton.icon(
+                        onPressed: _saveOffer,
+                        icon: const Icon(Icons.save),
+                        label: Text(
+                          isEditing ? "GUARDAR CAMBIOS" : "PUBLICAR OFERTA", 
+                          style: const TextStyle(fontSize: 16)
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.indigo,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                )
               ],
-            ),
-            const SizedBox(height: 16),
-
-            _buildTextField("Descripción", "Detalles de la oferta...", maxLines: 4, controller: _descController),
-            const SizedBox(height: 16),
-            _buildTextField("Requisitos", "Lista de requisitos...", maxLines: 3),
-            
-            const SizedBox(height: 30),
-            
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(isEditing ? "Cambios guardados" : "Oferta publicada")),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: Text(
-                  isEditing ? "Guardar Cambios" : "Publicar Oferta", 
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)
-                ),
-              ),
-            )
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Actualizamos el widget para aceptar el controlador
-  Widget _buildTextField(String label, String hint, {int maxLines = 1, TextEditingController? controller}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller, // Asignamos el controlador aquí
-          maxLines: maxLines,
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: TextStyle(color: Colors.grey[400]),
-            filled: true,
-            fillColor: Colors.grey[50],
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: Colors.grey.shade300),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide(color: Colors.grey.shade200),
             ),
           ),
         ),
-      ],
+      ),
     );
   }
 }

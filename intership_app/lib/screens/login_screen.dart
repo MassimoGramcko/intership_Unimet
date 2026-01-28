@@ -1,132 +1,126 @@
 import 'package:flutter/material.dart';
-import '../config/theme.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; 
+import '../services/auth_service.dart';
 import 'register_screen.dart';
-import 'student_home.dart';      // <--- IMPORTANTE: Importamos vista Estudiante
-import 'coordinator_home.dart';  // <--- IMPORTANTE: Importamos vista Coordinador
+import 'student_home_screen.dart'; 
+import 'admin_home_screen.dart'; // <--- NUEVO IMPORT: Para poder ir a la pantalla del Admin
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  void _login() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    final authService = AuthService();
+    
+    try {
+      // 1. Verificar correo y contraseña en Auth
+      final user = await authService.loginUser(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      if (user != null) {
+        // 2. Si las credenciales son buenas, buscamos el ROL en la base de datos (Firestore)
+        final DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (mounted) {
+          if (userDoc.exists) {
+            String role = userDoc['role']; // Puede ser 'student' o 'admin'
+
+            if (role == 'student') {
+              // --> ES ESTUDIANTE: Vamos a la pantalla principal de Estudiante
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const StudentHomeScreen()),
+              );
+            } else if (role == 'admin') {
+              // --> ES ADMIN: Vamos a la pantalla del Jefe
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const AdminHomeScreen()),
+              );
+            }
+          }
+        }
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error: ${e.toString()}"), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.surfaceWhite,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Center(
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // 1. LOGO DE LA UNIMET
-                  const Icon(
-                    Icons.school, 
-                    size: 100, 
-                    color: AppTheme.primaryOrange
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    "UNIMET INTERNSHIP",
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: AppTheme.secondaryBlue,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  
-                  const SizedBox(height: 40),
-
-                  // 2. CAMPOS DE TEXTO
-                  TextFormField(
-                    decoration: const InputDecoration(
-                      labelText: "Correo Electrónico",
-                      prefixIcon: Icon(Icons.email_outlined),
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-                  
-                  const SizedBox(height: 20),
-
-                  TextFormField(
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: "Contraseña",
-                      prefixIcon: Icon(Icons.lock_outline),
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // 3. BOTÓN PRINCIPAL (ROL ESTUDIANTE)
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // Navegar al Home del Estudiante
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const StudentHomeScreen()),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryOrange,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        "INGRESAR",
-                        style: TextStyle(fontSize: 16, color: Colors.white),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // 4. ACCESO RÁPIDO: COORDINADOR (SOLO PARA PRUEBAS)
-                  // Este botón es temporal para que puedas ver la otra vista
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context, 
-                        MaterialPageRoute(builder: (context) => const CoordinatorHomeScreen())
-                      );
-                    },
-                    child: const Text(
-                      "Acceso Rápido: COORDINADOR (Demo)",
-                      style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-
-                  const Divider(), // Línea divisoria visual
-
-                  // 5. ENLACE DE REGISTRO
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text("¿Eres estudiante nuevo?"),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const RegisterScreen()),
-                          );
-                        },
-                        child: const Text(
-                          "Regístrate aquí",
-                          style: TextStyle(color: AppTheme.secondaryBlue),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+      appBar: AppBar(title: const Text("Iniciar Sesión")),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.school, size: 80, color: Colors.blue),
+            const SizedBox(height: 20),
+            
+            TextField(
+              controller: _emailController, 
+              decoration: const InputDecoration(labelText: "Correo", border: OutlineInputBorder())
             ),
-          ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _passwordController, 
+              decoration: const InputDecoration(labelText: "Contraseña", border: OutlineInputBorder()),
+              obscureText: true,
+            ),
+            const SizedBox(height: 20),
+            
+            _isLoading 
+              ? const CircularProgressIndicator()
+              : ElevatedButton(
+                  onPressed: _login,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text("Ingresar"),
+                ),
+            
+            const SizedBox(height: 20),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                );
+              },
+              child: const Text("¿No tienes cuenta? Regístrate aquí"),
+            ),
+          ],
         ),
       ),
     );

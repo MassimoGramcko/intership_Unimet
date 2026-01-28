@@ -1,3 +1,9 @@
+// --- AGREGA ESTE BLOQUE AL PRINCIPIO ---
+plugins {
+    id("com.google.gms.google-services") version "4.4.4" apply false
+}
+
+// --- A PARTIR DE AQUÍ ES LO QUE YA TENÍAS ---
 allprojects {
     repositories {
         google()

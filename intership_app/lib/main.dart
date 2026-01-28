@@ -1,26 +1,23 @@
 import 'package:flutter/material.dart';
-// import 'package:firebase_core/firebase_core.dart'; 
-import 'config/theme.dart';
-import 'screens/login_screen.dart'; // <--- 1. IMPORTANTE: Agregamos esta línea
+import 'package:firebase_core/firebase_core.dart'; // <--- 1. Importar esto
+import 'screens/login_screen.dart'; 
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  // await Firebase.initializeApp(); 
+void main() async { // <--- 2. Agregar 'async' aquí
+  WidgetsFlutterBinding.ensureInitialized(); // <--- 3. Agregar esta línea obligatoria
+  await Firebase.initializeApp(); // <--- 4. Iniciar Firebase
   
-  runApp(const UnimetInternshipApp());
+  runApp(const MyApp());
 }
 
-class UnimetInternshipApp extends StatelessWidget {
-  const UnimetInternshipApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Unimet Internship',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme, // Mantenemos tu tema naranja
-      
-      // 2. CAMBIO AQUÍ: En lugar del Scaffold de prueba, ponemos el Login
+      title: 'Internship App',
+      theme: ThemeData(primarySwatch: Colors.blue),
       home: const LoginScreen(), 
     );
   }

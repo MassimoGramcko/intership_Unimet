@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "608770874573",
+    "project_id": "internshipapp-unimet",
+    "storage_bucket": "internshipapp-unimet.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:608770874573:android:cf933c83d73c6cbfc8dd84",
+        "android_client_info": {
+          "package_name": "com.example.intership_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDRIY-cXETscI0-hvdJ_Jt_pA39BWICWU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

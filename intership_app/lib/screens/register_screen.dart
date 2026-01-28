@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../config/theme.dart';
-import 'student_home.dart'; // <--- 1. IMPORTANTE: Importamos la pantalla destino
+import '../services/auth_service.dart'; // <--- Verifica que esta ruta no tenga error
+import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -10,162 +10,162 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  // Variable para guardar la carrera seleccionada
-  String? selectedCareer;
+  // Controladores para capturar el texto
+  final TextEditingController _nombresController = TextEditingController();
+  final TextEditingController _apellidosController = TextEditingController();
+  final TextEditingController _cedulaController = TextEditingController();
+  final TextEditingController _carnetController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   
-  // Lista de carreras de la UNIMET
-  final List<String> careers = [
-    "Ing. de Sistemas",
-    "Ing. de Producción",
-    "Ing. Civil",
-    "Ing. Mecánica",
-    "Ing. Química",
-    "Psicología",
-    "Economía Empresarial",
-    "Contaduría Pública",
-    "Derecho",
-    "Idiomas Modernos",
-    "Estudios Liberales",
+  // Variable para el selector de carreras
+  String? _selectedCarrera;
+  
+  // Lista de carreras de la Unimet (puedes agregar más)
+  final List<String> _carreras = [
+    'Ingeniería de Sistemas',
+    'Ingeniería Civil',
+    'Ingeniería Mecánica',
+    'Ingeniería Química',
+    'Ingeniería de Producción',
+    'Psicología',
+    'Derecho',
+    'Administración',
+    'Contaduría',
+    'Economía',
+    'Educación',
+    'Idiomas Modernos',
+    'Matemáticas',
+    'Estudios Liberales'
   ];
+
+  bool _isLoading = false;
+
+  void _register() async {
+    // 1. Validar que no haya campos vacíos
+    if (_nombresController.text.isEmpty || 
+        _emailController.text.isEmpty || 
+        _passwordController.text.isEmpty ||
+        _selectedCarrera == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor llena todos los campos obligatorios')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true; // Mostrar ruedita de carga
+    });
+
+    final authService = AuthService();
+    
+    // 2. Llamar al servicio de Registro
+    String? result = await authService.registerStudent(
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+      nombres: _nombresController.text.trim(),
+      apellidos: _apellidosController.text.trim(),
+      cedula: _cedulaController.text.trim(),
+      carnet: _carnetController.text.trim(),
+      carrera: _selectedCarrera!,
+    );
+
+    setState(() {
+      _isLoading = false; // Ocultar ruedita
+    });
+
+    if (result == null) {
+      // Éxito: Navegar al Login
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('¡Cuenta creada con éxito! Por favor inicia sesión.')),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+        );
+      }
+    } else {
+      // Error: Mostrar mensaje rojo
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(result), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Registro de Estudiante"),
-        backgroundColor: AppTheme.primaryOrange, 
-        foregroundColor: Colors.white,
-      ),
-      body: SafeArea(
+      appBar: AppBar(title: const Text("Registro de Estudiante")),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Crea tu cuenta",
-                style: TextStyle(
-                  fontSize: 24, 
-                  fontWeight: FontWeight.bold, 
-                  color: AppTheme.secondaryBlue 
-                ),
-              ),
+              const Icon(Icons.person_add, size: 80, color: Colors.blue),
+              const SizedBox(height: 20),
+              
+              // Campos del formulario
+              TextField(controller: _nombresController, decoration: const InputDecoration(labelText: "Nombres", border: OutlineInputBorder())),
               const SizedBox(height: 10),
-              const Text(
-                "Completa tus datos para postularte a pasantías.",
-                style: TextStyle(color: Colors.grey),
-              ),
-              const SizedBox(height: 30),
-
-              // 1. Nombres y Apellidos
-              _buildTextField(label: "Nombres", icon: Icons.person_outline),
-              const SizedBox(height: 15),
-              _buildTextField(label: "Apellidos", icon: Icons.person_outline),
-              const SizedBox(height: 15),
-
-              // 2. Identificación
-              _buildTextField(
-                label: "Cédula de Identidad", 
-                icon: Icons.badge_outlined,
-                isNumber: true
-              ),
-              const SizedBox(height: 15),
-
-              _buildTextField(
-                label: "Carnet Estudiantil", 
-                icon: Icons.card_membership,
-                isNumber: true
-              ),
-              const SizedBox(height: 15),
-
-              // 3. Contacto
-              _buildTextField(
-                label: "Correo (UNIMET / Gmail)", 
-                icon: Icons.email_outlined,
-                inputType: TextInputType.emailAddress
-              ),
-              const SizedBox(height: 15),
-
-              // 4. Lista Desplegable de Carreras
+              TextField(controller: _apellidosController, decoration: const InputDecoration(labelText: "Apellidos", border: OutlineInputBorder())),
+              const SizedBox(height: 10),
+              TextField(controller: _cedulaController, decoration: const InputDecoration(labelText: "Cédula", border: OutlineInputBorder())),
+              const SizedBox(height: 10),
+              TextField(controller: _carnetController, decoration: const InputDecoration(labelText: "Carnet", border: OutlineInputBorder())),
+              const SizedBox(height: 10),
+              
+              // Dropdown (Lista desplegable)
               DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: "Carrera",
-                  prefixIcon: Icon(Icons.school_outlined),
-                  border: OutlineInputBorder(),
-                ),
-                value: selectedCareer,
-                items: careers.map((String career) {
+                value: _selectedCarrera,
+                decoration: const InputDecoration(labelText: "Carrera", border: OutlineInputBorder()),
+                items: _carreras.map((String carrera) {
                   return DropdownMenuItem<String>(
-                    value: career,
-                    child: Text(career),
+                    value: carrera,
+                    child: Text(carrera),
                   );
                 }).toList(),
-                onChanged: (newValue) {
+                onChanged: (String? newValue) {
                   setState(() {
-                    selectedCareer = newValue;
+                    _selectedCarrera = newValue;
                   });
                 },
               ),
-              const SizedBox(height: 15),
-
-              // 5. Contraseña
-              _buildTextField(
-                label: "Contraseña", 
-                icon: Icons.lock_outline,
-                isPassword: true
+              
+              const SizedBox(height: 10),
+              TextField(controller: _emailController, decoration: const InputDecoration(labelText: "Correo Unimet", border: OutlineInputBorder())),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _passwordController, 
+                decoration: const InputDecoration(labelText: "Contraseña", border: OutlineInputBorder()),
+                obscureText: true,
               ),
-
-              const SizedBox(height: 40),
-
-              // BOTÓN FINAL ACTUALIZADO
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  // 2. CAMBIO AQUÍ: Navegación al Home
-                  onPressed: () {
-                    // Usamos pushAndRemoveUntil para que no pueda volver atrás al registro
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (context) => const StudentHomeScreen()),
-                      (route) => false, 
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryOrange,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+              const SizedBox(height: 20),
+              
+              // Botón de Registrar
+              _isLoading 
+                ? const CircularProgressIndicator()
+                : ElevatedButton(
+                    onPressed: _register,
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 50),
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
                     ),
+                    child: const Text("Crear Cuenta"),
                   ),
-                  child: const Text(
-                    "CREAR CUENTA",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
+              
+              TextButton(
+                onPressed: () {
+                   Navigator.pop(context); 
+                },
+                child: const Text("¿Ya tienes cuenta? Ingresa aquí"),
+              )
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  // Helper para crear inputs más rápido
-  Widget _buildTextField({
-    required String label, 
-    required IconData icon, 
-    bool isPassword = false,
-    bool isNumber = false,
-    TextInputType? inputType,
-  }) {
-    return TextFormField(
-      obscureText: isPassword,
-      keyboardType: isNumber ? TextInputType.number : (inputType ?? TextInputType.text),
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon),
-        border: const OutlineInputBorder(),
       ),
     );
   }
