@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../config/theme.dart';
-import 'create_offer_screen.dart'; // Importamos para poder editar
+import '../../config/theme.dart';
+import '../admin/create_offer_screen.dart'; // Importamos para poder editar
 
 class OfferDetailScreen extends StatelessWidget {
   const OfferDetailScreen({super.key});

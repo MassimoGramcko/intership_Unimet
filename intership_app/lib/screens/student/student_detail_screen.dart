@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../config/theme.dart';
+import '../../config/theme.dart';
 
 class StudentDetailScreen extends StatelessWidget {
   const StudentDetailScreen({super.key});
