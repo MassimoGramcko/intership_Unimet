@@ -5,7 +5,7 @@ import '../../config/theme.dart';
 
 // --- RUTAS DE PANTALLAS ---
 import '../student/student_home.dart';
-import '../admin/coordinator_home.dart';
+import '../Coordinador/coordinator_home.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {

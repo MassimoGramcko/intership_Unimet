@@ -3,8 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../config/theme.dart';
 import '../auth/login_screen.dart';
-import 'profile_tab.dart'; // Para ir al Perfil
-import 'explore_tab.dart'; // <--- NUEVO: Para ir a Explorar Ofertas
+import 'profile_tab.dart'; 
+import 'explore_tab.dart'; 
+import 'applications_tab.dart'; // <--- 1. IMPORTANTE: Agregamos esto
 
 class StudentHomeScreen extends StatelessWidget {
   const StudentHomeScreen({super.key});
@@ -120,7 +121,7 @@ class StudentHomeScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildMinimalStat("0", "Postulaciones"),
+                        _buildMinimalStat("1", "Postulaciones"), // Puedes cambiar el 0 por 1 para ver el cambio visual
                         _buildMinimalStat("0", "Favoritas"),
                          _buildMinimalStat("—", "Promedio"),
                       ],
@@ -142,7 +143,6 @@ class StudentHomeScreen extends StatelessWidget {
 
                 // --- TARJETA HERO: EXPLORAR ---
                 GestureDetector(
-                  // AQUÍ ESTÁ EL CAMBIO: NAVEGACIÓN A EXPLORE TAB
                   onTap: () {
                     Navigator.push(
                       context,
@@ -216,7 +216,15 @@ class StudentHomeScreen extends StatelessWidget {
                         icon: Icons.folder_open_rounded,
                         title: "Mis Solicitudes",
                         color: Colors.blueAccent,
-                        onTap: () => print("Solicitudes"),
+                        // 2. AQUÍ ESTÁ EL CAMBIO CLAVE:
+                        onTap: () {
+                           Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ApplicationsTab(),
+                            ),
+                          );
+                        },
                       ),
                     ),
                     const SizedBox(width: 20),
@@ -225,7 +233,6 @@ class StudentHomeScreen extends StatelessWidget {
                         icon: Icons.person_rounded,
                         title: "Mi Perfil y CV",
                         color: Colors.purpleAccent,
-                        // NAVEGACIÓN A PERFIL
                         onTap: () {
                           Navigator.push(
                             context,
