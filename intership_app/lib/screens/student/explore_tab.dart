@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../config/theme.dart';
-import 'job_details_screen.dart'; // 1. IMPORT NECESARIO
+import 'job_details_screen.dart'; // Importante para la navegación
 
-// MODELO DE DATOS
+// --- MODELO DE DATOS (Compartido) ---
 class JobOffer {
   final String id;
   final String title;
@@ -11,6 +11,7 @@ class JobOffer {
   final String location;
   final String type;
   final String wage;
+  final String description; // Agregamos descripción
   final bool isRemote;
   final bool isFeatured;
   final Color brandColor;
@@ -23,6 +24,7 @@ class JobOffer {
     required this.location,
     required this.type,
     required this.wage,
+    required this.description,
     required this.isRemote,
     required this.isFeatured,
     required this.brandColor,
@@ -35,29 +37,32 @@ class JobOffer {
       id: doc.id,
       title: data['title'] ?? 'Sin título',
       company: data['company'] ?? 'Empresa Confidencial',
-      location: data['location'] ?? 'Ubicación no especificada',
-      type: data['type'] ?? 'Pasantía',
+      location: data['location'] ?? 'Caracas, Venezuela',
+      type: data['modality'] ?? 'Pasantía', // Ajustado a 'modality' que usa el coordinador
       wage: data['wage'] ?? 'A convenir',
-      isRemote: data['isRemote'] ?? false,
+      description: data['description'] ?? 'Sin descripción disponible.',
+      isRemote: (data['modality'] == 'Remoto'),
       isFeatured: data['isFeatured'] ?? false,
-      postedAt: data['postedAt'],
+      // AQUÍ ESTÁ EL AJUSTE IMPORTANTE DE FECHA:
+      postedAt: data['postedAt'] ?? data['createdAt'], 
       brandColor: _parseColor(data['colorHex']),
     );
   }
 
   static Color _parseColor(String? hexString) {
-    if (hexString == null || hexString.isEmpty) return Colors.grey;
+    if (hexString == null || hexString.isEmpty) return Colors.blueAccent;
     try {
       final buffer = StringBuffer();
       if (hexString.length == 6 || hexString.length == 7) buffer.write('ff');
       buffer.write(hexString.replaceFirst('#', ''));
       return Color(int.parse(buffer.toString(), radix: 16));
     } catch (e) {
-      return Colors.grey;
+      return Colors.blueAccent;
     }
   }
 }
 
+// --- PANTALLA EXPLORE ---
 class ExploreTab extends StatefulWidget {
   const ExploreTab({super.key});
 
@@ -82,7 +87,7 @@ class _ExploreTabState extends State<ExploreTab> {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('job_offers')
-            .orderBy('postedAt', descending: true)
+            .orderBy('createdAt', descending: true) // Asegúrate que coincida con lo que guarda el coordinador
             .snapshots(),
         builder: (context, snapshot) {
           
@@ -91,7 +96,7 @@ class _ExploreTabState extends State<ExploreTab> {
           }
 
           if (snapshot.hasError) {
-             return Center(child: Text("Error: ${snapshot.error}", style: const TextStyle(color: Colors.white)));
+             return Center(child: Text("Error de carga", style: TextStyle(color: Colors.white.withOpacity(0.5))));
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -100,15 +105,12 @@ class _ExploreTabState extends State<ExploreTab> {
 
           final allDocs = snapshot.data!.docs;
           
-          final featuredOffers = allDocs
-              .map((doc) => JobOffer.fromFirestore(doc))
-              .where((offer) => offer.isFeatured)
-              .toList();
+          // Convertimos docs a objetos JobOffer
+          final allOffers = allDocs.map((doc) => JobOffer.fromFirestore(doc)).toList();
 
-          final recentOffers = allDocs
-              .map((doc) => JobOffer.fromFirestore(doc))
-              .where((offer) => !offer.isFeatured)
-              .toList();
+          // Filtramos (puedes ajustar lógica de destacados si tienes ese campo en firebase)
+          final featuredOffers = allOffers.take(3).toList(); // Tomamos los 3 primeros como destacados
+          final recentOffers = allOffers; // Mostramos todos en la lista vertical
 
           return Stack(
             children: [
@@ -153,13 +155,6 @@ class _ExploreTabState extends State<ExploreTab> {
                         fontWeight: FontWeight.w800,
                         color: Colors.white,
                         letterSpacing: 1.5,
-                        shadows: [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 10,
-                            offset: Offset(0, 4),
-                          )
-                        ]
                       ),
                     ),
                     actions: [
@@ -170,7 +165,7 @@ class _ExploreTabState extends State<ExploreTab> {
                     ],
                   ),
 
-                  // BUSCADOR
+                  // BUSCADOR (Visual)
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
@@ -180,13 +175,6 @@ class _ExploreTabState extends State<ExploreTab> {
                           color: Colors.white.withOpacity(0.05),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(color: Colors.white.withOpacity(0.1)),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
-                            )
-                          ]
                         ),
                         child: Row(
                           children: [
@@ -211,10 +199,10 @@ class _ExploreTabState extends State<ExploreTab> {
 
                   // SECCIÓN DESTACADOS
                   if (featuredOffers.isNotEmpty) ...[
-                    SliverToBoxAdapter(
+                    const SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 10, 20, 15),
-                        child: const Text("Destacado para ti", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                        padding: EdgeInsets.fromLTRB(20, 10, 20, 15),
+                        child: Text("Destacado para ti", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                       ),
                     ),
                     SliverToBoxAdapter(
@@ -236,7 +224,7 @@ class _ExploreTabState extends State<ExploreTab> {
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(20, 30, 20, 10),
                       child: Text(
-                        recentOffers.isEmpty ? "Todas las ofertas" : "Agregados Recientemente", 
+                        "Ofertas Recientes", 
                         style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)
                       ),
                     ),
@@ -288,9 +276,8 @@ class _ExploreTabState extends State<ExploreTab> {
     );
   }
 
-  // 2. MODIFICACIÓN: Tarjeta destacada con GestureDetector y Hero
   Widget _buildFeaturedCard(JobOffer offer) {
-    return GestureDetector( // <--- ENVOLVIMOS TODO EN GESTUREDETECTOR
+    return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
@@ -321,9 +308,8 @@ class _ExploreTabState extends State<ExploreTab> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                  // AQUÍ AGREGAMOS EL HERO
                   child: Hero(
-                    tag: offer.id, 
+                    tag: "featured_${offer.id}", // Tag único
                     child: Icon(Icons.business, color: offer.brandColor, size: 24)
                   ),
                 ),
@@ -353,9 +339,8 @@ class _ExploreTabState extends State<ExploreTab> {
     );
   }
 
-  // 3. MODIFICACIÓN: Tarjeta vertical con GestureDetector
   Widget _buildVerticalCard(JobOffer offer) {
-    return GestureDetector( // <--- ENVOLVIMOS TODO EN GESTUREDETECTOR
+    return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
@@ -382,7 +367,10 @@ class _ExploreTabState extends State<ExploreTab> {
                 color: offer.brandColor.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(15),
               ),
-              child: Icon(Icons.work_outline, color: offer.brandColor),
+              child: Hero(
+                tag: "list_${offer.id}", // Tag único diferente al de featured para evitar conflictos
+                child: Icon(Icons.work_outline, color: offer.brandColor)
+              ),
             ),
             const SizedBox(width: 15),
             Expanded(

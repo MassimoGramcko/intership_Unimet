@@ -31,15 +31,26 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
 
     try {
       await FirebaseFirestore.instance.collection('job_offers').add({
+        // 1. Datos básicos
         'title': _titleController.text.trim(),
         'company': _companyController.text.trim(),
         'description': _descController.text.trim(),
         'location': _locationController.text.trim(),
-        'modality': _modality,
         'wage': _wageController.text.trim(),
-        'postedAt': FieldValue.serverTimestamp(),
+        
+        // 2. FECHAS (La clave para el ordenamiento)
+        'createdAt': FieldValue.serverTimestamp(), 
+        
+        // 3. MODALIDAD (Doble compatibilidad)
+        'modality': _modality,
+        'type': _modality, // Agregamos 'type' para que coincida con lo que a veces busca el estudiante
+        'isRemote': _modality == 'Remoto', // Útil para filtros futuros
+
+        // 4. Datos por defecto (Para que la tarjeta se vea bonita)
         'isActive': true,
         'applicantsCount': 0,
+        'isFeatured': false,
+        'colorHex': '#FF5733', // Color naranja por defecto para el icono
       });
 
       if (mounted) {
@@ -87,7 +98,6 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
         padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
-          // IMPORTANTE: Aquí NO debe haber 'const' antes de [
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -147,7 +157,6 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
               
               const SizedBox(height: 15),
               
-              // Esta es la línea que te daba error, ahora está arreglada
               _buildTextField(_wageController, "Remuneración", "Ej: 100 USD / No remunerado", Icons.attach_money),
 
               const SizedBox(height: 25),
