@@ -56,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (role == 'admin' || role == 'coordinator') {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (_) => const CoordinatorHomeScreen()),
+            MaterialPageRoute(builder: (_) => const CoordinatorHome()),
           );
         } else {
           Navigator.pushReplacement(

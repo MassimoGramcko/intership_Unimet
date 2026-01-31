@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:intl/intl.dart'; // ¡Ahora sí lo usaremos!
-import '../../config/theme.dart';
+import 'package:intl/intl.dart';
+
+// Si te da error esta línea, comenta el import y usa Colors.orange en su lugar
+// import '../../config/theme.dart'; 
 
 class ApplicationsTab extends StatefulWidget {
   const ApplicationsTab({super.key});
@@ -12,22 +14,40 @@ class ApplicationsTab extends StatefulWidget {
 }
 
 class _ApplicationsTabState extends State<ApplicationsTab> {
-  String _selectedFilter = 'Todos'; // Filtro seleccionado por defecto
+  String _selectedFilter = 'Todos';
 
-  // Configuración de colores y textos según el estado
+  // Configuración visual según el estado ESTANDARIZADO
   final Map<String, dynamic> statusConfig = {
     'pending': {'color': Colors.blue, 'label': 'Enviado', 'step': 1},
     'reviewing': {'color': Colors.orange, 'label': 'En Revisión', 'step': 2},
-    'accepted': {'color': Colors.greenAccent, 'label': 'Aceptado', 'step': 3},
-    'rejected': {'color': Colors.redAccent, 'label': 'No seleccionado', 'step': 3},
+    'accepted': {'color': const Color(0xFF22C55E), 'label': 'Aceptado', 'step': 3}, // Verde fuerte
+    'rejected': {'color': const Color(0xFFEF4444), 'label': 'No seleccionado', 'step': 3}, // Rojo
   };
+
+  // --- FUNCIÓN CRÍTICA: NORMALIZA EL ESTADO ---
+  // Convierte "Aceptado", "Approved", "accepted" -> "accepted"
+  String _getStatusKey(String? rawStatus) {
+    String status = (rawStatus ?? '').toLowerCase();
+    
+    if (status.contains('aceptado') || status.contains('accepted') || status.contains('aprobado')) {
+      return 'accepted';
+    } else if (status.contains('rechazado') || status.contains('rejected')) {
+      return 'rejected';
+    } else if (status.contains('revisión') || status.contains('reviewing')) {
+      return 'reviewing';
+    } else {
+      return 'pending';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
+    // Color principal seguro (por si no tienes el archivo theme)
+    final Color primaryColor = const Color(0xFFFF6B00); 
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A), // Fondo oscuro
+      backgroundColor: const Color(0xFF0F172A),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -40,7 +60,7 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
       ),
       body: Column(
         children: [
-          // 1. FILTROS (Cápsulas)
+          // 1. FILTROS
           Container(
             height: 60,
             padding: const EdgeInsets.symmetric(vertical: 10),
@@ -48,15 +68,13 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 20),
               children: [
-                _buildFilterChip("Todos"),
+                _buildFilterChip("Todos", primaryColor),
                 const SizedBox(width: 10),
-                _buildFilterChip("Pendiente", dbValue: "pending"),
+                _buildFilterChip("Pendiente", primaryColor, dbKey: "pending"),
                 const SizedBox(width: 10),
-                _buildFilterChip("En Revisión", dbValue: "reviewing"),
+                _buildFilterChip("Aceptado", primaryColor, dbKey: "accepted"),
                 const SizedBox(width: 10),
-                _buildFilterChip("Aceptado", dbValue: "accepted"),
-                const SizedBox(width: 10),
-                _buildFilterChip("Rechazado", dbValue: "rejected"),
+                _buildFilterChip("Rechazado", primaryColor, dbKey: "rejected"),
               ],
             ),
           ),
@@ -67,22 +85,25 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
               stream: FirebaseFirestore.instance
                   .collection('applications')
                   .where('studentId', isEqualTo: user?.uid)
+                  .orderBy('appliedAt', descending: true) // Asegúrate de tener índice compuesto si esto falla
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: AppTheme.primaryOrange));
+                  return Center(child: CircularProgressIndicator(color: primaryColor));
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return _buildEmptyState();
                 }
 
-                // Filtrado manual (para evitar crear múltiples índices en Firestore por ahora)
                 var docs = snapshot.data!.docs;
+
+                // Filtrado manual usando la llave normalizada
                 if (_selectedFilter != 'Todos') {
                   docs = docs.where((doc) {
                     final data = doc.data() as Map<String, dynamic>;
-                    return (data['status'] ?? 'pending') == _selectedFilter;
+                    // Usamos la función traductora aquí también
+                    return _getStatusKey(data['status']) == _selectedFilter;
                   }).toList();
                 }
 
@@ -106,9 +127,9 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
 
   // --- WIDGETS AUXILIARES ---
 
-  Widget _buildFilterChip(String label, {String? dbValue}) {
-    final isSelected = dbValue == null ? _selectedFilter == 'Todos' : _selectedFilter == dbValue;
-    final valueToSet = dbValue ?? 'Todos';
+  Widget _buildFilterChip(String label, Color activeColor, {String? dbKey}) {
+    final valueToSet = dbKey ?? 'Todos';
+    final isSelected = _selectedFilter == valueToSet;
 
     return GestureDetector(
       onTap: () => setState(() => _selectedFilter = valueToSet),
@@ -116,14 +137,11 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryOrange : Colors.white.withOpacity(0.05),
+          color: isSelected ? activeColor : Colors.white.withOpacity(0.05),
           borderRadius: BorderRadius.circular(30),
           border: Border.all(
-            color: isSelected ? AppTheme.primaryOrange : Colors.white.withOpacity(0.1),
+            color: isSelected ? activeColor : Colors.white.withOpacity(0.1),
           ),
-          boxShadow: isSelected 
-            ? [BoxShadow(color: AppTheme.primaryOrange.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 4))]
-            : [],
         ),
         child: Center(
           child: Text(
@@ -139,24 +157,24 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
   }
 
   Widget _buildApplicationCard(Map<String, dynamic> data) {
-    final statusKey = data['status'] ?? 'pending';
-    final config = statusConfig[statusKey] ?? statusConfig['pending'];
+    // 1. OBTENER LA LLAVE CORRECTA (pending, accepted, rejected)
+    final statusKey = _getStatusKey(data['status']);
+    
+    // 2. OBTENER CONFIGURACIÓN
+    final config = statusConfig[statusKey]!;
     final Color statusColor = config['color'];
     final String statusLabel = config['label'];
-    final int currentStep = config['step']; // 1, 2, o 3
+    final int currentStep = config['step'];
 
-    // --- AQUÍ USAMOS INTL PARA LA FECHA ---
     String dateStr = "Reciente";
     if (data['appliedAt'] != null) {
       try {
         DateTime date = (data['appliedAt'] as Timestamp).toDate();
-        // Formato: 29 Ene, 05:30 PM
         dateStr = DateFormat('dd MMM, hh:mm a').format(date); 
       } catch (e) {
         dateStr = "Fecha desconocida";
       }
     }
-    // --------------------------------------
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -170,12 +188,11 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
       ),
       child: Column(
         children: [
-          // Parte Superior: Info Empresa
+          // Parte Superior
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                // Icono decorativo
                 Container(
                   width: 50,
                   height: 50,
@@ -186,7 +203,6 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
                   child: Icon(Icons.business, color: statusColor, size: 28),
                 ),
                 const SizedBox(width: 15),
-                // Textos
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,7 +219,6 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
                     ],
                   ),
                 ),
-                // Badge de estado
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
@@ -222,7 +237,7 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
 
           Divider(color: Colors.white.withOpacity(0.05), height: 1),
 
-          // Parte Inferior: Barra de Progreso
+          // Parte Inferior: Timeline
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -231,13 +246,11 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("Progreso de solicitud", style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11)),
-                    // Mostramos la fecha formateada aquí
+                    Text("Progreso:", style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11)),
                     Text(dateStr, style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11)),
                   ],
                 ),
                 const SizedBox(height: 10),
-                // Timeline Visual
                 SizedBox(
                   height: 6,
                   child: Row(
@@ -246,6 +259,7 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
                       const SizedBox(width: 4),
                       _buildProgressSegment(isActive: currentStep >= 2, color: statusColor),
                       const SizedBox(width: 4),
+                      // Si está rechazado, el paso 3 se pinta también (rojo), si es aceptado (verde)
                       _buildProgressSegment(isActive: currentStep >= 3, color: statusColor, isLast: true),
                     ],
                   ),
@@ -281,7 +295,7 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
           Icon(Icons.folder_off_outlined, size: 80, color: Colors.white.withOpacity(0.2)),
           const SizedBox(height: 15),
           Text(
-            "No hay solicitudes en '$_selectedFilter'",
+            "No hay solicitudes aquí",
             style: TextStyle(color: Colors.white.withOpacity(0.5)),
           ),
         ],

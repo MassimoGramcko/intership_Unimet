@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart'; // Solo para formatear la fecha simple
-import '../../config/theme.dart';
+import 'package:intl/intl.dart'; 
 import '../auth/login_screen.dart';
 import 'create_offer_screen.dart';
+import 'manage_offers_screen.dart'; 
+import 'coordinator_applications_screen.dart'; // <--- NAVEGACIÓN SOLICITUDES
 
-class CoordinatorHomeScreen extends StatefulWidget {
-  const CoordinatorHomeScreen({super.key});
+class CoordinatorHome extends StatefulWidget {
+  const CoordinatorHome({super.key});
 
   @override
-  State<CoordinatorHomeScreen> createState() => _CoordinatorHomeScreenState();
+  State<CoordinatorHome> createState() => _CoordinatorHomeState();
 }
 
-class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
-  // Función para cerrar sesión
+class _CoordinatorHomeState extends State<CoordinatorHome> {
+  
+  // Color principal naranja (Hardcoded para no depender de otro archivo)
+  final Color primaryOrange = const Color(0xFFFF6B00);
+
   void _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
     if (context.mounted) {
@@ -28,13 +32,14 @@ class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Fecha simple (sin configuración de idioma complicada)
+    // Fecha en inglés para evitar errores de locale
     String formattedDate = DateFormat('EEEE, d MMMM').format(DateTime.now());
 
     return Scaffold(
+      backgroundColor: const Color(0xFF0F172A), // Fondo de seguridad
       body: Stack(
         children: [
-          // CAPA 1: Fondo oscuro moderno
+          // CAPA 1: Fondo oscuro moderno con gradiente
           Container(
             decoration: const BoxDecoration(
               gradient: RadialGradient(
@@ -87,23 +92,40 @@ class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
 
                   const SizedBox(height: 35),
 
-                  // TARJETAS KPI
+                  // TARJETAS KPI (SOLICITUDES Y OFERTAS)
                   Row(
                     children: [
+                      // --- TARJETA DE SOLICITUDES ---
                       _buildModernKpiCard(
                         title: "Solicitudes",
                         collectionName: "applications",
                         icon: Icons.people_alt_rounded,
                         accentColor: Colors.orangeAccent,
-                        gradientColors: [AppTheme.primaryOrange.withOpacity(0.8), Colors.orange[800]!],
+                        gradientColors: [primaryOrange.withOpacity(0.8), Colors.orange[800]!],
+                        // NAVEGACIÓN CORRECTA A SOLICITUDES
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const CoordinatorApplicationsScreen()),
+                          );
+                        },
                       ),
                       const SizedBox(width: 15),
+                      
+                      // --- TARJETA DE OFERTAS ---
                       _buildModernKpiCard(
                         title: "Ofertas Activas",
                         collectionName: "job_offers",
                         icon: Icons.business_center_rounded,
                         accentColor: Colors.blueAccent,
                         gradientColors: [Colors.blueAccent.withOpacity(0.8), Colors.blue[800]!],
+                        // NAVEGACIÓN CORRECTA A GESTIONAR OFERTAS
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const ManageOffersScreen()),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -120,7 +142,7 @@ class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // LISTA
+                  // LISTA DE ACTIVIDAD
                   StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
                         .collection('applications')
@@ -129,9 +151,9 @@ class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
                         .snapshots(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: Padding(
-                          padding: EdgeInsets.all(20.0),
-                          child: CircularProgressIndicator(color: AppTheme.primaryOrange),
+                        return Center(child: Padding(
+                          padding: const EdgeInsets.all(20.0),
+                          child: CircularProgressIndicator(color: primaryOrange),
                         ));
                       }
                       
@@ -163,7 +185,7 @@ class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primaryOrange.withOpacity(0.5),
+              color: primaryOrange.withOpacity(0.5),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),
@@ -176,7 +198,7 @@ class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
               MaterialPageRoute(builder: (_) => const CreateOfferScreen())
             );
           },
-          backgroundColor: AppTheme.primaryOrange,
+          backgroundColor: primaryOrange,
           elevation: 0,
           icon: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
           label: const Text("Crear Oferta", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
@@ -193,73 +215,87 @@ class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
     required IconData icon,
     required Color accentColor,
     required List<Color> gradientColors,
+    VoidCallback? onTap, 
   }) {
     return Expanded(
       child: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection(collectionName).snapshots(),
         builder: (context, snapshot) {
-          final count = snapshot.hasData ? snapshot.data!.docs.length : 0;
+          // Filtramos solo si es job_offers para contar las activas, si no cuenta todo
+          int count = 0;
+          if (snapshot.hasData) {
+            if (collectionName == 'job_offers') {
+               count = snapshot.data!.docs.where((doc) => doc['isActive'] == true).length;
+            } else if (collectionName == 'applications') {
+               count = snapshot.data!.docs.where((doc) => doc['status'] == 'Pendiente').length;
+            } else {
+               count = snapshot.data!.docs.length;
+            }
+          }
           
-          return Container(
-            height: 160,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(25),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  gradientColors[0].withOpacity(0.2),
-                  gradientColors[1].withOpacity(0.1),
+          return GestureDetector(
+            onTap: onTap,
+            child: Container(
+              height: 160,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(25),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    gradientColors[0].withOpacity(0.2),
+                    gradientColors[1].withOpacity(0.1),
+                  ],
+                ),
+                border: Border.all(color: Colors.white.withOpacity(0.08)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 15,
+                    offset: const Offset(0, 10),
+                  )
                 ],
               ),
-              border: Border.all(color: Colors.white.withOpacity(0.08)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 15,
-                  offset: const Offset(0, 10),
-                )
-              ],
-            ),
-            child: Stack(
-              children: [
-                Positioned(
-                  right: -20,
-                  bottom: -20,
-                  child: Icon(icon, size: 100, color: accentColor.withOpacity(0.05)),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: accentColor.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(icon, color: accentColor, size: 24),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "$count",
-                            style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w900, height: 1),
-                          ),
-                          const SizedBox(height: 5),
-                          Text(
-                            title,
-                            style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
-                          ),
-                        ],
-                      )
-                    ],
+              child: Stack(
+                children: [
+                  Positioned(
+                    right: -20,
+                    bottom: -20,
+                    child: Icon(icon, size: 100, color: accentColor.withOpacity(0.05)),
                   ),
-                ),
-              ],
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: accentColor.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(icon, color: accentColor, size: 24),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "$count",
+                              style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.w900, height: 1),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              title,
+                              style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14),
+                            ),
+                          ],
+                        )
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },
@@ -268,24 +304,21 @@ class _CoordinatorHomeScreenState extends State<CoordinatorHomeScreen> {
   }
 
   Widget _buildModernReviewTile(Map<String, dynamic> data) {
-    String status = data['status'] ?? 'pending';
+    String status = (data['status'] ?? 'Pendiente').toString().toLowerCase();
+    
     Color statusColor;
     String statusText;
 
-    switch (status) {
-      case 'reviewing':
+    if (status == 'pendiente' || status == 'reviewing') {
         statusColor = Colors.orange;
-        statusText = 'Revisando';
-        break;
-      case 'accepted':
+        statusText = 'Pendiente';
+    } else if (status == 'aceptado' || status == 'accepted') {
         statusColor = Colors.greenAccent;
         statusText = 'Aceptado';
-        break;
-      case 'rejected':
+    } else if (status == 'rechazado' || status == 'rejected') {
         statusColor = Colors.redAccent;
         statusText = 'Rechazado';
-        break;
-      default:
+    } else {
         statusColor = Colors.blue;
         statusText = 'Nuevo';
     }

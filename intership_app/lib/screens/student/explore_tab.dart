@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../config/theme.dart';
-import 'job_details_screen.dart'; // Importante para la navegación
+import 'job_details_screen.dart'; 
 
-// --- MODELO DE DATOS (Compartido) ---
+// --- MODELO DE DATOS ---
 class JobOffer {
   final String id;
   final String title;
@@ -11,7 +11,7 @@ class JobOffer {
   final String location;
   final String type;
   final String wage;
-  final String description; // Agregamos descripción
+  final String description; 
   final bool isRemote;
   final bool isFeatured;
   final Color brandColor;
@@ -38,12 +38,11 @@ class JobOffer {
       title: data['title'] ?? 'Sin título',
       company: data['company'] ?? 'Empresa Confidencial',
       location: data['location'] ?? 'Caracas, Venezuela',
-      type: data['modality'] ?? 'Pasantía', // Ajustado a 'modality' que usa el coordinador
+      type: data['modality'] ?? 'Pasantía', 
       wage: data['wage'] ?? 'A convenir',
       description: data['description'] ?? 'Sin descripción disponible.',
       isRemote: (data['modality'] == 'Remoto'),
       isFeatured: data['isFeatured'] ?? false,
-      // AQUÍ ESTÁ EL AJUSTE IMPORTANTE DE FECHA:
       postedAt: data['postedAt'] ?? data['createdAt'], 
       brandColor: _parseColor(data['colorHex']),
     );
@@ -87,7 +86,8 @@ class _ExploreTabState extends State<ExploreTab> {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('job_offers')
-            .orderBy('createdAt', descending: true) // Asegúrate que coincida con lo que guarda el coordinador
+            .where('isActive', isEqualTo: true) // <--- IMPORTANTE: FILTRO AGREGADO AQUÍ
+            .orderBy('createdAt', descending: true) 
             .snapshots(),
         builder: (context, snapshot) {
           
@@ -96,6 +96,9 @@ class _ExploreTabState extends State<ExploreTab> {
           }
 
           if (snapshot.hasError) {
+             // Es muy probable que aquí veas un error de "Index" la primera vez.
+             // Revisa la consola de depuración para el enlace de creación del índice.
+             print("Error en ExploreTab: ${snapshot.error}"); 
              return Center(child: Text("Error de carga", style: TextStyle(color: Colors.white.withOpacity(0.5))));
           }
 
@@ -109,8 +112,8 @@ class _ExploreTabState extends State<ExploreTab> {
           final allOffers = allDocs.map((doc) => JobOffer.fromFirestore(doc)).toList();
 
           // Filtramos (puedes ajustar lógica de destacados si tienes ese campo en firebase)
-          final featuredOffers = allOffers.take(3).toList(); // Tomamos los 3 primeros como destacados
-          final recentOffers = allOffers; // Mostramos todos en la lista vertical
+          final featuredOffers = allOffers.take(3).toList(); 
+          final recentOffers = allOffers; 
 
           return Stack(
             children: [
@@ -309,7 +312,7 @@ class _ExploreTabState extends State<ExploreTab> {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
                   child: Hero(
-                    tag: "featured_${offer.id}", // Tag único
+                    tag: "featured_${offer.id}", 
                     child: Icon(Icons.business, color: offer.brandColor, size: 24)
                   ),
                 ),
@@ -368,7 +371,7 @@ class _ExploreTabState extends State<ExploreTab> {
                 borderRadius: BorderRadius.circular(15),
               ),
               child: Hero(
-                tag: "list_${offer.id}", // Tag único diferente al de featured para evitar conflictos
+                tag: "list_${offer.id}", 
                 child: Icon(Icons.work_outline, color: offer.brandColor)
               ),
             ),
