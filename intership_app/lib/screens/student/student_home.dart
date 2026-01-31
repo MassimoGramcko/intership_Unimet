@@ -5,7 +5,7 @@ import '../../config/theme.dart';
 import '../auth/login_screen.dart';
 import 'profile_tab.dart'; 
 import 'explore_tab.dart'; 
-import 'applications_tab.dart'; // <--- 1. IMPORTANTE: Agregamos esto
+import 'applications_tab.dart'; 
 
 class StudentHomeScreen extends StatelessWidget {
   const StudentHomeScreen({super.key});
@@ -37,20 +37,21 @@ class StudentHomeScreen extends StatelessWidget {
                   return const Center(child: CircularProgressIndicator(color: AppTheme.primaryOrange));
                 }
                 if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
-                   return _buildDashboardUI(context, 'Estudiante', 'Carrera no definida');
+                   return _buildDashboardUI(context, user, 'Estudiante', 'Carrera no definida');
                 }
 
                 final userData = snapshot.data!.data() as Map<String, dynamic>;
                 final String firstName = userData['firstName'] ?? 'Estudiante';
                 final String career = userData['career'] ?? 'UNIMET';
 
-                return _buildDashboardUI(context, firstName, career);
+                // Pasamos 'user' también para usar su ID en los contadores
+                return _buildDashboardUI(context, user, firstName, career);
               },
             ),
     );
   }
 
-  Widget _buildDashboardUI(BuildContext context, String name, String career) {
+  Widget _buildDashboardUI(BuildContext context, User? user, String name, String career) {
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -118,14 +119,33 @@ class StudentHomeScreen extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 40),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildMinimalStat("1", "Postulaciones"), // Puedes cambiar el 0 por 1 para ver el cambio visual
-                        _buildMinimalStat("0", "Favoritas"),
-                         _buildMinimalStat("—", "Promedio"),
-                      ],
-                    )
+                    
+                    // --- AQUÍ ESTÁ EL CAMBIO CLAVE: CONTADORES EN TIEMPO REAL ---
+                    StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('applications')
+                          .where('studentId', isEqualTo: user?.uid)
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        // Por defecto es "0"
+                        String countPostulaciones = "0";
+
+                        if (snapshot.hasData) {
+                          // Si hay datos, contamos cuántos documentos hay
+                          countPostulaciones = snapshot.data!.docs.length.toString();
+                        }
+
+                        return Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildMinimalStat(countPostulaciones, "Postulaciones"), // Ahora es dinámico
+                            _buildMinimalStat("0", "Favoritas"),
+                            _buildMinimalStat("—", "Promedio"),
+                          ],
+                        );
+                      },
+                    ),
+                    // -----------------------------------------------------------
                   ],
                 ),
               ),
@@ -216,7 +236,6 @@ class StudentHomeScreen extends StatelessWidget {
                         icon: Icons.folder_open_rounded,
                         title: "Mis Solicitudes",
                         color: Colors.blueAccent,
-                        // 2. AQUÍ ESTÁ EL CAMBIO CLAVE:
                         onTap: () {
                            Navigator.push(
                             context,
