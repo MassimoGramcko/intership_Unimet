@@ -44,7 +44,6 @@ class StudentHomeScreen extends StatelessWidget {
                 final String firstName = userData['firstName'] ?? 'Estudiante';
                 final String career = userData['career'] ?? 'UNIMET';
 
-                // Pasamos 'user' también para usar su ID en los contadores
                 return _buildDashboardUI(context, user, firstName, career);
               },
             ),
@@ -120,32 +119,46 @@ class StudentHomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 40),
                     
-                    // --- AQUÍ ESTÁ EL CAMBIO CLAVE: CONTADORES EN TIEMPO REAL ---
+                    // --- AQUÍ ESTÁ EL CAMBIO "CHÉVERE" ---
+                    // Eliminamos el Row viejo y ponemos las tarjetas modernas
                     StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection('applications')
                           .where('studentId', isEqualTo: user?.uid)
                           .snapshots(),
                       builder: (context, snapshot) {
-                        // Por defecto es "0"
                         String countPostulaciones = "0";
-
                         if (snapshot.hasData) {
-                          // Si hay datos, contamos cuántos documentos hay
                           countPostulaciones = snapshot.data!.docs.length.toString();
                         }
 
                         return Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            _buildMinimalStat(countPostulaciones, "Postulaciones"), // Ahora es dinámico
-                            _buildMinimalStat("0", "Favoritas"),
-                            _buildMinimalStat("—", "Promedio"),
+                            // Tarjeta 1: Postulaciones (Naranja)
+                            Expanded(
+                              child: _buildModernStatCard(
+                                countPostulaciones, 
+                                "Postulaciones", 
+                                Icons.send_rounded, 
+                                AppTheme.primaryOrange
+                              ),
+                            ),
+                            const SizedBox(width: 15), // Espacio entre tarjetas
+                            
+                            // Tarjeta 2: Favoritas (Rosado - Estática por ahora)
+                            Expanded(
+                              child: _buildModernStatCard(
+                                "0", 
+                                "Favoritas", 
+                                Icons.favorite_rounded, 
+                                Colors.pinkAccent
+                              ),
+                            ),
                           ],
                         );
                       },
                     ),
-                    // -----------------------------------------------------------
+                    // -------------------------------------
                   ],
                 ),
               ),
@@ -237,7 +250,7 @@ class StudentHomeScreen extends StatelessWidget {
                         title: "Mis Solicitudes",
                         color: Colors.blueAccent,
                         onTap: () {
-                           Navigator.push(
+                            Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => const ApplicationsTab(),
@@ -270,16 +283,47 @@ class StudentHomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMinimalStat(String value, String label) {
-    return Column(
-      children: [
-        Text(value, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 5),
-        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14)),
-      ],
+  // --- NUEVO WIDGET PARA LAS TARJETAS DE ESTADÍSTICAS ---
+  Widget _buildModernStatCard(String value, String label, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.08), // Fondo semitransparente
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.1)), // Borde sutil
+      ),
+      child: Row(
+        children: [
+          // Icono con círculo de color de fondo
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2), // Color suave de fondo
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
+          const SizedBox(width: 12),
+          // Textos
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                label,
+                style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 11),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
+  // --- WIDGET PARA ACCESOS RÁPIDOS (Ya lo tenías) ---
   Widget _buildGlassCard({required IconData icon, required String title, required Color color, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,

@@ -140,7 +140,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     backgroundColor: Colors.white.withValues(alpha: 0.15), // Borde sutil
                     child: const CircleAvatar(
                       radius: 55, // Tamaño de la imagen
-                      backgroundImage: AssetImage('assets/unimet_logo.png'),
+                      backgroundImage: AssetImage('assets/Logo_app.jpeg'),
                       backgroundColor: Colors.transparent,
                     ),
                   ),
