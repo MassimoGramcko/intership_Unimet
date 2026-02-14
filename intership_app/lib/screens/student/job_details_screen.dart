@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_map/flutter_map.dart'; // IMPORTANTE
+import 'package:latlong2/latlong.dart';       // IMPORTANTE
 import '../../config/theme.dart';
-import 'explore_tab.dart'; // Importante: Para reconocer la clase JobOffer
+import 'explore_tab.dart'; 
 
 class JobDetailsScreen extends StatefulWidget {
-  final JobOffer offer; // Recibimos el objeto completo de la oferta
+  final JobOffer offer; 
 
   const JobDetailsScreen({super.key, required this.offer});
 
@@ -23,7 +25,6 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     _checkIfApplied();
   }
 
-  // Verificar si el estudiante ya se postuló antes a esta oferta
   void _checkIfApplied() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -43,7 +44,6 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     }
   }
 
-  // Guardar la postulación en Firebase
   void _applyToJob() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -51,14 +51,9 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     setState(() => _isApplying = true);
 
     try {
-      // 1. Obtener datos del estudiante para facilitar la vista al coordinador
       final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-      
-      // --- CORRECCIÓN AQUÍ ---
-      // userDoc.data() ya devuelve un mapa, no hace falta el 'as Map...'
       final userData = userDoc.data() ?? {}; 
 
-      // 2. Crear documento en la colección 'applications'
       await FirebaseFirestore.instance.collection('applications').add({
         'offerId': widget.offer.id,
         'jobTitle': widget.offer.title,
@@ -66,14 +61,12 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         'studentId': user.uid,
         'studentName': "${userData['firstName'] ?? 'Estudiante'} ${userData['lastName'] ?? ''}",
         'studentEmail': userData['email'] ?? user.email,
-        'status': 'Pendiente', // Estados posibles: Pendiente, Aprobado, Rechazado
+        'status': 'Pendiente',
         'appliedAt': FieldValue.serverTimestamp(),
       });
 
       if (mounted) {
         setState(() => _hasApplied = true);
-        
-        // Feedback visual de éxito
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("✅ ¡Solicitud enviada con éxito!"),
@@ -101,13 +94,13 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         children: [
           CustomScrollView(
             slivers: [
-              // 1. HEADER CON HERO ANIMATION
+              // 1. HEADER
               SliverAppBar(
                 expandedHeight: 250,
                 pinned: true,
                 backgroundColor: AppTheme.backgroundDark,
                 leading: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
                   onPressed: () => Navigator.pop(context),
                 ),
                 flexibleSpace: FlexibleSpaceBar(
@@ -127,7 +120,6 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                       ),
                       Center(
                         child: Hero(
-                          // Tag debe coincidir con el de la lista (explore_tab)
                           tag: "list_${widget.offer.id}", 
                           child: Icon(Icons.business_rounded, size: 80, color: Colors.white.withOpacity(0.9)),
                         ),
@@ -137,21 +129,19 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                 ),
               ),
 
-              // 2. CONTENIDO DETALLADO
+              // 2. CONTENIDO
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Título y Empresa
                       Text(widget.offer.title, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       Text(widget.offer.company, style: const TextStyle(color: AppTheme.primaryOrange, fontSize: 18, fontWeight: FontWeight.w500)),
                       
                       const SizedBox(height: 25),
 
-                      // Chips de información (Ubicación, Modalidad, Sueldo)
                       Wrap(
                         spacing: 10,
                         runSpacing: 10,
@@ -165,7 +155,6 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
 
                       const SizedBox(height: 35),
 
-                      // Descripción
                       const Text("Descripción del Puesto", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 15),
                       Container(
@@ -181,7 +170,13 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                         ),
                       ),
                       
-                      const SizedBox(height: 100), // Espacio extra para que el botón flotante no tape texto
+                      const SizedBox(height: 35),
+
+                      // --- NUEVO: SECCIÓN DEL MAPA ---
+                      _buildMapSection(),
+                      // -------------------------------
+
+                      const SizedBox(height: 100), 
                     ],
                   ),
                 ),
@@ -189,7 +184,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
             ],
           ),
 
-          // 3. BOTÓN FLOTANTE INFERIOR
+          // 3. BOTÓN FLOTANTE
           Positioned(
             bottom: 30,
             left: 20,
@@ -226,7 +221,61 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     );
   }
 
-  // Widget auxiliar para los chips de información
+  // --- WIDGET DEL MAPA ---
+  Widget _buildMapSection() {
+    // Si la oferta no tiene coordenadas, no mostramos nada
+    if (widget.offer.latitude == null || widget.offer.longitude == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("Ubicación Exacta", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 15),
+        Container(
+          height: 200,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: FlutterMap(
+              options: MapOptions(
+                initialCenter: LatLng(widget.offer.latitude!, widget.offer.longitude!),
+                initialZoom: 15.0,
+                // Bloqueamos la interacción para que no interrumpa el scroll de la página
+                interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.unimet.intership_app',
+                ),
+                MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: LatLng(widget.offer.latitude!, widget.offer.longitude!),
+                      width: 80,
+                      height: 80,
+                      child: const Icon(
+                        Icons.location_pin,
+                        color: Colors.redAccent,
+                        size: 45,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildInfoChip(IconData icon, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

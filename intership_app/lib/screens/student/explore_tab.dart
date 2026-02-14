@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../config/theme.dart';
 import 'job_details_screen.dart'; 
 
-// --- MODELO DE DATOS ---
+// --- MODELO DE DATOS ACTUALIZADO ---
 class JobOffer {
   final String id;
   final String title;
@@ -17,6 +17,10 @@ class JobOffer {
   final Color brandColor;
   final Timestamp? postedAt;
 
+  // --- NUEVOS CAMPOS AGREGADOS ---
+  final double? latitude;
+  final double? longitude;
+
   JobOffer({
     required this.id,
     required this.title,
@@ -29,6 +33,9 @@ class JobOffer {
     required this.isFeatured,
     required this.brandColor,
     this.postedAt,
+    // Agregar al constructor
+    this.latitude,
+    this.longitude,
   });
 
   factory JobOffer.fromFirestore(DocumentSnapshot doc) {
@@ -45,6 +52,11 @@ class JobOffer {
       isFeatured: data['isFeatured'] ?? false,
       postedAt: data['postedAt'] ?? data['createdAt'], 
       brandColor: _parseColor(data['colorHex']),
+      
+      // --- MAPEO DE COORDENADAS ---
+      // Usamos (as num?)?.toDouble() para evitar errores si Firebase guarda un entero (ej: 10) en vez de double (10.0)
+      latitude: (data['latitude'] as num?)?.toDouble(),
+      longitude: (data['longitude'] as num?)?.toDouble(),
     );
   }
 
@@ -86,7 +98,7 @@ class _ExploreTabState extends State<ExploreTab> {
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
             .collection('job_offers')
-            .where('isActive', isEqualTo: true) // <--- IMPORTANTE: FILTRO AGREGADO AQUÍ
+            .where('isActive', isEqualTo: true) 
             .orderBy('createdAt', descending: true) 
             .snapshots(),
         builder: (context, snapshot) {
@@ -96,8 +108,6 @@ class _ExploreTabState extends State<ExploreTab> {
           }
 
           if (snapshot.hasError) {
-             // Es muy probable que aquí veas un error de "Index" la primera vez.
-             // Revisa la consola de depuración para el enlace de creación del índice.
              print("Error en ExploreTab: ${snapshot.error}"); 
              return Center(child: Text("Error de carga", style: TextStyle(color: Colors.white.withOpacity(0.5))));
           }
@@ -111,7 +121,7 @@ class _ExploreTabState extends State<ExploreTab> {
           // Convertimos docs a objetos JobOffer
           final allOffers = allDocs.map((doc) => JobOffer.fromFirestore(doc)).toList();
 
-          // Filtramos (puedes ajustar lógica de destacados si tienes ese campo en firebase)
+          // Filtramos destacados y recientes
           final featuredOffers = allOffers.take(3).toList(); 
           final recentOffers = allOffers; 
 
@@ -312,6 +322,9 @@ class _ExploreTabState extends State<ExploreTab> {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
                   child: Hero(
+                    // NOTA: Si en JobDetails usas 'list_${offer.id}', la animación aquí podría no conectar perfectamente
+                    // a menos que cambies este tag o uses lógica condicional en JobDetails.
+                    // Por ahora lo dejo como 'featured_' para que no de error de duplicado.
                     tag: "featured_${offer.id}", 
                     child: Icon(Icons.business, color: offer.brandColor, size: 24)
                   ),

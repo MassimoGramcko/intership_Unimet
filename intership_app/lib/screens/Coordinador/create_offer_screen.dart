@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:latlong2/latlong.dart'; // IMPORTANTE: Para manejar coordenadas
 import '../../config/theme.dart';
+import 'location_picker_screen.dart'; // Asegúrate que la ruta sea correcta
 
 class CreateOfferScreen extends StatefulWidget {
   const CreateOfferScreen({super.key});
@@ -22,6 +24,38 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   // Variables de estado
   String _modality = 'Presencial'; 
   bool _isLoading = false;
+  
+  // NUEVO: Variables para guardar coordenadas
+  double? _latitude;
+  double? _longitude;
+
+  // NUEVO: Función para abrir el mapa
+  Future<void> _pickLocation() async {
+    // Navegamos a la pantalla del mapa y esperamos (await) el resultado
+    final LatLng? result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const LocationPickerScreen()),
+    );
+
+    // Si el usuario seleccionó algo (no se devolvió con "atrás" sin guardar)
+    if (result != null) {
+      setState(() {
+        _latitude = result.latitude;
+        _longitude = result.longitude;
+      });
+      
+      // Feedback visual
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Ubicación guardada del mapa"), 
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 1),
+          ),
+        );
+      }
+    }
+  }
 
   // Función para enviar a Firebase
   Future<void> _submitOffer() async {
@@ -35,22 +69,26 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
         'title': _titleController.text.trim(),
         'company': _companyController.text.trim(),
         'description': _descController.text.trim(),
-        'location': _locationController.text.trim(),
+        'location': _locationController.text.trim(), // Nombre del lugar
         'wage': _wageController.text.trim(),
         
-        // 2. FECHAS (La clave para el ordenamiento)
+        // NUEVO: Guardamos las coordenadas (pueden ser null si no eligió mapa)
+        'latitude': _latitude,
+        'longitude': _longitude,
+        
+        // 2. FECHAS
         'createdAt': FieldValue.serverTimestamp(), 
         
-        // 3. MODALIDAD (Doble compatibilidad)
+        // 3. MODALIDAD
         'modality': _modality,
-        'type': _modality, // Agregamos 'type' para que coincida con lo que a veces busca el estudiante
-        'isRemote': _modality == 'Remoto', // Útil para filtros futuros
+        'type': _modality,
+        'isRemote': _modality == 'Remoto',
 
-        // 4. Datos por defecto (Para que la tarjeta se vea bonita)
+        // 4. Datos por defecto
         'isActive': true,
         'applicantsCount': 0,
         'isFeatured': false,
-        'colorHex': '#FF5733', // Color naranja por defecto para el icono
+        'colorHex': '#FF5733',
       });
 
       if (mounted) {
@@ -112,14 +150,84 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
               _buildSectionTitle("Detalles"),
               const SizedBox(height: 15),
 
+              // --- AQUI MODIFICAMOS LA FILA DE UBICACIÓN Y MODALIDAD ---
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Columna Izquierda: Ubicación (Texto + Botón Mapa)
                   Expanded(
-                    child: _buildTextField(_locationController, "Ubicación", "Ej: Caracas", Icons.location_on_outlined),
+                    flex: 3, // Le damos más espacio a la ubicación
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text("Ubicación", style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            // Campo de Texto
+                            Expanded(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.05),
+                                  borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(15),
+                                    bottomLeft: Radius.circular(15),
+                                  ),
+                                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                                ),
+                                child: TextFormField(
+                                  controller: _locationController,
+                                  style: const TextStyle(color: Colors.white),
+                                  validator: (value) => value!.isEmpty ? "Requerido" : null,
+                                  decoration: InputDecoration(
+                                    hintText: "Ej: Torre A",
+                                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.2)),
+                                    prefixIcon: const Icon(Icons.location_on_outlined, color: Colors.white54),
+                                    border: InputBorder.none,
+                                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // Botón del Mapa
+                            InkWell(
+                              onTap: _pickLocation,
+                              child: Container(
+                                height: 50, // Misma altura aprox que el input
+                                width: 50,
+                                decoration: BoxDecoration(
+                                  // Si ya seleccionó coordenadas, se pone verde
+                                  color: _latitude != null ? Colors.green.withOpacity(0.8) : Colors.orange,
+                                  borderRadius: const BorderRadius.only(
+                                    topRight: Radius.circular(15),
+                                    bottomRight: Radius.circular(15),
+                                  ),
+                                ),
+                                child: Icon(
+                                  _latitude != null ? Icons.check : Icons.map,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_latitude != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4, left: 4),
+                            child: Text(
+                              "Coordenadas guardadas", 
+                              style: TextStyle(color: Colors.greenAccent[400], fontSize: 10),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
+                  
                   const SizedBox(width: 15),
+                  
+                  // Columna Derecha: Modalidad
                   Expanded(
+                    flex: 2,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -127,7 +235,8 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
                         const SizedBox(height: 8),
                         Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          height: 50, // Altura fija para alinear con el de al lado
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.05),
                             borderRadius: BorderRadius.circular(15),
@@ -136,13 +245,14 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<String>(
                               value: _modality,
+                              isExpanded: true,
                               dropdownColor: const Color(0xFF1E293B),
                               icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
-                              style: const TextStyle(color: Colors.white),
+                              style: const TextStyle(color: Colors.white, fontSize: 13),
                               items: ['Presencial', 'Remoto', 'Híbrido'].map((String value) {
                                 return DropdownMenuItem<String>(
                                   value: value,
-                                  child: Text(value),
+                                  child: Text(value, overflow: TextOverflow.ellipsis),
                                 );
                               }).toList(),
                               onChanged: (newValue) => setState(() => _modality = newValue!),
@@ -154,6 +264,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
                   ),
                 ],
               ),
+              // --- FIN DE LA MODIFICACIÓN ---
               
               const SizedBox(height: 15),
               
