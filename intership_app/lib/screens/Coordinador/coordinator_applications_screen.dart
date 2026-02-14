@@ -53,6 +53,18 @@ class _CoordinatorApplicationsScreenState extends State<CoordinatorApplicationsS
   // Filtro inicial (Tal cual está en tu DB)
   String _selectedFilter = 'Pendiente'; 
 
+  // --- NUEVA FUNCIÓN: Obtener Iniciales (Igual que en Home) ---
+  String _getInitials(String name) {
+    if (name.isEmpty) return "?";
+    List<String> nameParts = name.trim().split(RegExp(r'\s+'));
+    if (nameParts.isEmpty) return "?";
+    String initials = nameParts[0][0];
+    if (nameParts.length > 1) {
+      initials += nameParts.last[0];
+    }
+    return initials.toUpperCase();
+  }
+
   Future<void> _updateStatus(String docId, String newStatus) async {
     try {
       await FirebaseFirestore.instance
@@ -164,10 +176,12 @@ class _CoordinatorApplicationsScreenState extends State<CoordinatorApplicationsS
   }
 
   Widget _buildApplicationCard(JobApplication app) {
-    // NOTA: Eliminamos la variable dateStr para evitar la advertencia amarilla.
     
     final cardColor = const Color(0xFF1E202B); 
     final brandColor = Colors.blueAccent; 
+    
+    // Obtenemos iniciales
+    String initials = _getInitials(app.studentName);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
@@ -219,17 +233,37 @@ class _CoordinatorApplicationsScreenState extends State<CoordinatorApplicationsS
           
           const Divider(color: Colors.white10, height: 25),
 
-          // INFORMACIÓN DEL CANDIDATO
+          // INFORMACIÓN DEL CANDIDATO (CON EL NUEVO AVATAR)
           Row(
             children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: AppTheme.primaryOrange,
+              // --- NUEVO DISEÑO DE AVATAR ---
+              Container(
+                width: 40, 
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Colors.blue[400]!, Colors.purple[400]!]
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                     BoxShadow(color: Colors.purple.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))
+                  ]
+                ),
                 child: Text(
-                  app.studentName.isNotEmpty ? app.studentName[0].toUpperCase() : "?",
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  initials,
+                  style: const TextStyle(
+                    color: Colors.white, 
+                    fontWeight: FontWeight.bold, 
+                    fontSize: 14,
+                    letterSpacing: 1.0
+                  ),
                 ),
               ),
+              // -----------------------------
+
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

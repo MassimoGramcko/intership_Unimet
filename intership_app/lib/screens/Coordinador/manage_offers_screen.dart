@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'edit_offer_screen.dart'; // <--- IMPORTANTE: Asegúrate de que este archivo exista en la misma carpeta
+import 'edit_offer_screen.dart'; 
 
 class ManageOffersScreen extends StatelessWidget {
   const ManageOffersScreen({super.key});
@@ -98,14 +98,12 @@ class _OfferCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     bool isActive = data['isActive'] ?? false;
-    int applicants = data['applicantsCount'] ?? 0;
     String title = data['title'] ?? 'Sin título';
     String type = data['type'] ?? data['modality'] ?? 'Presencial';
 
     return Dismissible(
       key: Key(docId),
       direction: DismissDirection.endToStart,
-      // Fondo al deslizar para borrar
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 25),
@@ -170,12 +168,12 @@ class _OfferCard extends StatelessWidget {
               children: [
                 // Icono
                 Container(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.blueAccent.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(12)
                   ),
-                  child: Icon(Icons.work_rounded, color: Colors.blueAccent.shade200, size: 24),
+                  child: Icon(Icons.work_rounded, color: Colors.blueAccent.shade200, size: 26),
                 ),
                 const SizedBox(width: 15),
                 // Textos
@@ -185,7 +183,7 @@ class _OfferCard extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -214,20 +212,44 @@ class _OfferCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 20),
-            // Tags
+            
+            // --- STREAM EN TIEMPO REAL CORREGIDO (offerId) ---
             Row(
               children: [
-                _buildTag(type, Icons.location_on_outlined, Colors.blueAccent),
+                _buildTag(text: type, icon: Icons.location_on_outlined, color: Colors.blueAccent),
+                
                 const SizedBox(width: 10),
-                if (applicants > 0) 
-                  _buildTag("$applicants Postulados", Icons.people_alt_outlined, Colors.greenAccent)
-                else
-                  _buildTag("Sin postulantes", Icons.hourglass_empty_rounded, Colors.white38),
+                
+                StreamBuilder<QuerySnapshot>(
+                  // AQUÍ ESTÁ EL CAMBIO: Usamos 'offerId'
+                  stream: FirebaseFirestore.instance
+                      .collection('applications')
+                      .where('offerId', isEqualTo: docId) 
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return _buildTag(text: "...", icon: Icons.hourglass_empty, color: Colors.grey);
+                    }
+
+                    final int count = snapshot.data!.docs.length;
+                    final bool hasApplicants = count > 0;
+
+                    return _buildTag(
+                      text: hasApplicants ? "$count Postulados" : "Sin postulantes",
+                      icon: hasApplicants ? Icons.people_alt_rounded : Icons.person_off_outlined,
+                      color: hasApplicants ? Colors.orangeAccent : Colors.white38,
+                      isFilled: hasApplicants, 
+                    );
+                  },
+                ),
               ],
             ),
+            // ----------------------------------------------------
+
             const SizedBox(height: 20),
             const Divider(color: Colors.white10, thickness: 1),
             const SizedBox(height: 10),
+            
             // Footer
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -242,10 +264,8 @@ class _OfferCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                // --- BOTÓN EDITAR CONECTADO ---
                 InkWell(
                   onTap: () {
-                    // Navegación a la pantalla de Editar
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -258,7 +278,7 @@ class _OfferCard extends StatelessWidget {
                   },
                   borderRadius: BorderRadius.circular(20),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
                       color: Colors.orangeAccent.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(20),
@@ -281,23 +301,31 @@ class _OfferCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTag(String text, IconData icon, Color color) {
+  // Widget Tag Mejorado
+  Widget _buildTag({required String text, required IconData icon, required Color color, bool isFilled = false}) {
     Color finalColor = color == Colors.white38 ? Colors.white60 : color;
+    
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: finalColor.withOpacity(0.1),
+        color: isFilled ? finalColor.withOpacity(0.25) : finalColor.withOpacity(0.08),
         borderRadius: BorderRadius.circular(20), 
-        border: Border.all(color: finalColor.withOpacity(0.2)),
+        border: Border.all(
+          color: isFilled ? Colors.transparent : finalColor.withOpacity(0.2)
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: finalColor, size: 16),
-          const SizedBox(width: 6),
+          Icon(icon, color: isFilled ? Colors.white : finalColor, size: 16),
+          const SizedBox(width: 8),
           Text(
             text,
-            style: TextStyle(color: finalColor, fontSize: 13, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: isFilled ? Colors.white : finalColor, 
+              fontSize: 14, 
+              fontWeight: FontWeight.w600
+            ),
           ),
         ],
       ),

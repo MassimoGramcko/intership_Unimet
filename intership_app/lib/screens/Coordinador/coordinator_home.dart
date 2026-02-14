@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import '../auth/login_screen.dart';
 import 'create_offer_screen.dart';
 import 'manage_offers_screen.dart'; 
-import 'coordinator_applications_screen.dart'; // <--- NAVEGACIÓN SOLICITUDES
+import 'coordinator_applications_screen.dart';
 
 class CoordinatorHome extends StatefulWidget {
   const CoordinatorHome({super.key});
@@ -16,8 +16,11 @@ class CoordinatorHome extends StatefulWidget {
 
 class _CoordinatorHomeState extends State<CoordinatorHome> {
   
-  // Color principal naranja (Hardcoded para no depender de otro archivo)
+  // Color principal naranja
   final Color primaryOrange = const Color(0xFFFF6B00);
+  
+  // Variable de estado para el filtro
+  String _filtroStatus = 'Todos'; 
 
   void _logout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
@@ -30,16 +33,32 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
     }
   }
 
+  // --- NUEVA FUNCIÓN: Obtener Iniciales ---
+  String _getInitials(String name) {
+    if (name.isEmpty) return "?";
+    
+    // Divide el nombre por espacios y elimina espacios vacíos extras
+    List<String> nameParts = name.trim().split(RegExp(r'\s+'));
+    
+    if (nameParts.isEmpty) return "?";
+
+    String initials = nameParts[0][0]; // Primera letra del primer nombre
+    if (nameParts.length > 1) {
+      initials += nameParts.last[0]; // Primera letra del último apellido
+    }
+
+    return initials.toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Fecha en inglés para evitar errores de locale
     String formattedDate = DateFormat('EEEE, d MMMM').format(DateTime.now());
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A), // Fondo de seguridad
+      backgroundColor: const Color(0xFF0F172A), 
       body: Stack(
         children: [
-          // CAPA 1: Fondo oscuro moderno con gradiente
+          // CAPA 1: Fondo
           Container(
             decoration: const BoxDecoration(
               gradient: RadialGradient(
@@ -92,17 +111,15 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
 
                   const SizedBox(height: 35),
 
-                  // TARJETAS KPI (SOLICITUDES Y OFERTAS)
+                  // TARJETAS KPI
                   Row(
                     children: [
-                      // --- TARJETA DE SOLICITUDES ---
                       _buildModernKpiCard(
                         title: "Solicitudes",
                         collectionName: "applications",
                         icon: Icons.people_alt_rounded,
                         accentColor: Colors.orangeAccent,
                         gradientColors: [primaryOrange.withOpacity(0.8), Colors.orange[800]!],
-                        // NAVEGACIÓN CORRECTA A SOLICITUDES
                         onTap: () {
                           Navigator.push(
                             context,
@@ -111,15 +128,12 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
                         },
                       ),
                       const SizedBox(width: 15),
-                      
-                      // --- TARJETA DE OFERTAS ---
                       _buildModernKpiCard(
                         title: "Ofertas Activas",
                         collectionName: "job_offers",
                         icon: Icons.business_center_rounded,
                         accentColor: Colors.blueAccent,
                         gradientColors: [Colors.blueAccent.withOpacity(0.8), Colors.blue[800]!],
-                        // NAVEGACIÓN CORRECTA A GESTIONAR OFERTAS
                         onTap: () {
                           Navigator.push(
                             context,
@@ -132,22 +146,59 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
 
                   const SizedBox(height: 35),
                   
-                  // TÍTULO SECCIÓN
+                  // TÍTULO SECCIÓN + MENU DE FILTRO
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text("Actividad Reciente", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                      const Spacer(),
-                      Icon(Icons.more_horiz, color: Colors.white.withOpacity(0.5))
+                      
+                      PopupMenuButton<String>(
+                        icon: Icon(Icons.more_horiz_rounded, color: Colors.white.withOpacity(0.7)),
+                        color: const Color(0xFF1E293B),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Colors.white.withOpacity(0.1))),
+                        onSelected: (String valor) {
+                          setState(() {
+                            _filtroStatus = valor;
+                          });
+                        },
+                        itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                          _buildPopupItem("Todos", Icons.dashboard_customize_outlined),
+                          const PopupMenuDivider(height: 1),
+                          _buildPopupItem("Pendiente", Icons.hourglass_empty_rounded, Colors.orangeAccent),
+                          _buildPopupItem("Aceptado", Icons.check_circle_outline_rounded, Colors.greenAccent),
+                          _buildPopupItem("Rechazado", Icons.cancel_outlined, Colors.redAccent),
+                        ],
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+
+                  // Indicador visual de filtro activo
+                  if (_filtroStatus != 'Todos')
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10, bottom: 5),
+                      child: Row(
+                        children: [
+                          Icon(Icons.filter_alt_outlined, size: 14, color: Colors.white.withOpacity(0.5)),
+                          const SizedBox(width: 5),
+                          Text("Filtrando por: ", style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+                          Text(_filtroStatus, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                          const SizedBox(width: 10),
+                          InkWell(
+                            onTap: () => setState(() => _filtroStatus = 'Todos'),
+                            child: const Icon(Icons.close, size: 16, color: Colors.redAccent),
+                          )
+                        ],
+                      ),
+                    ),
+
+                  const SizedBox(height: 15),
 
                   // LISTA DE ACTIVIDAD
                   StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
                         .collection('applications')
                         .orderBy('appliedAt', descending: true)
-                        .limit(5)
+                        .limit(20) 
                         .snapshots(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
@@ -158,15 +209,29 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
                       }
                       
                       if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                        return _buildModernEmptyState();
+                        return _buildModernEmptyState("No hay actividad reciente");
+                      }
+
+                      var docs = snapshot.data!.docs;
+
+                      if (_filtroStatus != 'Todos') {
+                        docs = docs.where((doc) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          final status = (data['status'] ?? '').toString();
+                          return status.toLowerCase() == _filtroStatus.toLowerCase();
+                        }).toList();
+                      }
+
+                      if (docs.isEmpty) {
+                         return _buildModernEmptyState("No hay solicitudes $_filtroStatus");
                       }
 
                       return ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: snapshot.data!.docs.length,
+                        itemCount: docs.length,
                         itemBuilder: (context, index) {
-                          final data = snapshot.data!.docs[index].data() as Map<String, dynamic>;
+                          final data = docs[index].data() as Map<String, dynamic>;
                           return _buildModernReviewTile(data);
                         },
                       );
@@ -209,6 +274,19 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
 
   // --- Widgets Auxiliares ---
 
+  PopupMenuItem<String> _buildPopupItem(String text, IconData icon, [Color? color]) {
+    return PopupMenuItem<String>(
+      value: text,
+      child: Row(
+        children: [
+          Icon(icon, color: color ?? Colors.white70, size: 18),
+          const SizedBox(width: 12),
+          Text(text, style: TextStyle(color: color ?? Colors.white70)),
+        ],
+      ),
+    );
+  }
+
   Widget _buildModernKpiCard({
     required String title,
     required String collectionName,
@@ -221,7 +299,6 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
       child: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection(collectionName).snapshots(),
         builder: (context, snapshot) {
-          // Filtramos solo si es job_offers para contar las activas, si no cuenta todo
           int count = 0;
           if (snapshot.hasData) {
             if (collectionName == 'job_offers') {
@@ -305,7 +382,9 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
 
   Widget _buildModernReviewTile(Map<String, dynamic> data) {
     String status = (data['status'] ?? 'Pendiente').toString().toLowerCase();
-    
+    String studentName = data['studentName'] ?? 'Estudiante';
+    String initials = _getInitials(studentName); // Obtener iniciales
+
     Color statusColor;
     String statusText;
 
@@ -333,22 +412,41 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
       ),
       child: Row(
         children: [
+          // --- AVATAR CON INICIALES ---
           Container(
             width: 50,
             height: 50,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [Colors.blue[400]!, Colors.purple[400]!]),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.blue[400]!, Colors.purple[400]!]
+              ),
               shape: BoxShape.circle,
+              boxShadow: [
+                 BoxShadow(color: Colors.purple.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))
+              ]
             ),
-            child: const Icon(Icons.person_outline_rounded, color: Colors.white, size: 28),
+            child: Text(
+              initials,
+              style: const TextStyle(
+                color: Colors.white, 
+                fontWeight: FontWeight.bold, 
+                fontSize: 18,
+                letterSpacing: 1.0
+              ),
+            ),
           ),
+          
           const SizedBox(width: 15),
+          
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  data['studentName'] ?? 'Estudiante', 
+                  studentName, 
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)
                 ),
                 const SizedBox(height: 4),
@@ -386,7 +484,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
     );
   }
 
-  Widget _buildModernEmptyState() {
+  Widget _buildModernEmptyState([String message = "No hay nuevas solicitudes pendientes."]) {
     return Container(
       padding: const EdgeInsets.all(40),
       width: double.infinity,
@@ -397,12 +495,12 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
       ),
       child: Column(
         children: [
-          Icon(Icons.schedule_send_rounded, size: 60, color: Colors.white.withOpacity(0.2)),
+          Icon(Icons.filter_list_off_rounded, size: 60, color: Colors.white.withOpacity(0.2)),
           const SizedBox(height: 20),
-          const Text("Todo al día", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+          const Text("Sin resultados", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
           const SizedBox(height: 5),
           Text(
-            "No hay nuevas solicitudes pendientes.",
+            message,
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.white.withOpacity(0.5)),
           ),
