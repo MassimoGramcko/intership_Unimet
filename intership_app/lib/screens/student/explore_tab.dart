@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../config/theme.dart';
 import 'job_details_screen.dart'; 
 
-// --- MODELO DE DATOS ACTUALIZADO ---
+// --- MODELO DE DATOS (Sin cambios) ---
 class JobOffer {
   final String id;
   final String title;
@@ -16,8 +16,6 @@ class JobOffer {
   final bool isFeatured;
   final Color brandColor;
   final Timestamp? postedAt;
-
-  // --- NUEVOS CAMPOS AGREGADOS ---
   final double? latitude;
   final double? longitude;
 
@@ -33,7 +31,6 @@ class JobOffer {
     required this.isFeatured,
     required this.brandColor,
     this.postedAt,
-    // Agregar al constructor
     this.latitude,
     this.longitude,
   });
@@ -52,9 +49,6 @@ class JobOffer {
       isFeatured: data['isFeatured'] ?? false,
       postedAt: data['postedAt'] ?? data['createdAt'], 
       brandColor: _parseColor(data['colorHex']),
-      
-      // --- MAPEO DE COORDENADAS ---
-      // Usamos (as num?)?.toDouble() para evitar errores si Firebase guarda un entero (ej: 10) en vez de double (10.0)
       latitude: (data['latitude'] as num?)?.toDouble(),
       longitude: (data['longitude'] as num?)?.toDouble(),
     );
@@ -73,7 +67,6 @@ class JobOffer {
   }
 }
 
-// --- PANTALLA EXPLORE ---
 class ExploreTab extends StatefulWidget {
   const ExploreTab({super.key});
 
@@ -82,7 +75,15 @@ class ExploreTab extends StatefulWidget {
 }
 
 class _ExploreTabState extends State<ExploreTab> {
-  
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   String _calculateTimeAgo(Timestamp? timestamp) {
     if (timestamp == null) return "Reciente";
     final diff = DateTime.now().difference(timestamp.toDate());
@@ -95,183 +96,357 @@ class _ExploreTabState extends State<ExploreTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('job_offers')
-            .where('isActive', isEqualTo: true) 
-            .orderBy('createdAt', descending: true) 
-            .snapshots(),
-        builder: (context, snapshot) {
-          
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: AppTheme.primaryOrange));
-          }
+      // ELIMINAMOS EL STREAMBUILDER DE AQUÍ ARRIBA
+      body: Stack(
+        children: [
+          // A. FONDO GLOW
+          Positioned(
+            top: -80,
+            left: -20,
+            child: Container(
+              width: 250,
+              height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.primaryOrange.withOpacity(0.15),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryOrange.withOpacity(0.3),
+                    blurRadius: 120,
+                    spreadRadius: 20,
+                  )
+                ],
+              ),
+            ),
+          ),
 
-          if (snapshot.hasError) {
-             print("Error en ExploreTab: ${snapshot.error}"); 
-             return Center(child: Text("Error de carga", style: TextStyle(color: Colors.white.withOpacity(0.5))));
-          }
+          // B. CONTENIDO SCROLLABLE
+          CustomScrollView(
+            physics: const BouncingScrollPhysics(),
+            slivers: [
+              
+              // 1. APP BAR (Estática, no parpadea)
+              SliverAppBar(
+                backgroundColor: AppTheme.backgroundDark.withOpacity(0.9),
+                floating: true,
+                pinned: true,
+                elevation: 0,
+                centerTitle: true,
+                expandedHeight: 70,
+                title: const Text(
+                  "Descubrir",
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                actions: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 20),
+                    child: _buildIconButton(Icons.notifications_none_rounded),
+                  ),
+                ],
+              ),
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return _buildEmptyState();
-          }
-
-          final allDocs = snapshot.data!.docs;
-          
-          // Convertimos docs a objetos JobOffer
-          final allOffers = allDocs.map((doc) => JobOffer.fromFirestore(doc)).toList();
-
-          // Filtramos destacados y recientes
-          final featuredOffers = allOffers.take(3).toList(); 
-          final recentOffers = allOffers; 
-
-          return Stack(
-            children: [
-              // A. FONDO GLOW
-              Positioned(
-                top: -80,
-                left: -20,
-                child: Container(
-                  width: 250,
-                  height: 250,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppTheme.primaryOrange.withOpacity(0.15),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.primaryOrange.withOpacity(0.3),
-                        blurRadius: 120,
-                        spreadRadius: 20,
-                      )
-                    ],
+              // 2. BUSCADOR (Estático, mantiene el foco)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                  child: Container(
+                    height: 55,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                    ),
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 15),
+                        const Icon(Icons.search, color: Colors.grey),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            // Al escribir, solo actualizamos la variable, pero NO reconstruimos el TextField
+                            onChanged: (value) {
+                              setState(() {
+                                _searchQuery = value;
+                              });
+                            },
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              hintText: "Buscar empleo o empresa...",
+                              hintStyle: TextStyle(color: Colors.grey.withOpacity(0.5)),
+                              border: InputBorder.none,
+                              suffixIcon: _searchQuery.isNotEmpty 
+                                ? IconButton(
+                                    icon: const Icon(Icons.close, color: Colors.grey, size: 20),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() {
+                                        _searchQuery = "";
+                                      });
+                                    },
+                                  )
+                                : null,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
 
-              // B. CONTENIDO SCROLLABLE
-              CustomScrollView(
-                physics: const BouncingScrollPhysics(),
-                slivers: [
-                  
-                  // BARRA SUPERIOR
-                  SliverAppBar(
-                    backgroundColor: AppTheme.backgroundDark.withOpacity(0.9),
-                    floating: true,
-                    pinned: true,
-                    elevation: 0,
-                    centerTitle: true,
-                    expandedHeight: 70,
-                    title: const Text(
-                      "Descubrir",
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: 1.5,
-                      ),
-                    ),
-                    actions: [
-                      Padding(
-                        padding: const EdgeInsets.only(right: 20),
-                        child: _buildIconButton(Icons.notifications_none_rounded),
-                      ),
-                    ],
-                  ),
-
-                  // BUSCADOR (Visual)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-                      child: Container(
-                        height: 55,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withOpacity(0.1)),
-                        ),
-                        child: Row(
-                          children: [
-                            const SizedBox(width: 15),
-                            const Icon(Icons.search, color: Colors.grey),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: TextField(
-                                style: const TextStyle(color: Colors.white),
-                                decoration: InputDecoration(
-                                  hintText: "Buscar empleo...",
-                                  hintStyle: TextStyle(color: Colors.grey.withOpacity(0.5)),
-                                  border: InputBorder.none,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // SECCIÓN DESTACADOS
-                  if (featuredOffers.isNotEmpty) ...[
-                    const SliverToBoxAdapter(
+              // 3. AQUÍ PONEMOS EL STREAMBUILDER (Dentro de los Slivers)
+              // Esto hace que solo se recargue la lista de abajo, no el buscador.
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('job_offers')
+                    .where('isActive', isEqualTo: true)
+                    .orderBy('createdAt', descending: true)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  // MIENTRAS CARGA LA PRIMERA VEZ
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SliverToBoxAdapter(
                       child: Padding(
-                        padding: EdgeInsets.fromLTRB(20, 10, 20, 15),
-                        child: Text("Destacado para ti", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                        padding: EdgeInsets.only(top: 50),
+                        child: Center(child: CircularProgressIndicator(color: AppTheme.primaryOrange)),
                       ),
-                    ),
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                     return SliverToBoxAdapter(
+                       child: Center(child: Text("Error de carga", style: TextStyle(color: Colors.white.withOpacity(0.5)))),
+                     );
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return SliverToBoxAdapter(child: _buildEmptyState());
+                  }
+
+                  // PROCESAR DATOS
+                  final allDocs = snapshot.data!.docs;
+                  final allOffers = allDocs.map((doc) => JobOffer.fromFirestore(doc)).toList();
+
+                  // FILTRADO LOCAL
+                  final filteredOffers = allOffers.where((offer) {
+                    final query = _searchQuery.toLowerCase();
+                    final title = offer.title.toLowerCase();
+                    final company = offer.company.toLowerCase();
+                    return title.contains(query) || company.contains(query);
+                  }).toList();
+
+                  final showFeatured = _searchQuery.isEmpty;
+                  final featuredOffers = showFeatured ? allOffers.where((o) => o.isFeatured).take(3).toList() : <JobOffer>[];
+
+                  // Construimos una lista de Widgets Slivers para devolver
+                  List<Widget> sliverList = [];
+
+                  // A. SECCIÓN DESTACADOS
+                  if (showFeatured && featuredOffers.isNotEmpty) {
+                    sliverList.add(
+                      const SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(20, 10, 20, 15),
+                          child: Text("Destacado para ti", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    );
+                    sliverList.add(
+                      SliverToBoxAdapter(
+                        child: SizedBox(
+                          height: 190,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            padding: const EdgeInsets.only(left: 20),
+                            itemCount: featuredOffers.length,
+                            itemBuilder: (context, index) => _buildFeaturedCard(featuredOffers[index]),
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+
+                  // B. TÍTULO RESULTADOS
+                  sliverList.add(
                     SliverToBoxAdapter(
-                      child: SizedBox(
-                        height: 190,
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          physics: const BouncingScrollPhysics(),
-                          padding: const EdgeInsets.only(left: 20),
-                          itemCount: featuredOffers.length,
-                          itemBuilder: (context, index) => _buildFeaturedCard(featuredOffers[index]),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 30, 20, 10),
+                        child: Text(
+                          _searchQuery.isEmpty ? "Ofertas Recientes" : "Resultados (${filteredOffers.length})", 
+                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)
                         ),
                       ),
                     ),
-                  ],
+                  );
 
-                  // SECCIÓN RECIENTES
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 30, 20, 10),
-                      child: Text(
-                        "Ofertas Recientes", 
-                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)
+                  // C. LISTA DE RESULTADOS O MENSAJE VACÍO
+                  if (filteredOffers.isEmpty && _searchQuery.isNotEmpty) {
+                    sliverList.add(
+                       SliverToBoxAdapter(
+                        child: Container(
+                          padding: const EdgeInsets.only(top: 50),
+                          child: Column(
+                            children: [
+                               const Icon(Icons.search_off, size: 60, color: Colors.white24),
+                               const SizedBox(height: 10),
+                               Text('No encontramos "$_searchQuery"', style: const TextStyle(color: Colors.white54)),
+                            ],
+                          ),
+                        ),
+                      )
+                    );
+                  } else {
+                    sliverList.add(
+                      SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) => _buildVerticalCard(filteredOffers[index]),
+                          childCount: filteredOffers.length,
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  }
+                  
+                  // Espacio final
+                  sliverList.add(const SliverPadding(padding: EdgeInsets.only(bottom: 100)));
 
-                  // LISTA VERTICAL
-                  SliverList(
+                  // IMPORTANTE: Un builder normal devuelve UN widget.
+                  // Como aquí estamos dentro de slivers: [], debemos devolver un widget que agrupe otros slivers
+                  // Pero StreamBuilder espera devolver UN Widget.
+                  // TRUCO: Usamos un widget especial que no renderiza nada visual pero agrupa slivers? No.
+                  // MEJOR FORMA: Devolver un `SliverMainAxisGroup` (Flutter nuevo) o envolver en un widget que devuelva estos slivers.
+                  // Pero para simplificar y evitar errores de versión, vamos a cambiar la estrategia ligeramente:
+                  // En lugar de devolver una lista, devolvemos UN solo SliverList que contenga todo usando lógica interna, 
+                  // o usamos MultiSliver si tuvieras el paquete.
+                  
+                  // --- SOLUCIÓN ROBUSTA SIN PAQUETES EXTRA ---
+                  // Devolvemos UN SOLO SliverList que construye diferentes tipos de celdas según el índice.
+                  // O para mantener tu diseño, simplemente envolvemos los bloques en SliverToBoxAdapter cuando no son listas.
+                  
+                  // Pero espera, `StreamBuilder` NO puede devolver una lista de widgets `[]`.
+                  // Y `slivers: []` espera widgets individuales.
+                  
+                  // CORRECCIÓN FINAL DE ARQUITECTURA:
+                  // Usaremos `SliverList` con un `delegate` inteligente O anidaremos un CustomScrollView interno (no recomendado).
+                  
+                  // LA SOLUCIÓN MÁS LIMPIA:
+                  // Usamos un paquete o... usamos `SliverToBoxAdapter` para todo lo que no sea la lista principal.
+                  // Pero como no puedo agregar paquetes ahora, usaré un truco:
+                  // Devolveremos un `SliverList` donde el itemCount es la suma de todo.
+                  
+                  // NO, ESO ES COMPLICADO. 
+                  // VAMOS A HACERLO ASÍ: El StreamBuilder DEBE estar fuera de la lista `slivers` si queremos devolver multiples slivers.
+                  // PERO SI ESTÁ FUERA, ROMPE EL SCROLL.
+                  
+                  // LA SOLUCIÓN DEFINITIVA: 
+                  // El StreamBuilder devolverá un `SliverList` que renderiza TODO (Titulo, Carrusel horizontal, Lista vertical) como items de una sola lista vertical.
+                  
+                  return SliverList(
                     delegate: SliverChildBuilderDelegate(
-                      (context, index) => _buildVerticalCard(recentOffers[index]),
-                      childCount: recentOffers.length,
-                    ),
-                  ),
+                      (context, index) {
+                        // LÓGICA PARA RENDERIZAR LAS DISTINTAS SECCIONES COMO ITEMS DE UNA LISTA
+                        
+                        // 1. Calcular índices
+                        int currentIndex = index;
+                        
+                        // SECCIÓN A: DESTACADOS (Ocupa 1 espacio si existe)
+                        bool hasFeatured = showFeatured && featuredOffers.isNotEmpty;
+                        if (hasFeatured) {
+                          if (currentIndex == 0) {
+                             return Column(
+                               crossAxisAlignment: CrossAxisAlignment.start,
+                               children: [
+                                 const Padding(
+                                   padding: EdgeInsets.fromLTRB(20, 10, 20, 15),
+                                   child: Text("Destacado para ti", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                                 ),
+                                 SizedBox(
+                                    height: 190,
+                                    child: ListView.builder(
+                                      scrollDirection: Axis.horizontal,
+                                      physics: const BouncingScrollPhysics(),
+                                      padding: const EdgeInsets.only(left: 20),
+                                      itemCount: featuredOffers.length,
+                                      itemBuilder: (context, i) => _buildFeaturedCard(featuredOffers[i]),
+                                    ),
+                                  ),
+                               ],
+                             );
+                          }
+                          currentIndex--; // Restamos 1 porque ya pasamos el bloque destacados
+                        }
 
-                  const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
-                ],
+                        // SECCIÓN B: TÍTULO LISTA (Ocupa 1 espacio)
+                        if (currentIndex == 0) {
+                           return Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 30, 20, 10),
+                            child: Text(
+                              _searchQuery.isEmpty ? "Ofertas Recientes" : "Resultados (${filteredOffers.length})", 
+                              style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)
+                            ),
+                          );
+                        }
+                        currentIndex--;
+
+                        // SECCIÓN C: ITEMS DE LA LISTA O VACÍO
+                        if (filteredOffers.isEmpty && _searchQuery.isNotEmpty) {
+                           if (currentIndex == 0) {
+                             return Container(
+                                padding: const EdgeInsets.only(top: 50),
+                                child: Column(
+                                  children: [
+                                     const Icon(Icons.search_off, size: 60, color: Colors.white24),
+                                     const SizedBox(height: 10),
+                                     Text('No encontramos "$_searchQuery"', style: const TextStyle(color: Colors.white54)),
+                                  ],
+                                ),
+                              );
+                           }
+                           return null;
+                        }
+
+                        if (currentIndex < filteredOffers.length) {
+                          return _buildVerticalCard(filteredOffers[currentIndex]);
+                        }
+                        
+                        // Espacio final
+                        if (currentIndex == filteredOffers.length) {
+                          return const SizedBox(height: 100);
+                        }
+
+                        return null; // Fin de la lista
+                      },
+                      childCount: (showFeatured && featuredOffers.isNotEmpty ? 1 : 0) + 1 + (filteredOffers.isEmpty && _searchQuery.isNotEmpty ? 1 : filteredOffers.length) + 1,
+                    ),
+                  );
+                },
               ),
             ],
-          );
-        },
+          ),
+        ],
       ),
     );
   }
 
-  // --- WIDGETS AUXILIARES ---
-
+  // --- WIDGETS AUXILIARES (IGUALES) ---
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.work_off_outlined, color: Colors.grey, size: 50),
-          SizedBox(height: 10),
-          Text("No hay ofertas disponibles aún", style: TextStyle(color: Colors.white70)),
-        ],
+    return Container(
+      padding: const EdgeInsets.only(top: 50),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.work_off_outlined, color: Colors.grey, size: 50),
+            SizedBox(height: 10),
+            Text("No hay ofertas disponibles aún", style: TextStyle(color: Colors.white70)),
+          ],
+        ),
       ),
     );
   }
@@ -322,9 +497,6 @@ class _ExploreTabState extends State<ExploreTab> {
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
                   child: Hero(
-                    // NOTA: Si en JobDetails usas 'list_${offer.id}', la animación aquí podría no conectar perfectamente
-                    // a menos que cambies este tag o uses lógica condicional en JobDetails.
-                    // Por ahora lo dejo como 'featured_' para que no de error de duplicado.
                     tag: "featured_${offer.id}", 
                     child: Icon(Icons.business, color: offer.brandColor, size: 24)
                   ),
@@ -372,7 +544,7 @@ class _ExploreTabState extends State<ExploreTab> {
           border: Border.all(color: Colors.white.withOpacity(0.03)),
           boxShadow: [
             BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 5, offset: const Offset(0, 2))
-          ]
+          ],
         ),
         child: Row(
           children: [

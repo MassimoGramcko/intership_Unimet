@@ -98,7 +98,7 @@ class StudentHomeScreen extends StatelessWidget {
                               style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 8),
-                             Container(
+                            Container(
                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
                                 color: Colors.white.withOpacity(0.1),
@@ -119,8 +119,8 @@ class StudentHomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 40),
                     
-                    // --- AQUÍ ESTÁ EL CAMBIO "CHÉVERE" ---
-                    // Eliminamos el Row viejo y ponemos las tarjetas modernas
+                    // --- ESTADÍSTICAS (Postulaciones y Favoritas) ---
+                    // AHORA CON EL NUEVO DISEÑO
                     StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection('applications')
@@ -134,20 +134,20 @@ class StudentHomeScreen extends StatelessWidget {
 
                         return Row(
                           children: [
-                            // Tarjeta 1: Postulaciones (Naranja)
+                            // Tarjeta 1: Postulaciones (Naranja Intenso)
                             Expanded(
-                              child: _buildModernStatCard(
+                              child: _buildPremiumStatCard(
                                 countPostulaciones, 
                                 "Postulaciones", 
                                 Icons.send_rounded, 
                                 AppTheme.primaryOrange
                               ),
                             ),
-                            const SizedBox(width: 15), // Espacio entre tarjetas
+                            const SizedBox(width: 15), 
                             
-                            // Tarjeta 2: Favoritas (Rosado - Estática por ahora)
+                            // Tarjeta 2: Favoritas (Rosado Neón)
                             Expanded(
-                              child: _buildModernStatCard(
+                              child: _buildPremiumStatCard(
                                 "0", 
                                 "Favoritas", 
                                 Icons.favorite_rounded, 
@@ -158,7 +158,6 @@ class StudentHomeScreen extends StatelessWidget {
                         );
                       },
                     ),
-                    // -------------------------------------
                   ],
                 ),
               ),
@@ -241,16 +240,18 @@ class StudentHomeScreen extends StatelessWidget {
                 const Text("Accesos Rápidos", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 20),
 
-                // --- TARJETAS SECUNDARIAS ---
+                // --- TARJETAS SECUNDARIAS (Ya actualizadas) ---
                 Row(
                   children: [
                     Expanded(
-                      child: _buildGlassCard(
-                        icon: Icons.folder_open_rounded,
+                      child: _buildActionCard(
+                        context,
                         title: "Mis Solicitudes",
-                        color: Colors.blueAccent,
+                        subtitle: "Ver estado",
+                        icon: Icons.folder_open_rounded,
+                        accentColor: Colors.blueAccent,
                         onTap: () {
-                            Navigator.push(
+                          Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => const ApplicationsTab(),
@@ -261,10 +262,12 @@ class StudentHomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 20),
                     Expanded(
-                      child: _buildGlassCard(
-                        icon: Icons.person_rounded,
+                      child: _buildActionCard(
+                        context,
                         title: "Mi Perfil y CV",
-                        color: Colors.purpleAccent,
+                        subtitle: "Editar datos",
+                        icon: Icons.person_rounded,
+                        accentColor: Colors.purpleAccent,
                         onTap: () {
                           Navigator.push(
                             context,
@@ -275,6 +278,7 @@ class StudentHomeScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                const SizedBox(height: 40),
               ],
             ),
           ),
@@ -283,38 +287,69 @@ class StudentHomeScreen extends StatelessWidget {
     );
   }
 
-  // --- NUEVO WIDGET PARA LAS TARJETAS DE ESTADÍSTICAS ---
-  Widget _buildModernStatCard(String value, String label, IconData icon, Color color) {
+  // --- NUEVO WIDGET PARA LAS TARJETAS DE ESTADÍSTICAS (PREMIUM) ---
+  Widget _buildPremiumStatCard(String value, String label, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 15),
+      padding: const EdgeInsets.all(16), // Un poco más de espacio interno
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08), // Fondo semitransparente
+        // Degradado oscuro + toque de color
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF1E293B), // Fondo base (Slate 800)
+            color.withOpacity(0.2),  // Tinte de color
+          ],
+        ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.1)), // Borde sutil
+        border: Border.all(color: Colors.white.withOpacity(0.08)), // Borde sutil
+        // Sombra suave del color del icono (Glow)
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          // Icono con círculo de color de fondo
+          // Icono brillante
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2), // Color suave de fondo
+              color: color.withOpacity(0.2), 
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: color.withOpacity(0.3),
+                  blurRadius: 8,
+                  spreadRadius: 0,
+                )
+              ]
             ),
-            child: Icon(icon, color: color, size: 20),
+            child: Icon(icon, color: Colors.white, size: 22), // Icono blanco para contraste
           ),
           const SizedBox(width: 12),
           // Textos
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 value,
-                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Colors.white, 
+                  fontSize: 20, 
+                  fontWeight: FontWeight.bold
+                ),
               ),
               Text(
                 label,
-                style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 11),
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.6), 
+                  fontSize: 11
+                ),
               ),
             ],
           ),
@@ -323,30 +358,95 @@ class StudentHomeScreen extends StatelessWidget {
     );
   }
 
-  // --- WIDGET PARA ACCESOS RÁPIDOS (Ya lo tenías) ---
-  Widget _buildGlassCard({required IconData icon, required String title, required Color color, required VoidCallback onTap}) {
+  // --- WIDGET PARA ACCESOS RÁPIDOS (PREMIUM) ---
+  Widget _buildActionCard(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color accentColor,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        height: 160, 
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceDark.withOpacity(0.5), 
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFF1E293B), 
+              accentColor.withOpacity(0.15), 
+            ],
+          ),
           borderRadius: BorderRadius.circular(25),
-          border: Border.all(color: Colors.white.withOpacity(0.12)), 
+          border: Border.all(
+            color: Colors.white.withOpacity(0.08),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: accentColor.withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                shape: BoxShape.circle
+                color: accentColor.withOpacity(0.2),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: accentColor.withOpacity(0.3),
+                    blurRadius: 8,
+                    spreadRadius: 0,
+                  )
+                ]
               ),
-              child: Icon(icon, color: color, size: 24),
+              child: Icon(icon, color: Colors.white, size: 26),
             ),
-            const SizedBox(height: 20),
-            Text(title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.5),
+                        fontSize: 12,
+                      ),
+                    ),
+                    const Spacer(),
+                    Icon(
+                      Icons.arrow_forward_rounded, 
+                      color: Colors.white.withOpacity(0.3), 
+                      size: 16
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ],
         ),
       ),
