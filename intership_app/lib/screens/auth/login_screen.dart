@@ -29,14 +29,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // --- LÓGICA PRINCIPAL: LOGIN ---
   Future<void> _login() async {
+    // 1. VALIDACIÓN INICIAL (Evita el error feo de Firebase)
+    if (_emailController.text.trim().isEmpty || _passwordController.text.trim().isEmpty) {
+      _showMessage("⚠️ Por favor, ingresa tu correo y contraseña.", isError: true);
+      return; // Detenemos la ejecución aquí
+    }
+
     setState(() => _isLoading = true);
     
     try {
+      // 2. INTENTO DE LOGIN
       UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
+      // 3. VERIFICAR DATOS EN FIRESTORE
       final userDoc = await FirebaseFirestore.instance
           .collection('users') 
           .doc(userCredential.user!.uid)
@@ -52,6 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final userData = userDoc.data() as Map<String, dynamic>;
       final String role = userData['role'] ?? 'student';
 
+      // 4. REDIRECCIÓN SEGÚN ROL
       if (mounted) {
         if (role == 'admin' || role == 'coordinator') {
           Navigator.pushReplacement(
@@ -67,10 +76,34 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
     } on FirebaseAuthException catch (e) {
-      String message = e.message ?? "Error de autenticación";
-      if (e.code == 'user-not-found') message = "Usuario no encontrado.";
-      if (e.code == 'wrong-password') message = "Contraseña incorrecta.";
+      // 5. MANEJO DE ERRORES DE FIREBASE (Traducidos)
+      String message = "Error de autenticación";
+      
+      switch (e.code) {
+        case 'user-not-found':
+          message = "No existe una cuenta con este correo.";
+          break;
+        case 'wrong-password':
+          message = "La contraseña es incorrecta.";
+          break;
+        case 'invalid-email':
+          message = "El formato del correo no es válido.";
+          break;
+        case 'user-disabled':
+          message = "Esta cuenta ha sido deshabilitada.";
+          break;
+        case 'too-many-requests':
+          message = "Demasiados intentos fallidos. Intenta más tarde.";
+          break;
+        case 'user-not-found-db':
+          message = e.message ?? "Error de base de datos.";
+          break;
+        default:
+          message = "Error: ${e.message}";
+      }
+      
       _showMessage(message, isError: true);
+
     } catch (e) {
       _showMessage("Error de conexión: $e", isError: true);
     } finally {
@@ -89,11 +122,14 @@ class _LoginScreenState extends State<LoginScreen> {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
       _showMessage("¡Correo enviado! Revisa tu bandeja de entrada.", isError: false);
     } on FirebaseAuthException catch (e) {
-      _showMessage(e.message ?? "Error al enviar correo.", isError: true);
+      String msg = e.message ?? "Error al enviar correo.";
+      if (e.code == 'user-not-found') msg = "No hay cuenta registrada con este correo.";
+      _showMessage(msg, isError: true);
     }
   }
 
   void _showMessage(String message, {required bool isError}) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -101,6 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 4),
       ),
     );
   }
@@ -132,14 +169,12 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // ------------------------------------------------
-                  // CAMBIO: LOGO REDONDO USANDO CIRCLEAVATAR
-                  // ------------------------------------------------
                   CircleAvatar(
-                    radius: 60, // Tamaño exterior
-                    backgroundColor: Colors.white.withValues(alpha: 0.15), // Borde sutil
+                    radius: 60,
+                    // Nota: Si usas una versión antigua de Flutter y 'withValues' da error, usa 'withOpacity'
+                    backgroundColor: Colors.white.withValues(alpha: 0.15), 
                     child: const CircleAvatar(
-                      radius: 55, // Tamaño de la imagen
+                      radius: 55,
                       backgroundImage: AssetImage('assets/Logo_app.jpeg'),
                       backgroundColor: Colors.transparent,
                     ),
@@ -252,7 +287,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ],
                   ),
-
                 ],
               ),
             ),
