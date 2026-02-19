@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 // Si te da error esta línea, comenta el import y usa Colors.orange en su lugar
 // import '../../config/theme.dart'; 
+//comentario de prueba
 
 class ApplicationsTab extends StatefulWidget {
   const ApplicationsTab({super.key});
