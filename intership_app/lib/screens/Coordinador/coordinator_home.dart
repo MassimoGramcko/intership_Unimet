@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart'; 
-import '../auth/login_screen.dart';
 import 'create_offer_screen.dart';
 import 'manage_offers_screen.dart'; 
 import 'coordinator_applications_screen.dart';
+import 'coordinator_settings_screen.dart';
+
+// NUEVO: Importamos la pantalla de Lista de Usuarios / Chats
+// (Asegúrate de que el nombre del archivo y la carpeta sean correctos, si lo llamaste diferente, ajusta esta línea)
+// Como están en la misma carpeta (Coordinador), puedes llamarlo directo así:
+import 'lista_usuarios_screen.dart';
 
 class CoordinatorHome extends StatefulWidget {
   const CoordinatorHome({super.key});
@@ -14,7 +18,7 @@ class CoordinatorHome extends StatefulWidget {
   State<CoordinatorHome> createState() => _CoordinatorHomeState();
 }
 
-class _CoordinatorHomeState extends State<CoordinatorHome> {
+class _CoordinatorHomeState extends State<CoordinatorHome> with SingleTickerProviderStateMixin {
   
   // Color principal naranja
   final Color primaryOrange = const Color(0xFFFF6B00);
@@ -22,35 +26,50 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
   // Variable de estado para el filtro
   String _filtroStatus = 'Todos'; 
 
-  void _logout(BuildContext context) async {
-    await FirebaseAuth.instance.signOut();
-    if (context.mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-        (route) => false,
-      );
-    }
+  // Variables para la animación del Speed Dial
+  late AnimationController _animationController;
+  bool _isDialOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 250),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  // Función para abrir/cerrar el menú
+  void _toggleDial() {
+    setState(() {
+      _isDialOpen = !_isDialOpen;
+      if (_isDialOpen) {
+        _animationController.forward(); 
+      } else {
+        _animationController.reverse(); 
+      }
+    });
   }
 
   // --- FUNCIÓN: Obtener Iniciales ---
   String _getInitials(String name) {
     if (name.isEmpty) return "?";
-    
-    // Divide el nombre por espacios y elimina espacios vacíos extras
     List<String> nameParts = name.trim().split(RegExp(r'\s+'));
-    
     if (nameParts.isEmpty) return "?";
-
-    String initials = nameParts[0][0]; // Primera letra del primer nombre
+    String initials = nameParts[0][0]; 
     if (nameParts.length > 1) {
-      initials += nameParts.last[0]; // Primera letra del último apellido
+      initials += nameParts.last[0]; 
     }
-
     return initials.toUpperCase();
   }
 
-  // --- FUNCIÓN CORREGIDA: Archivar historial antiguo (Soft Delete) ---
+  // --- FUNCIÓN: Archivar historial antiguo ---
   void _clearOldActivity() async {
     bool? confirm = await showDialog<bool>(
       context: context,
@@ -82,9 +101,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
         var status = (data['status'] ?? '').toString().toLowerCase();
         bool isArchived = data['isArchived'] ?? false;
         
-        // Solo archivamos los que ya no están pendientes Y que no estén archivados ya
         if (!isArchived && (status == 'aceptado' || status == 'rechazado' || status == 'accepted' || status == 'rejected')) {
-          // <--- CAMBIO CLAVE: Hacemos Update en vez de Delete
           await doc.reference.update({'isArchived': true});
           archivedCount++;
         }
@@ -145,8 +162,14 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
                           ),
                         ],
                       ),
+                      
                       IconButton(
-                        onPressed: () => _logout(context),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const CoordinatorSettingsScreen()),
+                          );
+                        },
                         icon: Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
@@ -154,7 +177,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white.withOpacity(0.1)),
                           ),
-                          child: const Icon(Icons.logout_rounded, color: Colors.white, size: 22),
+                          child: const Icon(Icons.settings_outlined, color: Colors.white, size: 22), 
                         ),
                       )
                     ],
@@ -229,7 +252,6 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
                     ],
                   ),
 
-                  // Indicador visual de filtro activo
                   if (_filtroStatus != 'Todos')
                     Padding(
                       padding: const EdgeInsets.only(top: 10, bottom: 5),
@@ -255,7 +277,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
                     stream: FirebaseFirestore.instance
                         .collection('applications')
                         .orderBy('appliedAt', descending: true)
-                        .limit(50) // Aumentamos el límite para que filtre bien a nivel local
+                        .limit(50) 
                         .snapshots(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
@@ -269,14 +291,12 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
                         return _buildModernEmptyState("No hay actividad reciente");
                       }
 
-                      // <--- CAMBIO CLAVE: Filtramos para ignorar los archivados
                       var docs = snapshot.data!.docs.where((doc) {
                         final data = doc.data() as Map<String, dynamic>;
                         final isArchived = data['isArchived'] ?? false;
                         return !isArchived; 
                       }).toList();
 
-                      // Filtro manual por estado (Pendiente, Aceptado, etc)
                       if (_filtroStatus != 'Todos') {
                         docs = docs.where((doc) {
                           final data = doc.data() as Map<String, dynamic>;
@@ -289,7 +309,6 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
                          return _buildModernEmptyState("No hay actividad reciente para mostrar.");
                       }
 
-                      // Mostramos máximo 20 resultados visuales
                       final displayDocs = docs.take(20).toList();
 
                       return ListView.builder(
@@ -311,37 +330,125 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
               ),
             ),
           ),
+          
+          if (_isDialOpen)
+            GestureDetector(
+              onTap: _toggleDial,
+              child: Container(
+                color: Colors.black.withOpacity(0.4), 
+              ),
+            ),
         ],
       ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: primaryOrange.withOpacity(0.5),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
+      floatingActionButton: _buildSpeedDial(), 
+    );
+  }
+
+  // --- Widget del Speed Dial ---
+  Widget _buildSpeedDial() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        // BOTÓN 1: CHAT
+        ScaleTransition(
+          scale: CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                ),
+                child: const Text("Mensajes", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+              const SizedBox(width: 15),
+              FloatingActionButton.small(
+                heroTag: "chat_btn",
+                backgroundColor: Colors.blueAccent,
+                onPressed: () {
+                  _toggleDial();
+                  // ¡AQUÍ HICIMOS EL CAMBIO! Navegamos a la lista de usuarios
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const ListaUsuariosScreen()), 
+                  );
+                },
+                child: const Icon(Icons.chat_bubble_rounded, color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+        
+        const SizedBox(height: 15),
+
+        // BOTÓN 2: CREAR OFERTA
+        ScaleTransition(
+          scale: CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                ),
+                child: const Text("Crear Oferta", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+              const SizedBox(width: 15),
+              FloatingActionButton.small(
+                heroTag: "offer_btn",
+                backgroundColor: primaryOrange,
+                onPressed: () {
+                  _toggleDial();
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(builder: (_) => const CreateOfferScreen())
+                  );
+                },
+                child: const Icon(Icons.add_business_rounded, color: Colors.white),
+              ),
+            ],
+          ),
+        ),
+        
+        const SizedBox(height: 15),
+
+        // BOTÓN PRINCIPAL
+        Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: primaryOrange.withOpacity(0.5),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: FloatingActionButton(
+            heroTag: "main_btn",
+            backgroundColor: primaryOrange,
+            elevation: 0,
+            onPressed: _toggleDial,
+            child: RotationTransition(
+              turns: Tween(begin: 0.0, end: 0.125).animate(
+                CurvedAnimation(parent: _animationController, curve: Curves.easeInOut)
+              ),
+              child: const Icon(Icons.add_rounded, color: Colors.white, size: 32),
             ),
-          ],
+          ),
         ),
-        child: FloatingActionButton.extended(
-          onPressed: () {
-            Navigator.push(
-              context, 
-              MaterialPageRoute(builder: (_) => const CreateOfferScreen())
-            );
-          },
-          backgroundColor: primaryOrange,
-          elevation: 0,
-          icon: const Icon(Icons.add_rounded, color: Colors.white, size: 28),
-          label: const Text("Crear Oferta", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-        ),
-      ),
+      ],
     );
   }
 
   // --- Widgets Auxiliares ---
-
   PopupMenuItem<String> _buildPopupItem(String text, IconData icon, [Color? color]) {
     return PopupMenuItem<String>(
       value: text,
@@ -478,7 +585,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 25),
         decoration: BoxDecoration(
-          color: Colors.orangeAccent.withOpacity(0.9), // Cambiado a naranja
+          color: Colors.orangeAccent.withOpacity(0.9), 
           borderRadius: BorderRadius.circular(20),
         ),
         child: const Row(
@@ -504,7 +611,6 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent, shape: const StadiumBorder()),
                 child: const Text("Sí, Ocultar", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)), 
                 onPressed: () {
-                   // <--- CAMBIO CLAVE: Hacemos Update en vez de Delete al deslizar
                    FirebaseFirestore.instance.collection('applications').doc(docId).update({'isArchived': true});
                    Navigator.of(ctx).pop(true);
                 }
@@ -523,7 +629,6 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
         ),
         child: Row(
           children: [
-            // Avatar
             Container(
               width: 50,
               height: 50,
