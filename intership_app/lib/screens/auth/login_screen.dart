@@ -18,7 +18,9 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  
   bool _isLoading = false;
+  bool _obscurePassword = true; // <-- NUEVO: Variable para el "ojito" de la contraseña
 
   @override
   void dispose() {
@@ -76,15 +78,14 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
     } on FirebaseAuthException catch (e) {
-      // 5. MANEJO DE ERRORES DE FIREBASE (Traducidos)
+      // 5. MANEJO DE ERRORES DE FIREBASE (Actualizado)
       String message = "Error de autenticación";
       
       switch (e.code) {
-        case 'user-not-found':
-          message = "No existe una cuenta con este correo.";
-          break;
-        case 'wrong-password':
-          message = "La contraseña es incorrecta.";
+        case 'invalid-credential': // <-- NUEVO: El error actual de Firebase
+        case 'user-not-found':     // Por si usas una versión antigua
+        case 'wrong-password':     // Por si usas una versión antigua
+          message = "Correo o contraseña incorrectos. Verifica tus datos.";
           break;
         case 'invalid-email':
           message = "El formato del correo no es válido.";
@@ -123,7 +124,9 @@ class _LoginScreenState extends State<LoginScreen> {
       _showMessage("¡Correo enviado! Revisa tu bandeja de entrada.", isError: false);
     } on FirebaseAuthException catch (e) {
       String msg = e.message ?? "Error al enviar correo.";
-      if (e.code == 'user-not-found') msg = "No hay cuenta registrada con este correo.";
+      if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
+         msg = "No hay cuenta registrada con este correo.";
+      }
       _showMessage(msg, isError: true);
     }
   }
@@ -222,11 +225,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Password
                   TextField(
                     controller: _passwordController,
-                    obscureText: true,
+                    obscureText: _obscurePassword, // <-- NUEVO: Usa la variable de estado
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
                       labelText: "Contraseña",
                       prefixIcon: const Icon(Icons.lock_outline, color: AppTheme.primaryOrange),
+                      // <-- NUEVO: Icono interactivo al final del campo
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          color: Colors.white.withValues(alpha: 0.5),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
                       filled: true,
                       fillColor: AppTheme.surfaceDark,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),

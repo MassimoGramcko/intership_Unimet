@@ -2,25 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../config/theme.dart';
-import '../auth/login_screen.dart';
 import 'profile_tab.dart'; 
 import 'explore_tab.dart'; 
 import 'applications_tab.dart'; 
+import 'settings_screen.dart'; // <-- 1. Importamos la nueva pantalla
 
 class StudentHomeScreen extends StatelessWidget {
   const StudentHomeScreen({super.key});
-
-  // Función para cerrar sesión
-  void _logout(BuildContext context) async {
-    await FirebaseAuth.instance.signOut();
-    if (context.mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-        (route) => false,
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +17,7 @@ class StudentHomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
       body: user == null
-          ? const Center(child: Text("No hay sesión activa"))
+          ? const Center(child: Text("No hay sesión activa", style: TextStyle(color: Colors.white)))
           : StreamBuilder<DocumentSnapshot>(
               stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
               builder: (context, snapshot) {
@@ -111,16 +99,29 @@ class StudentHomeScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                         IconButton(
-                          onPressed: () => _logout(context),
-                          icon: const Icon(Icons.logout_rounded, color: Colors.white70),
+                        // --- 2. NUEVO BOTÓN DE CONFIGURACIÓN ---
+                        IconButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                            );
+                          },
+                          icon: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.05),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white.withOpacity(0.1)),
+                            ),
+                            child: const Icon(Icons.settings_outlined, color: Colors.white, size: 22),
+                          ),
                         )
                       ],
                     ),
                     const SizedBox(height: 40),
                     
                     // --- ESTADÍSTICAS (Postulaciones y Favoritas) ---
-                    // AHORA CON EL NUEVO DISEÑO
                     StreamBuilder<QuerySnapshot>(
                       stream: FirebaseFirestore.instance
                           .collection('applications')
@@ -134,7 +135,6 @@ class StudentHomeScreen extends StatelessWidget {
 
                         return Row(
                           children: [
-                            // Tarjeta 1: Postulaciones (Naranja Intenso)
                             Expanded(
                               child: _buildPremiumStatCard(
                                 countPostulaciones, 
@@ -144,8 +144,6 @@ class StudentHomeScreen extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 15), 
-                            
-                            // Tarjeta 2: Favoritas (Rosado Neón)
                             Expanded(
                               child: _buildPremiumStatCard(
                                 "0", 
@@ -203,7 +201,7 @@ class StudentHomeScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 40),
-                         const SizedBox(height: 20),
+                        const SizedBox(height: 20),
                         const Text("Explorar Ofertas", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 10),
                         
@@ -215,8 +213,8 @@ class StudentHomeScreen extends StatelessWidget {
                           )
                         ),
                         
-                         const SizedBox(height: 25),
-                         Container(
+                        const SizedBox(height: 25),
+                        Container(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -230,7 +228,7 @@ class StudentHomeScreen extends StatelessWidget {
                             ]
                           ),
                           child: const Text("Buscar Ahora", style: TextStyle(color: AppTheme.primaryOrange, fontWeight: FontWeight.bold)),
-                         )
+                        )
                       ],
                     ),
                   ),
@@ -240,7 +238,7 @@ class StudentHomeScreen extends StatelessWidget {
                 const Text("Accesos Rápidos", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 20),
 
-                // --- TARJETAS SECUNDARIAS (Ya actualizadas) ---
+                // --- TARJETAS SECUNDARIAS ---
                 Row(
                   children: [
                     Expanded(
@@ -287,23 +285,21 @@ class StudentHomeScreen extends StatelessWidget {
     );
   }
 
-  // --- NUEVO WIDGET PARA LAS TARJETAS DE ESTADÍSTICAS (PREMIUM) ---
+  // --- WIDGET PARA LAS TARJETAS DE ESTADÍSTICAS ---
   Widget _buildPremiumStatCard(String value, String label, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(16), // Un poco más de espacio interno
+      padding: const EdgeInsets.all(16), 
       decoration: BoxDecoration(
-        // Degradado oscuro + toque de color
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF1E293B), // Fondo base (Slate 800)
-            color.withOpacity(0.2),  // Tinte de color
+            const Color(0xFF1E293B), 
+            color.withOpacity(0.2),  
           ],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.08)), // Borde sutil
-        // Sombra suave del color del icono (Glow)
+        border: Border.all(color: Colors.white.withOpacity(0.08)), 
         boxShadow: [
           BoxShadow(
             color: color.withOpacity(0.15),
@@ -314,7 +310,6 @@ class StudentHomeScreen extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Icono brillante
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
@@ -328,10 +323,9 @@ class StudentHomeScreen extends StatelessWidget {
                 )
               ]
             ),
-            child: Icon(icon, color: Colors.white, size: 22), // Icono blanco para contraste
+            child: Icon(icon, color: Colors.white, size: 22), 
           ),
           const SizedBox(width: 12),
-          // Textos
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -358,7 +352,7 @@ class StudentHomeScreen extends StatelessWidget {
     );
   }
 
-  // --- WIDGET PARA ACCESOS RÁPIDOS (PREMIUM) ---
+  // --- WIDGET PARA ACCESOS RÁPIDOS ---
   Widget _buildActionCard(
     BuildContext context, {
     required String title,

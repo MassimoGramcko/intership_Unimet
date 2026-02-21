@@ -33,7 +33,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
     }
   }
 
-  // --- NUEVA FUNCIÓN: Obtener Iniciales ---
+  // --- FUNCIÓN: Obtener Iniciales ---
   String _getInitials(String name) {
     if (name.isEmpty) return "?";
     
@@ -48,6 +48,57 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
     }
 
     return initials.toUpperCase();
+  }
+
+  // --- FUNCIÓN CORREGIDA: Archivar historial antiguo (Soft Delete) ---
+  void _clearOldActivity() async {
+    bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1E293B),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("¿Limpiar historial?", style: TextStyle(color: Colors.white)),
+        content: const Text(
+          "Se ocultarán de esta vista las solicitudes 'Aceptadas' o 'Rechazadas'.\n\nNo te preocupes, los datos y contadores de la oferta seguirán intactos.", 
+          style: TextStyle(color: Colors.white70)
+        ),
+        actions: [
+          TextButton(child: const Text("Cancelar"), onPressed: () => Navigator.of(ctx).pop(false)),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent, shape: const StadiumBorder()),
+            child: const Text("Sí, Limpiar", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)), 
+            onPressed: () => Navigator.of(ctx).pop(true),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      var snapshot = await FirebaseFirestore.instance.collection('applications').get();
+      int archivedCount = 0;
+      
+      for (var doc in snapshot.docs) {
+        var data = doc.data();
+        var status = (data['status'] ?? '').toString().toLowerCase();
+        bool isArchived = data['isArchived'] ?? false;
+        
+        // Solo archivamos los que ya no están pendientes Y que no estén archivados ya
+        if (!isArchived && (status == 'aceptado' || status == 'rechazado' || status == 'accepted' || status == 'rejected')) {
+          // <--- CAMBIO CLAVE: Hacemos Update en vez de Delete
+          await doc.reference.update({'isArchived': true});
+          archivedCount++;
+        }
+      }
+      
+      if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(
+             content: Text("Limpieza exitosa: Se ocultaron $archivedCount registros."),
+             backgroundColor: Colors.greenAccent.shade700,
+           )
+         );
+      }
+    }
   }
 
   @override
@@ -157,9 +208,13 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
                         color: const Color(0xFF1E293B),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15), side: BorderSide(color: Colors.white.withOpacity(0.1))),
                         onSelected: (String valor) {
-                          setState(() {
-                            _filtroStatus = valor;
-                          });
+                          if (valor == 'Limpiar Historial') {
+                            _clearOldActivity();
+                          } else {
+                            setState(() {
+                              _filtroStatus = valor;
+                            });
+                          }
                         },
                         itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
                           _buildPopupItem("Todos", Icons.dashboard_customize_outlined),
@@ -167,6 +222,8 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
                           _buildPopupItem("Pendiente", Icons.hourglass_empty_rounded, Colors.orangeAccent),
                           _buildPopupItem("Aceptado", Icons.check_circle_outline_rounded, Colors.greenAccent),
                           _buildPopupItem("Rechazado", Icons.cancel_outlined, Colors.redAccent),
+                          const PopupMenuDivider(height: 1),
+                          _buildPopupItem("Limpiar Historial", Icons.delete_sweep_rounded, Colors.orangeAccent), 
                         ],
                       ),
                     ],
@@ -198,7 +255,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
                     stream: FirebaseFirestore.instance
                         .collection('applications')
                         .orderBy('appliedAt', descending: true)
-                        .limit(20) 
+                        .limit(50) // Aumentamos el límite para que filtre bien a nivel local
                         .snapshots(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
@@ -212,8 +269,14 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
                         return _buildModernEmptyState("No hay actividad reciente");
                       }
 
-                      var docs = snapshot.data!.docs;
+                      // <--- CAMBIO CLAVE: Filtramos para ignorar los archivados
+                      var docs = snapshot.data!.docs.where((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final isArchived = data['isArchived'] ?? false;
+                        return !isArchived; 
+                      }).toList();
 
+                      // Filtro manual por estado (Pendiente, Aceptado, etc)
                       if (_filtroStatus != 'Todos') {
                         docs = docs.where((doc) {
                           final data = doc.data() as Map<String, dynamic>;
@@ -223,16 +286,21 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
                       }
 
                       if (docs.isEmpty) {
-                         return _buildModernEmptyState("No hay solicitudes $_filtroStatus");
+                         return _buildModernEmptyState("No hay actividad reciente para mostrar.");
                       }
+
+                      // Mostramos máximo 20 resultados visuales
+                      final displayDocs = docs.take(20).toList();
 
                       return ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: docs.length,
+                        itemCount: displayDocs.length,
                         itemBuilder: (context, index) {
-                          final data = docs[index].data() as Map<String, dynamic>;
-                          return _buildModernReviewTile(data);
+                          final doc = displayDocs[index];
+                          final data = doc.data() as Map<String, dynamic>;
+                          final docId = doc.id; 
+                          return _buildModernReviewTile(data, docId); 
                         },
                       );
                     },
@@ -380,10 +448,10 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
     );
   }
 
-  Widget _buildModernReviewTile(Map<String, dynamic> data) {
+  Widget _buildModernReviewTile(Map<String, dynamic> data, String docId) {
     String status = (data['status'] ?? 'Pendiente').toString().toLowerCase();
     String studentName = data['studentName'] ?? 'Estudiante';
-    String initials = _getInitials(studentName); // Obtener iniciales
+    String initials = _getInitials(studentName); 
 
     Color statusColor;
     String statusText;
@@ -402,84 +470,128 @@ class _CoordinatorHomeState extends State<CoordinatorHome> {
         statusText = 'Nuevo';
     }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 15),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E293B).withOpacity(0.6),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+    return Dismissible(
+      key: Key(docId),
+      direction: DismissDirection.endToStart,
+      background: Container(
+        margin: const EdgeInsets.only(bottom: 15),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 25),
+        decoration: BoxDecoration(
+          color: Colors.orangeAccent.withOpacity(0.9), // Cambiado a naranja
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text("Ocultar", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            SizedBox(width: 10),
+            Icon(Icons.visibility_off_rounded, color: Colors.white, size: 28),
+          ],
+        ),
       ),
-      child: Row(
-        children: [
-          // --- AVATAR CON INICIALES ---
-          Container(
-            width: 50,
-            height: 50,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.blue[400]!, Colors.purple[400]!]
+      confirmDismiss: (direction) async {
+        return await showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: const Color(0xFF1E293B),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text("¿Ocultar actividad?", style: TextStyle(color: Colors.white)),
+            content: const Text("Esta acción quitará el registro de tu historial, pero mantendrá la postulación en la base de datos de la oferta.", style: TextStyle(color: Colors.white70)),
+            actions: [
+              TextButton(child: const Text("Cancelar"), onPressed: () => Navigator.of(ctx).pop(false)),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent, shape: const StadiumBorder()),
+                child: const Text("Sí, Ocultar", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)), 
+                onPressed: () {
+                   // <--- CAMBIO CLAVE: Hacemos Update en vez de Delete al deslizar
+                   FirebaseFirestore.instance.collection('applications').doc(docId).update({'isArchived': true});
+                   Navigator.of(ctx).pop(true);
+                }
               ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                 BoxShadow(color: Colors.purple.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))
-              ]
-            ),
-            child: Text(
-              initials,
-              style: const TextStyle(
-                color: Colors.white, 
-                fontWeight: FontWeight.bold, 
-                fontSize: 18,
-                letterSpacing: 1.0
-              ),
-            ),
+            ],
           ),
-          
-          const SizedBox(width: 15),
-          
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  studentName, 
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 15),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E293B).withOpacity(0.6),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
+        ),
+        child: Row(
+          children: [
+            // Avatar
+            Container(
+              width: 50,
+              height: 50,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Colors.blue[400]!, Colors.purple[400]!]
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.work_outline_rounded, color: Colors.white.withOpacity(0.5), size: 14),
-                    const SizedBox(width: 5),
-                    Expanded(
-                      child: Text(
-                        data['jobTitle'] ?? 'Puesto desconocido', 
-                        style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
-                        overflow: TextOverflow.ellipsis,
+                shape: BoxShape.circle,
+                boxShadow: [
+                   BoxShadow(color: Colors.purple.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))
+                ]
+              ),
+              child: Text(
+                initials,
+                style: const TextStyle(
+                  color: Colors.white, 
+                  fontWeight: FontWeight.bold, 
+                  fontSize: 18,
+                  letterSpacing: 1.0
+                ),
+              ),
+            ),
+            
+            const SizedBox(width: 15),
+            
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    studentName, 
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.work_outline_rounded, color: Colors.white.withOpacity(0.5), size: 14),
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: Text(
+                          data['jobTitle'] ?? 'Puesto desconocido', 
+                          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: statusColor.withOpacity(0.5)),
-              boxShadow: [BoxShadow(color: statusColor.withOpacity(0.2), blurRadius: 8)]
-            ),
-            child: Text(
-              statusText, 
-              style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.bold)
-            ),
-          )
-        ],
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: statusColor.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(30),
+                border: Border.all(color: statusColor.withOpacity(0.5)),
+                boxShadow: [BoxShadow(color: statusColor.withOpacity(0.2), blurRadius: 8)]
+              ),
+              child: Text(
+                statusText, 
+                style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.bold)
+              ),
+            )
+          ],
+        ),
       ),
     );
   }

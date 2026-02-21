@@ -213,7 +213,7 @@ class _OfferCard extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             
-            // --- STREAM EN TIEMPO REAL CORREGIDO (offerId) ---
+            // --- STREAM EN TIEMPO REAL ---
             Row(
               children: [
                 _buildTag(text: type, icon: Icons.location_on_outlined, color: Colors.blueAccent),
@@ -221,7 +221,6 @@ class _OfferCard extends StatelessWidget {
                 const SizedBox(width: 10),
                 
                 StreamBuilder<QuerySnapshot>(
-                  // AQUÍ ESTÁ EL CAMBIO: Usamos 'offerId'
                   stream: FirebaseFirestore.instance
                       .collection('applications')
                       .where('offerId', isEqualTo: docId) 
@@ -238,7 +237,8 @@ class _OfferCard extends StatelessWidget {
                       text: hasApplicants ? "$count Postulados" : "Sin postulantes",
                       icon: hasApplicants ? Icons.people_alt_rounded : Icons.person_off_outlined,
                       color: hasApplicants ? Colors.orangeAccent : Colors.white38,
-                      isFilled: hasApplicants, 
+                      // <--- AQUÍ ESTÁ EL CAMBIO CLAVE: Ponerlo en 'false'
+                      isFilled: false, 
                     );
                   },
                 ),
@@ -301,7 +301,7 @@ class _OfferCard extends StatelessWidget {
     );
   }
 
-  // Widget Tag Mejorado
+  // Widget Tag Mejorado (Este no se toca, ya hace el trabajo bien si isFilled es false)
   Widget _buildTag({required String text, required IconData icon, required Color color, bool isFilled = false}) {
     Color finalColor = color == Colors.white38 ? Colors.white60 : color;
     
