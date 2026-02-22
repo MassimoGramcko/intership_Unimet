@@ -1,15 +1,17 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart'; 
-import 'create_offer_screen.dart';
-import 'manage_offers_screen.dart'; 
+import 'package:firebase_auth/firebase_auth.dart'; // Necesario para obtener el ID del usuario actual
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+import '../notifications_screen.dart'; // Importamos la pantalla de notificaciones
 import 'coordinator_applications_screen.dart';
 import 'coordinator_settings_screen.dart';
-
+import 'create_offer_screen.dart';
 // NUEVO: Importamos la pantalla de Lista de Usuarios / Chats
 // (Asegúrate de que el nombre del archivo y la carpeta sean correctos, si lo llamaste diferente, ajusta esta línea)
 // Como están en la misma carpeta (Coordinador), puedes llamarlo directo así:
 import 'lista_usuarios_screen.dart';
+import 'manage_offers_screen.dart';
 
 class CoordinatorHome extends StatefulWidget {
   const CoordinatorHome({super.key});
@@ -118,9 +120,69 @@ class _CoordinatorHomeState extends State<CoordinatorHome> with SingleTickerProv
     }
   }
 
+  // --- WIDGET: Botón de Notificaciones con Badge ---
+  Widget _buildNotificationButton(String userId) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('notifications')
+          .where('userId', isEqualTo: userId)
+          .where('isRead', isEqualTo: false) // Solo contamos las no leídas
+          .snapshots(),
+      builder: (context, snapshot) {
+        int unreadCount = 0;
+        if (snapshot.hasData) {
+          unreadCount = snapshot.data!.docs.length;
+        }
+
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                );
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.all(6), // Reducimos un poco el tamaño
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                ),
+                child: const Icon(Icons.notifications_outlined, color: Colors.white, size: 20), // Icono más discreto
+              ),
+            ),
+            if (unreadCount > 0)
+              Positioned(
+                top: -5,
+                right: -5,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(
+                    color: Colors.redAccent,
+                    shape: BoxShape.circle,
+                  ),
+                  constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                  child: Text(
+                    unreadCount > 9 ? '9+' : '$unreadCount',
+                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     String formattedDate = DateFormat('EEEE, d MMMM').format(DateTime.now());
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A), 
@@ -151,9 +213,17 @@ class _CoordinatorHomeState extends State<CoordinatorHome> with SingleTickerProv
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            formattedDate,
-                            style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14, fontWeight: FontWeight.w500),
+                          Row(
+                            children: [
+                              Text(
+                                formattedDate,
+                                style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 14, fontWeight: FontWeight.w500),
+                              ),
+                              if (currentUserId != null) ...[
+                                const SizedBox(width: 10),
+                                _buildNotificationButton(currentUserId),
+                              ]
+                            ],
                           ),
                           const SizedBox(height: 5),
                           const Text(
