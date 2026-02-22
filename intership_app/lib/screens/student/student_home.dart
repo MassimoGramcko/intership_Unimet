@@ -6,8 +6,10 @@ import 'profile_tab.dart';
 import 'explore_tab.dart'; 
 import 'applications_tab.dart'; 
 import 'settings_screen.dart'; 
-// IMPORTANTE: Importamos las utilidades de chat
+// Importación de las utilidades de chat
 import 'package:intership_app/services/chat_utils.dart';
+// IMPORTANTE: Importamos la pantalla de notificaciones que creamos
+import '../notifications_screen.dart';// Ajusta la ruta si es necesario
 
 class StudentHomeScreen extends StatelessWidget {
   const StudentHomeScreen({super.key});
@@ -104,22 +106,82 @@ class StudentHomeScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                        IconButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => const SettingsScreen()),
-                            );
-                          },
-                          icon: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.05),
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white.withOpacity(0.1)),
+                        // --- AQUÍ REEMPLAZAMOS EL ICONO SOLO DE AJUSTES POR UN ROW CON LA CAMPANITA ---
+                        Row(
+                          children: [
+                            // 1. Campanita de Notificaciones
+                            StreamBuilder<QuerySnapshot>(
+                              stream: FirebaseFirestore.instance
+                                  .collection('notifications')
+                                  .where('userId', isEqualTo: user?.uid)
+                                  .where('isRead', isEqualTo: false) // Solo cuenta las no leídas
+                                  .snapshots(),
+                              builder: (context, snapshot) {
+                                int unreadCount = 0;
+                                if (snapshot.hasData) {
+                                  unreadCount = snapshot.data!.docs.length;
+                                }
+
+                                return Stack(
+                                  children: [
+                                    IconButton(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                                        );
+                                      },
+                                      icon: Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.05),
+                                          shape: BoxShape.circle,
+                                          border: Border.all(color: Colors.white.withOpacity(0.1)),
+                                        ),
+                                        child: const Icon(Icons.notifications_outlined, color: Colors.white, size: 22),
+                                      ),
+                                    ),
+                                    // El puntito rojo solo aparece si hay > 0
+                                    if (unreadCount > 0)
+                                      Positioned(
+                                        right: 8,
+                                        top: 8,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(4),
+                                          decoration: const BoxDecoration(
+                                            color: Colors.redAccent,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Text(
+                                            '$unreadCount',
+                                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              },
                             ),
-                            child: const Icon(Icons.settings_outlined, color: Colors.white, size: 22),
-                          ),
+                            const SizedBox(width: 4),
+                            // 2. Botón de Configuración Original
+                            IconButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                                );
+                              },
+                              icon: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.05),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                                ),
+                                child: const Icon(Icons.settings_outlined, color: Colors.white, size: 22),
+                              ),
+                            ),
+                          ],
                         )
                       ],
                     ),
@@ -136,26 +198,12 @@ class StudentHomeScreen extends StatelessWidget {
                           countPostulaciones = snapshot.data!.docs.length.toString();
                         }
 
-                        return Row(
-                          children: [
-                            Expanded(
-                              child: _buildPremiumStatCard(
-                                countPostulaciones, 
-                                "Postulaciones", 
-                                Icons.send_rounded, 
-                                AppTheme.primaryOrange
-                              ),
-                            ),
-                            const SizedBox(width: 15), 
-                            Expanded(
-                              child: _buildPremiumStatCard(
-                                "0", 
-                                "Favoritas", 
-                                Icons.favorite_rounded, 
-                                Colors.pinkAccent
-                              ),
-                            ),
-                          ],
+                        // Reemplazamos el Row y los Expanded para que solo quede Postulaciones ocupando todo el ancho
+                        return _buildPremiumStatCard(
+                          countPostulaciones, 
+                          "Postulaciones", 
+                          Icons.send_rounded, 
+                          AppTheme.primaryOrange
                         );
                       },
                     ),

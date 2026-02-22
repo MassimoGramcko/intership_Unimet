@@ -96,7 +96,6 @@ class _ExploreTabState extends State<ExploreTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
-      // ELIMINAMOS EL STREAMBUILDER DE AQUÍ ARRIBA
       body: Stack(
         children: [
           // A. FONDO GLOW
@@ -142,12 +141,7 @@ class _ExploreTabState extends State<ExploreTab> {
                     letterSpacing: 1.5,
                   ),
                 ),
-                actions: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 20),
-                    child: _buildIconButton(Icons.notifications_none_rounded),
-                  ),
-                ],
+                // Botón de notificaciones eliminado de aquí
               ),
 
               // 2. BUSCADOR (Estático, mantiene el foco)
@@ -169,7 +163,6 @@ class _ExploreTabState extends State<ExploreTab> {
                         Expanded(
                           child: TextField(
                             controller: _searchController,
-                            // Al escribir, solo actualizamos la variable, pero NO reconstruimos el TextField
                             onChanged: (value) {
                               setState(() {
                                 _searchQuery = value;
@@ -201,7 +194,6 @@ class _ExploreTabState extends State<ExploreTab> {
               ),
 
               // 3. AQUÍ PONEMOS EL STREAMBUILDER (Dentro de los Slivers)
-              // Esto hace que solo se recargue la lista de abajo, no el buscador.
               StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('job_offers')
@@ -244,114 +236,10 @@ class _ExploreTabState extends State<ExploreTab> {
                   final showFeatured = _searchQuery.isEmpty;
                   final featuredOffers = showFeatured ? allOffers.where((o) => o.isFeatured).take(3).toList() : <JobOffer>[];
 
-                  // Construimos una lista de Widgets Slivers para devolver
-                  List<Widget> sliverList = [];
-
-                  // A. SECCIÓN DESTACADOS
-                  if (showFeatured && featuredOffers.isNotEmpty) {
-                    sliverList.add(
-                      const SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.fromLTRB(20, 10, 20, 15),
-                          child: Text("Destacado para ti", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                    );
-                    sliverList.add(
-                      SliverToBoxAdapter(
-                        child: SizedBox(
-                          height: 190,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            physics: const BouncingScrollPhysics(),
-                            padding: const EdgeInsets.only(left: 20),
-                            itemCount: featuredOffers.length,
-                            itemBuilder: (context, index) => _buildFeaturedCard(featuredOffers[index]),
-                          ),
-                        ),
-                      ),
-                    );
-                  }
-
-                  // B. TÍTULO RESULTADOS
-                  sliverList.add(
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 30, 20, 10),
-                        child: Text(
-                          _searchQuery.isEmpty ? "Ofertas Recientes" : "Resultados (${filteredOffers.length})", 
-                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)
-                        ),
-                      ),
-                    ),
-                  );
-
-                  // C. LISTA DE RESULTADOS O MENSAJE VACÍO
-                  if (filteredOffers.isEmpty && _searchQuery.isNotEmpty) {
-                    sliverList.add(
-                       SliverToBoxAdapter(
-                        child: Container(
-                          padding: const EdgeInsets.only(top: 50),
-                          child: Column(
-                            children: [
-                               const Icon(Icons.search_off, size: 60, color: Colors.white24),
-                               const SizedBox(height: 10),
-                               Text('No encontramos "$_searchQuery"', style: const TextStyle(color: Colors.white54)),
-                            ],
-                          ),
-                        ),
-                      )
-                    );
-                  } else {
-                    sliverList.add(
-                      SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) => _buildVerticalCard(filteredOffers[index]),
-                          childCount: filteredOffers.length,
-                        ),
-                      ),
-                    );
-                  }
-                  
-                  // Espacio final
-                  sliverList.add(const SliverPadding(padding: EdgeInsets.only(bottom: 100)));
-
-                  // IMPORTANTE: Un builder normal devuelve UN widget.
-                  // Como aquí estamos dentro de slivers: [], debemos devolver un widget que agrupe otros slivers
-                  // Pero StreamBuilder espera devolver UN Widget.
-                  // TRUCO: Usamos un widget especial que no renderiza nada visual pero agrupa slivers? No.
-                  // MEJOR FORMA: Devolver un `SliverMainAxisGroup` (Flutter nuevo) o envolver en un widget que devuelva estos slivers.
-                  // Pero para simplificar y evitar errores de versión, vamos a cambiar la estrategia ligeramente:
-                  // En lugar de devolver una lista, devolvemos UN solo SliverList que contenga todo usando lógica interna, 
-                  // o usamos MultiSliver si tuvieras el paquete.
-                  
-                  // --- SOLUCIÓN ROBUSTA SIN PAQUETES EXTRA ---
-                  // Devolvemos UN SOLO SliverList que construye diferentes tipos de celdas según el índice.
-                  // O para mantener tu diseño, simplemente envolvemos los bloques en SliverToBoxAdapter cuando no son listas.
-                  
-                  // Pero espera, `StreamBuilder` NO puede devolver una lista de widgets `[]`.
-                  // Y `slivers: []` espera widgets individuales.
-                  
-                  // CORRECCIÓN FINAL DE ARQUITECTURA:
-                  // Usaremos `SliverList` con un `delegate` inteligente O anidaremos un CustomScrollView interno (no recomendado).
-                  
-                  // LA SOLUCIÓN MÁS LIMPIA:
-                  // Usamos un paquete o... usamos `SliverToBoxAdapter` para todo lo que no sea la lista principal.
-                  // Pero como no puedo agregar paquetes ahora, usaré un truco:
-                  // Devolveremos un `SliverList` donde el itemCount es la suma de todo.
-                  
-                  // NO, ESO ES COMPLICADO. 
-                  // VAMOS A HACERLO ASÍ: El StreamBuilder DEBE estar fuera de la lista `slivers` si queremos devolver multiples slivers.
-                  // PERO SI ESTÁ FUERA, ROMPE EL SCROLL.
-                  
                   // LA SOLUCIÓN DEFINITIVA: 
-                  // El StreamBuilder devolverá un `SliverList` que renderiza TODO (Titulo, Carrusel horizontal, Lista vertical) como items de una sola lista vertical.
-                  
                   return SliverList(
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
-                        // LÓGICA PARA RENDERIZAR LAS DISTINTAS SECCIONES COMO ITEMS DE UNA LISTA
-                        
                         // 1. Calcular índices
                         int currentIndex = index;
                         
@@ -375,11 +263,11 @@ class _ExploreTabState extends State<ExploreTab> {
                                       itemCount: featuredOffers.length,
                                       itemBuilder: (context, i) => _buildFeaturedCard(featuredOffers[i]),
                                     ),
-                                  ),
+                                 ),
                                ],
                              );
                           }
-                          currentIndex--; // Restamos 1 porque ya pasamos el bloque destacados
+                          currentIndex--; 
                         }
 
                         // SECCIÓN B: TÍTULO LISTA (Ocupa 1 espacio)
@@ -434,7 +322,7 @@ class _ExploreTabState extends State<ExploreTab> {
     );
   }
 
-  // --- WIDGETS AUXILIARES (IGUALES) ---
+  // --- WIDGETS AUXILIARES ---
   Widget _buildEmptyState() {
     return Container(
       padding: const EdgeInsets.only(top: 50),
@@ -448,19 +336,6 @@ class _ExploreTabState extends State<ExploreTab> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildIconButton(IconData icon) {
-    return Container(
-      width: 45,
-      height: 45,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08), 
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white.withOpacity(0.05))
-      ),
-      child: Icon(icon, color: Colors.white, size: 22),
     );
   }
 

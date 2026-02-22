@@ -46,17 +46,62 @@ class _ChatScreenState extends State<ChatScreen> {
       'timestamp': FieldValue.serverTimestamp(),
     };
 
+    // 1. Guardar el mensaje en la colección de mensajes del chat
     await FirebaseFirestore.instance
         .collection('chats')
         .doc(widget.chatId)
         .collection('messages')
         .add(messageData);
 
+    // 2. Actualizar el último mensaje en la información general del chat
     await FirebaseFirestore.instance.collection('chats').doc(widget.chatId).set({
       'users': [currentUserId, widget.otherUserId],
       'lastMessage': text,
       'lastUpdate': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+
+    // --- NUEVO: OBTENER EL NOMBRE REAL DEL USUARIO QUE ENVÍA ---
+    String myName = "Usuario"; 
+    
+    // Primero revisamos si el nombre está en Firebase Auth
+    if (FirebaseAuth.instance.currentUser?.displayName != null && 
+        FirebaseAuth.instance.currentUser!.displayName!.isNotEmpty) {
+      myName = FirebaseAuth.instance.currentUser!.displayName!;
+    } else {
+      // Si no, lo buscamos en tu colección de usuarios en Firestore.
+      try {
+        final userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUserId).get();
+        if (userDoc.exists && userDoc.data() != null) {
+          final data = userDoc.data() as Map<String, dynamic>;
+          
+          // --- AQUÍ ESTÁ EL CAMBIO CLAVE: BUSCAMOS firstName Y lastName ---
+          final String firstName = data['firstName'] ?? '';
+          final String lastName = data['lastName'] ?? '';
+          
+          final String fullName = '$firstName $lastName'.trim();
+          
+          if (fullName.isNotEmpty) {
+            myName = fullName; // Se guardará como "Massimo Coordinador"
+          }
+        }
+      } catch (e) {
+        debugPrint("Error obteniendo nombre: $e");
+      }
+    }
+    // -----------------------------------------------------------
+
+    // 3. Crear la notificación con el ID del chat y el NOMBRE REAL
+    await FirebaseFirestore.instance.collection('notifications').add({
+      'userId': widget.otherUserId,
+      'senderId': currentUserId,
+      'chatId': widget.chatId, 
+      'senderName': myName, // <-- AHORA USA TU NOMBRE COMPLETO
+      'title': 'Nuevo mensaje de $myName', // <-- TÍTULO PERSONALIZADO
+      'body': text,
+      'timestamp': FieldValue.serverTimestamp(),
+      'isRead': false,
+      'type': 'chat',
+    });
   }
 
   @override
@@ -70,10 +115,9 @@ class _ChatScreenState extends State<ChatScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        titleSpacing: 0, // Pegar el avatar a la flecha
+        titleSpacing: 0,
         title: Row(
           children: [
-            // --- NUEVO AVATAR CON DEGRADADO ---
             Container(
               width: 38,
               height: 38,
@@ -162,7 +206,6 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  // --- BURBUJAS DE MENSAJE MEJORADAS ---
   Widget _buildMessageBubble(String text, bool isMe, String time) {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -178,8 +221,8 @@ class _ChatScreenState extends State<ChatScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
               gradient: isMe 
-                ? LinearGradient(colors: [Colors.blue.shade700, Colors.blue.shade500]) // Azul moderno para ti
-                : const LinearGradient(colors: [Color(0xFF334155), Color(0xFF1E293B)]), // Gris pizarra para el otro
+                ? LinearGradient(colors: [Colors.blue.shade700, Colors.blue.shade500])
+                : const LinearGradient(colors: [Color(0xFF334155), Color(0xFF1E293B)]),
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(18),
                 topRight: const Radius.circular(18),
@@ -211,7 +254,6 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  // --- ÁREA DE ENTRADA DE TEXTO ---
   Widget _buildInputArea() {
     return Container(
       padding: const EdgeInsets.only(left: 15, right: 15, bottom: 25, top: 10),
@@ -247,7 +289,7 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Container(
               padding: const EdgeInsets.all(12),
               decoration: const BoxDecoration(
-                color: Colors.blueAccent, // Cambiado de naranja a azul
+                color: Colors.blueAccent,
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.send_rounded, color: Colors.white, size: 22),
