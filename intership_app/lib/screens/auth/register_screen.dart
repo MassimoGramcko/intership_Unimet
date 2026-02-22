@@ -203,7 +203,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       fillColor: AppTheme.surfaceDark,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
                     ),
-                    value: _selectedCareer,
+                    initialValue: _selectedCareer,
                     items: _careers.map((career) {
                       return DropdownMenuItem(
                         value: career,

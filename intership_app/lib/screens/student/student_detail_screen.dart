@@ -50,7 +50,7 @@ class StudentDetailScreen extends StatelessWidget {
             const SizedBox(height: 30),
 
             // 3. SECCIÓN DE HABILIDADES
-            Align(
+            const Align(
               alignment: Alignment.centerLeft,
               child: Text("Habilidades", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
             ),
@@ -69,7 +69,7 @@ class StudentDetailScreen extends StatelessWidget {
             const SizedBox(height: 30),
 
             // 4. SOBRE MÍ
-            Align(
+            const Align(
               alignment: Alignment.centerLeft,
               child: Text("Sobre mí", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
             ),

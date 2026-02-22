@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
+
 import '../../config/theme.dart';
 
 // --- MODELO AJUSTADO A TU BASE DE DATOS REAL ---
@@ -177,8 +178,8 @@ class _CoordinatorApplicationsScreenState extends State<CoordinatorApplicationsS
 
   Widget _buildApplicationCard(JobApplication app) {
     
-    final cardColor = const Color(0xFF1E202B); 
-    final brandColor = Colors.blueAccent; 
+    const cardColor = Color(0xFF1E202B); 
+    const brandColor = Colors.blueAccent; 
     
     // Obtenemos iniciales
     String initials = _getInitials(app.studentName);
@@ -204,7 +205,7 @@ class _CoordinatorApplicationsScreenState extends State<CoordinatorApplicationsS
                   color: brandColor.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(Icons.work_outline, color: brandColor, size: 20),
+                child: const Icon(Icons.work_outline, color: brandColor, size: 20),
               ),
               const SizedBox(width: 12),
               Expanded(

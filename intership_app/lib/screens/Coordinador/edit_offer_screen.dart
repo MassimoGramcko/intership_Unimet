@@ -288,7 +288,7 @@ class _EditOfferScreenState extends State<EditOfferScreen> {
           ),
           Switch(
             value: _isActive,
-            activeColor: Colors.white,
+            activeThumbColor: Colors.white,
             activeTrackColor: Colors.greenAccent,
             inactiveThumbColor: Colors.white,
             inactiveTrackColor: Colors.redAccent.withOpacity(0.5),
