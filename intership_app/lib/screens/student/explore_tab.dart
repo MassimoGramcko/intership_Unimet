@@ -326,10 +326,10 @@ class _ExploreTabState extends State<ExploreTab> {
   Widget _buildEmptyState() {
     return Container(
       padding: const EdgeInsets.only(top: 50),
-      child: const Center(
+      child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+          children: const [
             Icon(Icons.work_off_outlined, color: Colors.grey, size: 50),
             SizedBox(height: 10),
             Text("No hay ofertas disponibles aún", style: TextStyle(color: Colors.white70)),

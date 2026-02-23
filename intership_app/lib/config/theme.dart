@@ -28,6 +28,7 @@ class AppTheme {
       primary: primaryOrange,
       secondary: primaryOrange,
       surface: surfaceDark,
+      background: backgroundDark,
       error: Color(0xFFEF4444),
     ),
 

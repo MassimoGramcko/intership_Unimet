@@ -23,7 +23,7 @@ class CoordinatorHome extends StatefulWidget {
 class _CoordinatorHomeState extends State<CoordinatorHome> with SingleTickerProviderStateMixin {
   
   // Color principal naranja
-  static const Color primaryOrange = Color(0xFFFF6B00);
+  final Color primaryOrange = const Color(0xFFFF6B00);
   
   // Variable de estado para el filtro
   String _filtroStatus = 'Todos'; 
@@ -351,8 +351,8 @@ class _CoordinatorHomeState extends State<CoordinatorHome> with SingleTickerProv
                         .snapshots(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: Padding(
-                          padding: EdgeInsets.all(20.0),
+                        return Center(child: Padding(
+                          padding: const EdgeInsets.all(20.0),
                           child: CircularProgressIndicator(color: primaryOrange),
                         ));
                       }

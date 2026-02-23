@@ -45,7 +45,7 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     // Color principal seguro (por si no tienes el archivo theme)
-    const Color primaryColor = Color(0xFFFF6B00); 
+    final Color primaryColor = const Color(0xFFFF6B00); 
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
@@ -90,7 +90,7 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: primaryColor));
+                  return Center(child: CircularProgressIndicator(color: primaryColor));
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
