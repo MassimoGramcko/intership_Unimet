@@ -2,54 +2,112 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../config/theme.dart';
-import 'profile_tab.dart'; 
-import 'explore_tab.dart'; 
-import 'applications_tab.dart'; 
-import 'settings_screen.dart'; 
-// Importación de las utilidades de chat
+import 'profile_tab.dart';
+import 'explore_tab.dart';
+import 'applications_tab.dart';
+import 'settings_screen.dart';
 import 'package:intership_app/services/chat_utils.dart';
-// IMPORTANTE: Importamos la pantalla de notificaciones que creamos
-import '../notifications_screen.dart';// Ajusta la ruta si es necesario
+import '../notifications_screen.dart';
 
-class StudentHomeScreen extends StatelessWidget {
+class StudentHomeScreen extends StatefulWidget {
   const StudentHomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
+  State<StudentHomeScreen> createState() => _StudentHomeScreenState();
+}
 
+class _StudentHomeScreenState extends State<StudentHomeScreen> {
+  // --- COLORES PRE-COMPUTADOS ---
+  static const Color _white05 = Color(0x0DFFFFFF);
+  static const Color _white10 = Color(0x1AFFFFFF);
+  static const Color _white08 = Color(0x14FFFFFF);
+  static const Color _white50 = Color(0x80FFFFFF);
+  static const Color _white60 = Color(0x99FFFFFF);
+  static const Color _white90 = Color(0xE6FFFFFF);
+
+  // --- STREAMS CACHEADOS ---
+  late final User? _user;
+  late final Stream<DocumentSnapshot>? _userDataStream;
+  late final Stream<QuerySnapshot>? _notificationsStream;
+  late final Stream<QuerySnapshot>? _applicationsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _user = FirebaseAuth.instance.currentUser;
+
+    if (_user != null) {
+      _userDataStream = FirebaseFirestore.instance
+          .collection('users')
+          .doc(_user!.uid)
+          .snapshots();
+
+      _notificationsStream = FirebaseFirestore.instance
+          .collection('notifications')
+          .where('userId', isEqualTo: _user!.uid)
+          .where('isRead', isEqualTo: false)
+          .snapshots();
+
+      _applicationsStream = FirebaseFirestore.instance
+          .collection('applications')
+          .where('studentId', isEqualTo: _user!.uid)
+          .snapshots();
+    } else {
+      _userDataStream = null;
+      _notificationsStream = null;
+      _applicationsStream = null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
-      body: user == null
-          ? const Center(child: Text("No hay sesión activa", style: TextStyle(color: Colors.white)))
+      body: _user == null
+          ? const Center(
+              child: Text(
+                "No hay sesión activa",
+                style: TextStyle(color: Colors.white),
+              ),
+            )
           : StreamBuilder<DocumentSnapshot>(
-              stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
+              stream: _userDataStream,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: AppTheme.primaryOrange));
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: AppTheme.primaryOrange,
+                    ),
+                  );
                 }
-                if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
-                   return _buildDashboardUI(context, user, 'Estudiante', 'Carrera no definida');
+                if (snapshot.hasError ||
+                    !snapshot.hasData ||
+                    !snapshot.data!.exists) {
+                  return _buildDashboardUI(
+                    context,
+                    'Estudiante',
+                    'Carrera no definida',
+                  );
                 }
 
                 final userData = snapshot.data!.data() as Map<String, dynamic>;
                 final String firstName = userData['firstName'] ?? 'Estudiante';
                 final String career = userData['career'] ?? 'UNIMET';
 
-                return _buildDashboardUI(context, user, firstName, career);
+                return _buildDashboardUI(context, firstName, career);
               },
             ),
     );
   }
 
-  Widget _buildDashboardUI(BuildContext context, User? user, String name, String career) {
+  Widget _buildDashboardUI(BuildContext context, String name, String career) {
     final double screenWidth = MediaQuery.of(context).size.width;
     final double halfCardWidth = (screenWidth - 70) / 2;
 
     return SingleChildScrollView(
       child: Column(
         children: [
-          // --- HEADER CON EFECTO DE LUZ (MANTENIDO) ---
+          // --- HEADER CON EFECTO DE LUZ ---
           Stack(
             children: [
               Positioned(
@@ -60,10 +118,10 @@ class StudentHomeScreen extends StatelessWidget {
                   height: 300,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppTheme.primaryOrange.withOpacity(0.15),
+                    color: AppTheme.primaryOrange.withValues(alpha: 0.15),
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.primaryOrange.withOpacity(0.3),
+                        color: AppTheme.primaryOrange.withValues(alpha: 0.3),
                         blurRadius: 100,
                         spreadRadius: 50,
                       ),
@@ -72,9 +130,14 @@ class StudentHomeScreen extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.only(top: 70, left: 25, right: 25, bottom: 40),
+                padding: const EdgeInsets.only(
+                  top: 70,
+                  left: 25,
+                  right: 25,
+                  bottom: 40,
+                ),
                 decoration: const BoxDecoration(
-                  color: Color(0xFF0F172A), 
+                  color: Color(0xFF0F172A),
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(40),
                     bottomRight: Radius.circular(40),
@@ -90,32 +153,39 @@ class StudentHomeScreen extends StatelessWidget {
                           children: [
                             Text(
                               "¡Hola, $name!",
-                              style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             const SizedBox(height: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(20)
+                                color: _white10,
+                                borderRadius: BorderRadius.circular(20),
                               ),
                               child: Text(
                                 career.toUpperCase(),
-                                style: const TextStyle(color: AppTheme.primaryOrange, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1),
+                                style: const TextStyle(
+                                  color: AppTheme.primaryOrange,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1,
+                                ),
                               ),
                             ),
                           ],
                         ),
-                        // --- AQUÍ REEMPLAZAMOS EL ICONO SOLO DE AJUSTES POR UN ROW CON LA CAMPANITA ---
                         Row(
                           children: [
-                            // 1. Campanita de Notificaciones
+                            // Campanita de Notificaciones (usa stream cacheado)
                             StreamBuilder<QuerySnapshot>(
-                              stream: FirebaseFirestore.instance
-                                  .collection('notifications')
-                                  .where('userId', isEqualTo: user?.uid)
-                                  .where('isRead', isEqualTo: false) // Solo cuenta las no leídas
-                                  .snapshots(),
+                              stream: _notificationsStream,
                               builder: (context, snapshot) {
                                 int unreadCount = 0;
                                 if (snapshot.hasData) {
@@ -128,20 +198,28 @@ class StudentHomeScreen extends StatelessWidget {
                                       onPressed: () {
                                         Navigator.push(
                                           context,
-                                          MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const NotificationsScreen(),
+                                          ),
                                         );
                                       },
                                       icon: Container(
                                         padding: const EdgeInsets.all(10),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.05),
+                                        decoration: const BoxDecoration(
+                                          color: _white05,
                                           shape: BoxShape.circle,
-                                          border: Border.all(color: Colors.white.withOpacity(0.1)),
+                                          border: Border.fromBorderSide(
+                                            BorderSide(color: _white10),
+                                          ),
                                         ),
-                                        child: const Icon(Icons.notifications_outlined, color: Colors.white, size: 22),
+                                        child: const Icon(
+                                          Icons.notifications_outlined,
+                                          color: Colors.white,
+                                          size: 22,
+                                        ),
                                       ),
                                     ),
-                                    // El puntito rojo solo aparece si hay > 0
                                     if (unreadCount > 0)
                                       Positioned(
                                         right: 8,
@@ -154,7 +232,11 @@ class StudentHomeScreen extends StatelessWidget {
                                           ),
                                           child: Text(
                                             '$unreadCount',
-                                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -163,47 +245,53 @@ class StudentHomeScreen extends StatelessWidget {
                               },
                             ),
                             const SizedBox(width: 4),
-                            // 2. Botón de Configuración Original
                             IconButton(
                               onPressed: () {
                                 Navigator.push(
                                   context,
-                                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const SettingsScreen(),
+                                  ),
                                 );
                               },
                               icon: Container(
                                 padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.05),
+                                decoration: const BoxDecoration(
+                                  color: _white05,
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                                  border: Border.fromBorderSide(
+                                    BorderSide(color: _white10),
+                                  ),
                                 ),
-                                child: const Icon(Icons.settings_outlined, color: Colors.white, size: 22),
+                                child: const Icon(
+                                  Icons.settings_outlined,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
                               ),
                             ),
                           ],
-                        )
+                        ),
                       ],
                     ),
                     const SizedBox(height: 40),
-                    
+
+                    // Contador de postulaciones (usa stream cacheado)
                     StreamBuilder<QuerySnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection('applications')
-                          .where('studentId', isEqualTo: user?.uid)
-                          .snapshots(),
+                      stream: _applicationsStream,
                       builder: (context, snapshot) {
                         String countPostulaciones = "0";
                         if (snapshot.hasData) {
-                          countPostulaciones = snapshot.data!.docs.length.toString();
+                          countPostulaciones = snapshot.data!.docs.length
+                              .toString();
                         }
 
-                        // Reemplazamos el Row y los Expanded para que solo quede Postulaciones ocupando todo el ancho
                         return _buildPremiumStatCard(
-                          countPostulaciones, 
-                          "Postulaciones", 
-                          Icons.send_rounded, 
-                          AppTheme.primaryOrange
+                          countPostulaciones,
+                          "Postulaciones",
+                          Icons.send_rounded,
+                          AppTheme.primaryOrange,
                         );
                       },
                     ),
@@ -218,14 +306,23 @@ class StudentHomeScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Tu Próximo Paso", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                const Text(
+                  "Tu Próximo Paso",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 20),
 
                 GestureDetector(
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const ExploreTab()),
+                      MaterialPageRoute(
+                        builder: (context) => const ExploreTab(),
+                      ),
                     );
                   },
                   child: Container(
@@ -233,46 +330,76 @@ class StudentHomeScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(25),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [AppTheme.primaryOrange, AppTheme.primaryOrange.withOpacity(0.7)],
+                        colors: [
+                          AppTheme.primaryOrange,
+                          AppTheme.primaryOrange.withValues(alpha: 0.7),
+                        ],
                         begin: Alignment.topLeft,
-                        end: Alignment.bottomRight
+                        end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.primaryOrange.withOpacity(0.3), 
-                          blurRadius: 20, 
-                          offset: const Offset(0, 10)
-                        )
-                      ]
+                          color: AppTheme.primaryOrange.withValues(alpha: 0.3),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 40),
+                        const Icon(
+                          Icons.rocket_launch_rounded,
+                          color: Colors.white,
+                          size: 40,
+                        ),
                         const SizedBox(height: 20),
-                        const Text("Explorar Ofertas", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                        const Text(
+                          "Explorar Ofertas",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         const SizedBox(height: 10),
                         Text(
-                          "Encuentra la pasantía ideal para tu carrera hoy mismo.", 
-                          style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14)
+                          "Encuentra la pasantía ideal para tu carrera hoy mismo.",
+                          style: TextStyle(color: _white90, fontSize: 14),
                         ),
                         const SizedBox(height: 25),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(15),
                           ),
-                          child: const Text("Buscar Ahora", style: TextStyle(color: AppTheme.primaryOrange, fontWeight: FontWeight.bold)),
-                        )
+                          child: const Text(
+                            "Buscar Ahora",
+                            style: TextStyle(
+                              color: AppTheme.primaryOrange,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
 
                 const SizedBox(height: 30),
-                const Text("Accesos Rápidos", style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                const Text(
+                  "Accesos Rápidos",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 20),
 
                 Wrap(
@@ -289,7 +416,9 @@ class StudentHomeScreen extends StatelessWidget {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const ApplicationsTab()),
+                          MaterialPageRoute(
+                            builder: (context) => const ApplicationsTab(),
+                          ),
                         );
                       },
                     ),
@@ -303,12 +432,13 @@ class StudentHomeScreen extends StatelessWidget {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const ProfileTab()),
+                          MaterialPageRoute(
+                            builder: (context) => const ProfileTab(),
+                          ),
                         );
                       },
                     ),
-                    
-                    // --- TARJETA DE CHAT CON LÓGICA MEJORADA ---
+
                     _buildActionCard(
                       context,
                       width: double.infinity,
@@ -318,14 +448,18 @@ class StudentHomeScreen extends StatelessWidget {
                       accentColor: Colors.tealAccent.shade400,
                       onTap: () async {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Buscando coordinador...")),
+                          const SnackBar(
+                            content: Text("Buscando coordinador..."),
+                          ),
                         );
 
                         try {
-                          // Búsqueda flexible por rol
                           final querySnapshot = await FirebaseFirestore.instance
                               .collection('users')
-                              .where('role', whereIn: ['coordinador', 'coordinator'])
+                              .where(
+                                'role',
+                                whereIn: ['coordinador', 'coordinator'],
+                              )
                               .limit(1)
                               .get();
 
@@ -334,28 +468,34 @@ class StudentHomeScreen extends StatelessWidget {
                           if (querySnapshot.docs.isNotEmpty) {
                             final coordDoc = querySnapshot.docs.first;
                             final coordData = coordDoc.data();
-                            
-                            String coordName = "${coordData['firstName'] ?? ''} ${coordData['lastName'] ?? ''}".trim();
+
+                            String coordName =
+                                "${coordData['firstName'] ?? ''} ${coordData['lastName'] ?? ''}"
+                                    .trim();
                             if (coordName.isEmpty) coordName = "Coordinador";
 
                             ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
                             iniciarOabrirChat(
                               context: context,
-                              currentUserId: user?.uid ?? '',
+                              currentUserId: _user?.uid ?? '',
                               otherUserId: coordDoc.id,
                               otherUserName: coordName,
                             );
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("No se encontró un coordinador activo.")),
+                              const SnackBar(
+                                content: Text(
+                                  "No se encontró un coordinador activo.",
+                                ),
+                              ),
                             );
                           }
                         } catch (e) {
                           if (!context.mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Error: $e")),
-                          );
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text("Error: $e")));
                         }
                       },
                     ),
@@ -370,32 +510,50 @@ class StudentHomeScreen extends StatelessWidget {
     );
   }
 
-  // --- WIDGETS DE APOYO (MANTENIENDO TU DISEÑO ORIGINAL) ---
-  Widget _buildPremiumStatCard(String value, String label, IconData icon, Color color) {
+  // --- WIDGETS DE APOYO ---
+  Widget _buildPremiumStatCard(
+    String value,
+    String label,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
-      padding: const EdgeInsets.all(16), 
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [const Color(0xFF1E293B), color.withOpacity(0.2)],
+          colors: [const Color(0xFF1E293B), color.withValues(alpha: 0.2)],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.08)), 
+        border: Border.all(color: _white08),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: color.withOpacity(0.2), shape: BoxShape.circle),
-            child: Icon(icon, color: Colors.white, size: 22), 
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: Colors.white, size: 22),
           ),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(value, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-              Text(label, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 11)),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                label,
+                style: const TextStyle(color: _white60, fontSize: 11),
+              ),
             ],
           ),
         ],
@@ -403,21 +561,32 @@ class StudentHomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionCard(BuildContext context, {required String title, required String subtitle, required IconData icon, required Color accentColor, required VoidCallback onTap, double? width}) {
+  Widget _buildActionCard(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color accentColor,
+    required VoidCallback onTap,
+    double? width,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: width,
-        height: 160, 
+        height: 160,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [const Color(0xFF1E293B), accentColor.withOpacity(0.15)],
+            colors: [
+              const Color(0xFF1E293B),
+              accentColor.withValues(alpha: 0.15),
+            ],
           ),
           borderRadius: BorderRadius.circular(25),
-          border: Border.all(color: Colors.white.withOpacity(0.08)),
+          border: Border.all(color: _white08),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -425,19 +594,37 @@ class StudentHomeScreen extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: accentColor.withOpacity(0.2), shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                color: accentColor.withValues(alpha: 0.2),
+                shape: BoxShape.circle,
+              ),
               child: Icon(icon, color: Colors.white, size: 26),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold), maxLines: 1),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Text(subtitle, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(color: _white50, fontSize: 12),
+                    ),
                     const Spacer(),
-                    Icon(Icons.arrow_forward_rounded, color: Colors.white.withOpacity(0.3), size: 16),
+                    const Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Color(0x4DFFFFFF),
+                      size: 16,
+                    ),
                   ],
                 ),
               ],

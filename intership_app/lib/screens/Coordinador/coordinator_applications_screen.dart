@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../config/theme.dart';
 
-// --- MODELO AJUSTADO A TU BASE DE DATOS REAL ---
+// --- MODELO AJUSTADO ---
 class JobApplication {
   final String id;
   final String jobTitle;
   final String company;
-  final String status;      // 'Pendiente', 'Aceptado', 'Rechazado'
+  final String status;
   final String studentId;
-  final String studentName; 
+  final String studentName;
   final String studentEmail;
-  final String offerId;     
+  final String offerId;
   final Timestamp appliedAt;
 
   JobApplication({
@@ -32,7 +32,7 @@ class JobApplication {
       id: doc.id,
       jobTitle: data['jobTitle'] ?? 'Puesto',
       company: data['company'] ?? 'Empresa',
-      status: data['status'] ?? 'Pendiente', 
+      status: data['status'] ?? 'Pendiente',
       studentId: data['studentId'] ?? '',
       studentName: data['studentName'] ?? 'Estudiante',
       studentEmail: data['studentEmail'] ?? 'Sin correo',
@@ -46,14 +46,30 @@ class CoordinatorApplicationsScreen extends StatefulWidget {
   const CoordinatorApplicationsScreen({super.key});
 
   @override
-  State<CoordinatorApplicationsScreen> createState() => _CoordinatorApplicationsScreenState();
+  State<CoordinatorApplicationsScreen> createState() =>
+      _CoordinatorApplicationsScreenState();
 }
 
-class _CoordinatorApplicationsScreenState extends State<CoordinatorApplicationsScreen> {
-  // Filtro inicial (Tal cual está en tu DB)
-  String _selectedFilter = 'Pendiente'; 
+class _CoordinatorApplicationsScreenState
+    extends State<CoordinatorApplicationsScreen> {
+  String _selectedFilter = 'Pendiente';
 
-  // --- NUEVA FUNCIÓN: Obtener Iniciales (Igual que en Home) ---
+  // --- COLORES PRE-COMPUTADOS ---
+  static const Color _white10 = Color(0x1AFFFFFF);
+  static const Color _white24 = Color(0x3DFFFFFF);
+  static const Color _white30 = Color(0x4DFFFFFF);
+  static const Color _white50 = Color(0x80FFFFFF);
+  static const Color _white60 = Color(0x99FFFFFF);
+
+  // --- STREAM SE RECREA SOLO AL CAMBIAR FILTRO ---
+  Stream<QuerySnapshot> _getStream() {
+    return FirebaseFirestore.instance
+        .collection('applications')
+        .where('status', isEqualTo: _selectedFilter)
+        .orderBy('appliedAt', descending: true)
+        .snapshots();
+  }
+
   String _getInitials(String name) {
     if (name.isEmpty) return "?";
     List<String> nameParts = name.trim().split(RegExp(r'\s+'));
@@ -71,12 +87,14 @@ class _CoordinatorApplicationsScreenState extends State<CoordinatorApplicationsS
           .collection('applications')
           .doc(docId)
           .update({'status': newStatus});
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Estado actualizado a: $newStatus"),
-            backgroundColor: newStatus == 'Aceptado' ? Colors.green : Colors.redAccent,
+            backgroundColor: newStatus == 'Aceptado'
+                ? Colors.green
+                : Colors.redAccent,
             duration: const Duration(seconds: 1),
           ),
         );
@@ -94,7 +112,10 @@ class _CoordinatorApplicationsScreenState extends State<CoordinatorApplicationsS
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        title: const Text("Solicitudes", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Solicitudes",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
           onPressed: () => Navigator.pop(context),
@@ -102,7 +123,6 @@ class _CoordinatorApplicationsScreenState extends State<CoordinatorApplicationsS
       ),
       body: Column(
         children: [
-          // 1. FILTROS
           Container(
             height: 60,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -116,30 +136,32 @@ class _CoordinatorApplicationsScreenState extends State<CoordinatorApplicationsS
             ),
           ),
 
-          // 2. LISTA DE SOLICITUDES
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('applications')
-                  .where('status', isEqualTo: _selectedFilter)
-                  .orderBy('appliedAt', descending: true)
-                  .snapshots(),
+              stream: _getStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: AppTheme.primaryOrange));
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: AppTheme.primaryOrange,
+                    ),
+                  );
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return _buildEmptyState();
                 }
 
-                final apps = snapshot.data!.docs.map((doc) => JobApplication.fromFirestore(doc)).toList();
+                final apps = snapshot.data!.docs
+                    .map((doc) => JobApplication.fromFirestore(doc))
+                    .toList();
 
                 return ListView.builder(
                   padding: const EdgeInsets.all(20),
                   physics: const BouncingScrollPhysics(),
                   itemCount: apps.length,
-                  itemBuilder: (context, index) => _buildApplicationCard(apps[index]),
+                  itemBuilder: (context, index) =>
+                      _buildApplicationCard(apps[index]),
                 );
               },
             ),
@@ -149,8 +171,6 @@ class _CoordinatorApplicationsScreenState extends State<CoordinatorApplicationsS
     );
   }
 
-  // --- WIDGETS ---
-
   Widget _buildFilterBtn(String text, String value, Color color) {
     final isSelected = _selectedFilter == value;
     return GestureDetector(
@@ -159,14 +179,14 @@ class _CoordinatorApplicationsScreenState extends State<CoordinatorApplicationsS
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.2) : Colors.transparent,
+          color: isSelected ? color.withValues(alpha: 0.2) : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? color : Colors.white24),
+          border: Border.all(color: isSelected ? color : _white24),
         ),
         child: Text(
           text,
           style: TextStyle(
-            color: isSelected ? color : Colors.white60,
+            color: isSelected ? color : _white60,
             fontWeight: FontWeight.bold,
             fontSize: 13,
           ),
@@ -176,11 +196,9 @@ class _CoordinatorApplicationsScreenState extends State<CoordinatorApplicationsS
   }
 
   Widget _buildApplicationCard(JobApplication app) {
-    
-    final cardColor = const Color(0xFF1E202B); 
-    final brandColor = Colors.blueAccent; 
-    
-    // Obtenemos iniciales
+    final cardColor = const Color(0xFF1E202B);
+    final brandColor = Colors.blueAccent;
+
     String initials = _getInitials(app.studentName);
 
     return Container(
@@ -189,19 +207,18 @@ class _CoordinatorApplicationsScreenState extends State<CoordinatorApplicationsS
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white10),
+        border: Border.all(color: _white10),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header: Datos de la Oferta
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: brandColor.withOpacity(0.1),
+                  color: brandColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(Icons.work_outline, color: brandColor, size: 20),
@@ -213,56 +230,60 @@ class _CoordinatorApplicationsScreenState extends State<CoordinatorApplicationsS
                   children: [
                     Text(
                       app.jobTitle,
-                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       app.company,
-                      style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
+                      style: const TextStyle(color: _white60, fontSize: 13),
                     ),
                   ],
                 ),
               ),
-              // Fecha (Hace X tiempo)
               Text(
                 _timeAgo(app.appliedAt.toDate()),
-                style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 12),
+                style: const TextStyle(color: _white30, fontSize: 12),
               ),
             ],
           ),
-          
-          const Divider(color: Colors.white10, height: 25),
 
-          // INFORMACIÓN DEL CANDIDATO (CON EL NUEVO AVATAR)
+          const Divider(color: _white10, height: 25),
+
           Row(
             children: [
-              // --- NUEVO DISEÑO DE AVATAR ---
               Container(
-                width: 40, 
+                width: 40,
                 height: 40,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Colors.blue[400]!, Colors.purple[400]!]
+                    colors: [Colors.blue[400]!, Colors.purple[400]!],
                   ),
                   shape: BoxShape.circle,
                   boxShadow: [
-                     BoxShadow(color: Colors.purple.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))
-                  ]
+                    BoxShadow(
+                      color: Colors.purple.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Text(
                   initials,
                   style: const TextStyle(
-                    color: Colors.white, 
-                    fontWeight: FontWeight.bold, 
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
                     fontSize: 14,
-                    letterSpacing: 1.0
+                    letterSpacing: 1.0,
                   ),
                 ),
               ),
-              // -----------------------------
 
               const SizedBox(width: 12),
               Expanded(
@@ -270,12 +291,16 @@ class _CoordinatorApplicationsScreenState extends State<CoordinatorApplicationsS
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      app.studentName, 
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+                      app.studentName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
                     ),
                     Text(
                       app.studentEmail,
-                      style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
+                      style: const TextStyle(color: _white50, fontSize: 12),
                     ),
                   ],
                 ),
@@ -285,7 +310,6 @@ class _CoordinatorApplicationsScreenState extends State<CoordinatorApplicationsS
 
           const SizedBox(height: 20),
 
-          // BOTONES DE ACCIÓN (Solo si es 'Pendiente')
           if (app.status == 'Pendiente')
             Row(
               children: [
@@ -296,7 +320,9 @@ class _CoordinatorApplicationsScreenState extends State<CoordinatorApplicationsS
                       foregroundColor: Colors.redAccent,
                       side: const BorderSide(color: Colors.redAccent),
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     child: const Text("Rechazar"),
                   ),
@@ -309,7 +335,9 @@ class _CoordinatorApplicationsScreenState extends State<CoordinatorApplicationsS
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     child: const Text("Aprobar"),
                   ),
@@ -317,22 +345,27 @@ class _CoordinatorApplicationsScreenState extends State<CoordinatorApplicationsS
               ],
             )
           else
-            // Etiqueta de estado final
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 10),
               decoration: BoxDecoration(
-                color: (app.status == 'Aceptado' ? Colors.green : Colors.red).withOpacity(0.1),
+                color: (app.status == 'Aceptado' ? Colors.green : Colors.red)
+                    .withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: (app.status == 'Aceptado' ? Colors.green : Colors.red).withOpacity(0.3),
-                )
+                  color: (app.status == 'Aceptado' ? Colors.green : Colors.red)
+                      .withValues(alpha: 0.3),
+                ),
               ),
               child: Center(
                 child: Text(
-                  app.status == 'Aceptado' ? "Candidato Aprobado" : "Candidato Rechazado",
+                  app.status == 'Aceptado'
+                      ? "Candidato Aprobado"
+                      : "Candidato Rechazado",
                   style: TextStyle(
-                    color: app.status == 'Aceptado' ? Colors.greenAccent : Colors.redAccent,
+                    color: app.status == 'Aceptado'
+                        ? Colors.greenAccent
+                        : Colors.redAccent,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -348,18 +381,17 @@ class _CoordinatorApplicationsScreenState extends State<CoordinatorApplicationsS
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.assignment_turned_in_outlined, size: 60, color: Colors.white.withOpacity(0.1)),
+          Icon(Icons.assignment_turned_in_outlined, size: 60, color: _white10),
           const SizedBox(height: 15),
           Text(
             "No hay solicitudes en ${_selectedFilter.toLowerCase()}",
-            style: TextStyle(color: Colors.white.withOpacity(0.4)),
+            style: const TextStyle(color: _white50),
           ),
         ],
       ),
     );
   }
 
-  // Función auxiliar para "hace X tiempo"
   String _timeAgo(DateTime d) {
     Duration diff = DateTime.now().difference(d);
     if (diff.inDays > 0) return "${diff.inDays}d";

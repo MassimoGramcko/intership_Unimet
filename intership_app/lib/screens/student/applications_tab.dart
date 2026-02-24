@@ -3,10 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
-// Si te da error esta línea, comenta el import y usa Colors.orange en su lugar
-// import '../../config/theme.dart'; 
-//comentario de prueba
-
 class ApplicationsTab extends StatefulWidget {
   const ApplicationsTab({super.key});
 
@@ -17,20 +13,54 @@ class ApplicationsTab extends StatefulWidget {
 class _ApplicationsTabState extends State<ApplicationsTab> {
   String _selectedFilter = 'Todos';
 
-  // Configuración visual según el estado ESTANDARIZADO
+  // --- COLORES PRE-COMPUTADOS ---
+  static const Color _white05 = Color(0x0DFFFFFF);
+  static const Color _white10 = Color(0x1AFFFFFF);
+  static const Color _white20 = Color(0x33FFFFFF);
+  static const Color _white40 = Color(0x66FFFFFF);
+  static const Color _white50 = Color(0x80FFFFFF);
+  static const Color _white60 = Color(0x99FFFFFF);
+  static const Color _black20 = Color(0x33000000);
+
   final Map<String, dynamic> statusConfig = {
     'pending': {'color': Colors.blue, 'label': 'Enviado', 'step': 1},
     'reviewing': {'color': Colors.orange, 'label': 'En Revisión', 'step': 2},
-    'accepted': {'color': const Color(0xFF22C55E), 'label': 'Aceptado', 'step': 3}, // Verde fuerte
-    'rejected': {'color': const Color(0xFFEF4444), 'label': 'No seleccionado', 'step': 3}, // Rojo
+    'accepted': {
+      'color': const Color(0xFF22C55E),
+      'label': 'Aceptado',
+      'step': 3,
+    },
+    'rejected': {
+      'color': const Color(0xFFEF4444),
+      'label': 'No seleccionado',
+      'step': 3,
+    },
   };
 
-  // --- FUNCIÓN CRÍTICA: NORMALIZA EL ESTADO ---
-  // Convierte "Aceptado", "Approved", "accepted" -> "accepted"
+  // --- STREAM CACHEADO ---
+  late final Stream<QuerySnapshot>? _applicationsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      _applicationsStream = FirebaseFirestore.instance
+          .collection('applications')
+          .where('studentId', isEqualTo: user.uid)
+          .orderBy('appliedAt', descending: true)
+          .snapshots();
+    } else {
+      _applicationsStream = null;
+    }
+  }
+
   String _getStatusKey(String? rawStatus) {
     String status = (rawStatus ?? '').toLowerCase();
-    
-    if (status.contains('aceptado') || status.contains('accepted') || status.contains('aprobado')) {
+
+    if (status.contains('aceptado') ||
+        status.contains('accepted') ||
+        status.contains('aprobado')) {
       return 'accepted';
     } else if (status.contains('rechazado') || status.contains('rejected')) {
       return 'rejected';
@@ -43,9 +73,7 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    // Color principal seguro (por si no tienes el archivo theme)
-    final Color primaryColor = const Color(0xFFFF6B00); 
+    final Color primaryColor = const Color(0xFFFF6B00);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
@@ -53,15 +81,20 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text("Mis Postulaciones", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Mis Postulaciones",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
       ),
       body: Column(
         children: [
-          // 1. FILTROS
           Container(
             height: 60,
             padding: const EdgeInsets.symmetric(vertical: 10),
@@ -80,17 +113,14 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
             ),
           ),
 
-          // 2. LISTA DE SOLICITUDES
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('applications')
-                  .where('studentId', isEqualTo: user?.uid)
-                  .orderBy('appliedAt', descending: true) // Asegúrate de tener índice compuesto si esto falla
-                  .snapshots(),
+              stream: _applicationsStream,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator(color: primaryColor));
+                  return Center(
+                    child: CircularProgressIndicator(color: primaryColor),
+                  );
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -99,11 +129,9 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
 
                 var docs = snapshot.data!.docs;
 
-                // Filtrado manual usando la llave normalizada
                 if (_selectedFilter != 'Todos') {
                   docs = docs.where((doc) {
                     final data = doc.data() as Map<String, dynamic>;
-                    // Usamos la función traductora aquí también
                     return _getStatusKey(data['status']) == _selectedFilter;
                   }).toList();
                 }
@@ -126,8 +154,6 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
     );
   }
 
-  // --- WIDGETS AUXILIARES ---
-
   Widget _buildFilterChip(String label, Color activeColor, {String? dbKey}) {
     final valueToSet = dbKey ?? 'Todos';
     final isSelected = _selectedFilter == valueToSet;
@@ -138,17 +164,15 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? activeColor : Colors.white.withOpacity(0.05),
+          color: isSelected ? activeColor : _white05,
           borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: isSelected ? activeColor : Colors.white.withOpacity(0.1),
-          ),
+          border: Border.all(color: isSelected ? activeColor : _white10),
         ),
         child: Center(
           child: Text(
             label,
             style: TextStyle(
-              color: isSelected ? Colors.white : Colors.white60,
+              color: isSelected ? Colors.white : _white60,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),
           ),
@@ -158,10 +182,8 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
   }
 
   Widget _buildApplicationCard(Map<String, dynamic> data) {
-    // 1. OBTENER LA LLAVE CORRECTA (pending, accepted, rejected)
     final statusKey = _getStatusKey(data['status']);
-    
-    // 2. OBTENER CONFIGURACIÓN
+
     final config = statusConfig[statusKey]!;
     final Color statusColor = config['color'];
     final String statusLabel = config['label'];
@@ -171,7 +193,7 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
     if (data['appliedAt'] != null) {
       try {
         DateTime date = (data['appliedAt'] as Timestamp).toDate();
-        dateStr = DateFormat('dd MMM, hh:mm a').format(date); 
+        dateStr = DateFormat('dd MMM, hh:mm a').format(date);
       } catch (e) {
         dateStr = "Fecha desconocida";
       }
@@ -182,14 +204,13 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
       decoration: BoxDecoration(
         color: const Color(0xFF1E293B),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 5)),
+        border: Border.all(color: _white05),
+        boxShadow: const [
+          BoxShadow(color: _black20, blurRadius: 10, offset: Offset(0, 5)),
         ],
       ),
       child: Column(
         children: [
-          // Parte Superior
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -198,7 +219,7 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
+                    color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(Icons.business, color: statusColor, size: 28),
@@ -210,35 +231,47 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
                     children: [
                       Text(
                         data['jobTitle'] ?? 'Puesto',
-                        style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         data['company'] ?? 'Empresa',
-                        style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
+                        style: const TextStyle(color: _white60, fontSize: 13),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
+                    color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: statusColor.withOpacity(0.3)),
+                    border: Border.all(
+                      color: statusColor.withValues(alpha: 0.3),
+                    ),
                   ),
                   child: Text(
                     statusLabel,
-                    style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: statusColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
 
-          Divider(color: Colors.white.withOpacity(0.05), height: 1),
+          const Divider(color: _white05, height: 1),
 
-          // Parte Inferior: Timeline
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -247,8 +280,14 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("Progreso:", style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11)),
-                    Text(dateStr, style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11)),
+                    Text(
+                      "Progreso:",
+                      style: TextStyle(color: _white40, fontSize: 11),
+                    ),
+                    Text(
+                      dateStr,
+                      style: TextStyle(color: _white40, fontSize: 11),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 10),
@@ -256,29 +295,44 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
                   height: 6,
                   child: Row(
                     children: [
-                      _buildProgressSegment(isActive: currentStep >= 1, color: statusColor, isFirst: true),
+                      _buildProgressSegment(
+                        isActive: currentStep >= 1,
+                        color: statusColor,
+                        isFirst: true,
+                      ),
                       const SizedBox(width: 4),
-                      _buildProgressSegment(isActive: currentStep >= 2, color: statusColor),
+                      _buildProgressSegment(
+                        isActive: currentStep >= 2,
+                        color: statusColor,
+                      ),
                       const SizedBox(width: 4),
-                      // Si está rechazado, el paso 3 se pinta también (rojo), si es aceptado (verde)
-                      _buildProgressSegment(isActive: currentStep >= 3, color: statusColor, isLast: true),
+                      _buildProgressSegment(
+                        isActive: currentStep >= 3,
+                        color: statusColor,
+                        isLast: true,
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildProgressSegment({required bool isActive, required Color color, bool isFirst = false, bool isLast = false}) {
+  Widget _buildProgressSegment({
+    required bool isActive,
+    required Color color,
+    bool isFirst = false,
+    bool isLast = false,
+  }) {
     return Expanded(
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 500),
         decoration: BoxDecoration(
-          color: isActive ? color : Colors.white.withOpacity(0.1),
+          color: isActive ? color : _white10,
           borderRadius: BorderRadius.horizontal(
             left: isFirst ? const Radius.circular(5) : Radius.zero,
             right: isLast ? const Radius.circular(5) : Radius.zero,
@@ -293,12 +347,9 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.folder_off_outlined, size: 80, color: Colors.white.withOpacity(0.2)),
+          Icon(Icons.folder_off_outlined, size: 80, color: _white20),
           const SizedBox(height: 15),
-          Text(
-            "No hay solicitudes aquí",
-            style: TextStyle(color: Colors.white.withOpacity(0.5)),
-          ),
+          Text("No hay solicitudes aquí", style: TextStyle(color: _white50)),
         ],
       ),
     );

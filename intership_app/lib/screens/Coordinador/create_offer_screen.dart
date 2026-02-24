@@ -13,18 +13,18 @@ class CreateOfferScreen extends StatefulWidget {
 
 class _CreateOfferScreenState extends State<CreateOfferScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // Controladores de texto
   final _titleController = TextEditingController();
   final _companyController = TextEditingController();
   final _descController = TextEditingController();
   final _locationController = TextEditingController();
-  final _wageController = TextEditingController(); 
-  
+  final _wageController = TextEditingController();
+
   // Variables de estado
-  String _modality = 'Presencial'; 
+  String _modality = 'Presencial';
   bool _isLoading = false;
-  
+
   // NUEVO: Variables para guardar coordenadas
   double? _latitude;
   double? _longitude;
@@ -43,12 +43,12 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
         _latitude = result.latitude;
         _longitude = result.longitude;
       });
-      
+
       // Feedback visual
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text("Ubicación guardada del mapa"), 
+            content: Text("Ubicación guardada del mapa"),
             backgroundColor: Colors.green,
             duration: Duration(seconds: 1),
           ),
@@ -71,14 +71,14 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
         'description': _descController.text.trim(),
         'location': _locationController.text.trim(), // Nombre del lugar
         'wage': _wageController.text.trim(),
-        
+
         // NUEVO: Guardamos las coordenadas (pueden ser null si no eligió mapa)
         'latitude': _latitude,
         'longitude': _longitude,
-        
+
         // 2. FECHAS
-        'createdAt': FieldValue.serverTimestamp(), 
-        
+        'createdAt': FieldValue.serverTimestamp(),
+
         // 3. MODALIDAD
         'modality': _modality,
         'type': _modality,
@@ -93,7 +93,10 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("¡Oferta publicada exitosamente!"), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text("¡Oferta publicada exitosamente!"),
+            backgroundColor: Colors.green,
+          ),
         );
         Navigator.pop(context);
       }
@@ -129,7 +132,10 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
           icon: const Icon(Icons.close, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text("Nueva Oferta", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: const Text(
+          "Nueva Oferta",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -141,11 +147,21 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
             children: [
               _buildSectionTitle("Información del Puesto"),
               const SizedBox(height: 15),
-              
-              _buildTextField(_titleController, "Título", "Ej: Desarrollador Mobile", Icons.work_outline),
+
+              _buildTextField(
+                _titleController,
+                "Título",
+                "Ej: Desarrollador Mobile",
+                Icons.work_outline,
+              ),
               const SizedBox(height: 15),
-              _buildTextField(_companyController, "Empresa", "Ej: Tech Solutions", Icons.business),
-              
+              _buildTextField(
+                _companyController,
+                "Empresa",
+                "Ej: Tech Solutions",
+                Icons.business,
+              ),
+
               const SizedBox(height: 25),
               _buildSectionTitle("Detalles"),
               const SizedBox(height: 15),
@@ -160,7 +176,14 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text("Ubicación", style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
+                        const Text(
+                          "Ubicación",
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                         const SizedBox(height: 8),
                         Row(
                           children: [
@@ -168,23 +191,36 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
                             Expanded(
                               child: Container(
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.05),
+                                  color: Colors.white.withValues(alpha: 0.05),
                                   borderRadius: const BorderRadius.only(
                                     topLeft: Radius.circular(15),
                                     bottomLeft: Radius.circular(15),
                                   ),
-                                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                                  border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.1),
+                                  ),
                                 ),
                                 child: TextFormField(
                                   controller: _locationController,
                                   style: const TextStyle(color: Colors.white),
-                                  validator: (value) => value!.isEmpty ? "Requerido" : null,
+                                  validator: (value) =>
+                                      value!.isEmpty ? "Requerido" : null,
                                   decoration: InputDecoration(
                                     hintText: "Ej: Torre A",
-                                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.2)),
-                                    prefixIcon: const Icon(Icons.location_on_outlined, color: Colors.white54),
+                                    hintStyle: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.2,
+                                      ),
+                                    ),
+
+                                    prefixIcon: const Icon(
+                                      Icons.location_on_outlined,
+                                      color: Colors.white54,
+                                    ),
                                     border: InputBorder.none,
-                                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -197,7 +233,10 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
                                 width: 50,
                                 decoration: BoxDecoration(
                                   // Si ya seleccionó coordenadas, se pone verde
-                                  color: _latitude != null ? Colors.green.withOpacity(0.8) : Colors.orange,
+                                  color: _latitude != null
+                                      ? Colors.green.withValues(alpha: 0.8)
+                                      : Colors.orange,
+
                                   borderRadius: const BorderRadius.only(
                                     topRight: Radius.circular(15),
                                     bottomRight: Radius.circular(15),
@@ -215,47 +254,73 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
                           Padding(
                             padding: const EdgeInsets.only(top: 4, left: 4),
                             child: Text(
-                              "Coordenadas guardadas", 
-                              style: TextStyle(color: Colors.greenAccent[400], fontSize: 10),
+                              "Coordenadas guardadas",
+                              style: TextStyle(
+                                color: Colors.greenAccent[400],
+                                fontSize: 10,
+                              ),
                             ),
                           ),
                       ],
                     ),
                   ),
-                  
+
                   const SizedBox(width: 15),
-                  
+
                   // Columna Derecha: Modalidad
                   Expanded(
                     flex: 2,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text("Modalidad", style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
+                        const Text(
+                          "Modalidad",
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                         const SizedBox(height: 8),
                         Container(
                           width: double.infinity,
-                          height: 50, // Altura fija para alinear con el de al lado
+                          height:
+                              50, // Altura fija para alinear con el de al lado
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.05),
+                            color: Colors.white.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(15),
-                            border: Border.all(color: Colors.white.withOpacity(0.1)),
+
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.1),
+                            ),
                           ),
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<String>(
                               value: _modality,
                               isExpanded: true,
                               dropdownColor: const Color(0xFF1E293B),
-                              icon: const Icon(Icons.arrow_drop_down, color: Colors.white),
-                              style: const TextStyle(color: Colors.white, fontSize: 13),
-                              items: ['Presencial', 'Remoto', 'Híbrido'].map((String value) {
+                              icon: const Icon(
+                                Icons.arrow_drop_down,
+                                color: Colors.white,
+                              ),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                              ),
+                              items: ['Presencial', 'Remoto', 'Híbrido'].map((
+                                String value,
+                              ) {
                                 return DropdownMenuItem<String>(
                                   value: value,
-                                  child: Text(value, overflow: TextOverflow.ellipsis),
+                                  child: Text(
+                                    value,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 );
                               }).toList(),
-                              onChanged: (newValue) => setState(() => _modality = newValue!),
+                              onChanged: (newValue) =>
+                                  setState(() => _modality = newValue!),
                             ),
                           ),
                         ),
@@ -264,16 +329,27 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
                   ),
                 ],
               ),
+
               // --- FIN DE LA MODIFICACIÓN ---
-              
               const SizedBox(height: 15),
-              
-              _buildTextField(_wageController, "Remuneración", "Ej: 100 USD / No remunerado", Icons.attach_money),
+
+              _buildTextField(
+                _wageController,
+                "Remuneración",
+                "Ej: 100 USD / No remunerado",
+                Icons.attach_money,
+              ),
 
               const SizedBox(height: 25),
               _buildSectionTitle("Descripción"),
               const SizedBox(height: 15),
-              _buildTextField(_descController, "Requisitos y funciones...", "", Icons.description, maxLines: 5),
+              _buildTextField(
+                _descController,
+                "Requisitos y funciones...",
+                "",
+                Icons.description,
+                maxLines: 5,
+              ),
 
               const SizedBox(height: 40),
 
@@ -285,11 +361,27 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
                   onPressed: _isLoading ? null : _submitOffer,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppTheme.primaryOrange,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
                   ),
-                  child: _isLoading 
-                    ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text("PUBLICAR AHORA", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          "PUBLICAR AHORA",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -302,24 +394,41 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
 
   Widget _buildSectionTitle(String title) {
     return Text(
-      title, 
-      style: const TextStyle(color: AppTheme.primaryOrange, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1),
+      title,
+      style: const TextStyle(
+        color: AppTheme.primaryOrange,
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1,
+      ),
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, String hint, IconData icon, {int maxLines = 1}) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label,
+    String hint,
+    IconData icon, {
+    int maxLines = 1,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (label.isNotEmpty)
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
-        if (label.isNotEmpty)
-          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        if (label.isNotEmpty) const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: Colors.white.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
           child: TextFormField(
             controller: controller,
@@ -328,8 +437,11 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
             validator: (value) => value!.isEmpty ? "Campo requerido" : null,
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: TextStyle(color: Colors.white.withOpacity(0.2)),
-              prefixIcon: maxLines == 1 ? Icon(icon, color: Colors.white54) : null,
+              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.2)),
+
+              prefixIcon: maxLines == 1
+                  ? Icon(icon, color: Colors.white54)
+                  : null,
               border: InputBorder.none,
               contentPadding: const EdgeInsets.all(16),
             ),

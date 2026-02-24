@@ -23,7 +23,67 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
 
-  // --- FUNCIÓN PARA OBTENER 2 INICIALES ---
+  // --- COLORES PRE-COMPUTADOS ---
+  static const Color _bgDark = Color(0xFF0F172A);
+  static const Color _surfaceDark = Color(0xFF1E293B);
+  static const Color _white10 = Color(0x1AFFFFFF);
+  static const Color _white30 = Color(0x4DFFFFFF);
+  static const Color _white40 = Color(0x66FFFFFF);
+  static const Color _black10 = Color(0x1A000000);
+
+  // --- STREAM CACHEADO ---
+  late final Stream<QuerySnapshot> _messagesStream;
+
+  // --- NOMBRE CACHEADO (se busca UNA sola vez) ---
+  String _cachedMyName = "Usuario";
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Cachear stream de mensajes con límite
+    _messagesStream = FirebaseFirestore.instance
+        .collection('chats')
+        .doc(widget.chatId)
+        .collection('messages')
+        .orderBy('timestamp', descending: true)
+        .limit(100)
+        .snapshots();
+
+    // Cachear nombre del usuario UNA sola vez
+    _loadMyName();
+  }
+
+  Future<void> _loadMyName() async {
+    // Primero revisar displayName de Firebase Auth
+    if (FirebaseAuth.instance.currentUser?.displayName != null &&
+        FirebaseAuth.instance.currentUser!.displayName!.isNotEmpty) {
+      _cachedMyName = FirebaseAuth.instance.currentUser!.displayName!;
+      return;
+    }
+
+    // Si no, buscar en Firestore UNA sola vez
+    try {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUserId)
+          .get();
+
+      if (userDoc.exists && userDoc.data() != null) {
+        final data = userDoc.data() as Map<String, dynamic>;
+        final String firstName = data['firstName'] ?? '';
+        final String lastName = data['lastName'] ?? '';
+        final String fullName = '$firstName $lastName'.trim();
+
+        if (fullName.isNotEmpty) {
+          _cachedMyName = fullName;
+        }
+      }
+    } catch (e) {
+      debugPrint("Error obteniendo nombre: $e");
+    }
+  }
+
   String _getTwoInitials(String name) {
     if (name.isEmpty) return "??";
     List<String> parts = name.trim().split(RegExp(r'\s+'));
@@ -46,57 +106,30 @@ class _ChatScreenState extends State<ChatScreen> {
       'timestamp': FieldValue.serverTimestamp(),
     };
 
-    // 1. Guardar el mensaje en la colección de mensajes del chat
+    // 1. Guardar el mensaje
     await FirebaseFirestore.instance
         .collection('chats')
         .doc(widget.chatId)
         .collection('messages')
         .add(messageData);
 
-    // 2. Actualizar el último mensaje en la información general del chat
-    await FirebaseFirestore.instance.collection('chats').doc(widget.chatId).set({
-      'users': [currentUserId, widget.otherUserId],
-      'lastMessage': text,
-      'lastUpdate': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    // 2. Actualizar el último mensaje
+    await FirebaseFirestore.instance.collection('chats').doc(widget.chatId).set(
+      {
+        'users': [currentUserId, widget.otherUserId],
+        'lastMessage': text,
+        'lastUpdate': FieldValue.serverTimestamp(),
+      },
+      SetOptions(merge: true),
+    );
 
-    // --- NUEVO: OBTENER EL NOMBRE REAL DEL USUARIO QUE ENVÍA ---
-    String myName = "Usuario"; 
-    
-    // Primero revisamos si el nombre está en Firebase Auth
-    if (FirebaseAuth.instance.currentUser?.displayName != null && 
-        FirebaseAuth.instance.currentUser!.displayName!.isNotEmpty) {
-      myName = FirebaseAuth.instance.currentUser!.displayName!;
-    } else {
-      // Si no, lo buscamos en tu colección de usuarios en Firestore.
-      try {
-        final userDoc = await FirebaseFirestore.instance.collection('users').doc(currentUserId).get();
-        if (userDoc.exists && userDoc.data() != null) {
-          final data = userDoc.data() as Map<String, dynamic>;
-          
-          // --- AQUÍ ESTÁ EL CAMBIO CLAVE: BUSCAMOS firstName Y lastName ---
-          final String firstName = data['firstName'] ?? '';
-          final String lastName = data['lastName'] ?? '';
-          
-          final String fullName = '$firstName $lastName'.trim();
-          
-          if (fullName.isNotEmpty) {
-            myName = fullName; // Se guardará como "Massimo Coordinador"
-          }
-        }
-      } catch (e) {
-        debugPrint("Error obteniendo nombre: $e");
-      }
-    }
-    // -----------------------------------------------------------
-
-    // 3. Crear la notificación con el ID del chat y el NOMBRE REAL
+    // 3. Crear notificación con nombre CACHEADO (sin query extra)
     await FirebaseFirestore.instance.collection('notifications').add({
       'userId': widget.otherUserId,
       'senderId': currentUserId,
-      'chatId': widget.chatId, 
-      'senderName': myName, // <-- AHORA USA TU NOMBRE COMPLETO
-      'title': 'Nuevo mensaje de $myName', // <-- TÍTULO PERSONALIZADO
+      'chatId': widget.chatId,
+      'senderName': _cachedMyName,
+      'title': 'Nuevo mensaje de $_cachedMyName',
       'body': text,
       'timestamp': FieldValue.serverTimestamp(),
       'isRead': false,
@@ -105,14 +138,24 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   @override
+  void dispose() {
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: _bgDark,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E293B),
+        backgroundColor: _surfaceDark,
         elevation: 2,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         titleSpacing: 0,
@@ -146,7 +189,11 @@ class _ChatScreenState extends State<ChatScreen> {
             Expanded(
               child: Text(
                 widget.otherUserName,
-                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -157,23 +204,20 @@ class _ChatScreenState extends State<ChatScreen> {
         children: [
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('chats')
-                  .doc(widget.chatId)
-                  .collection('messages')
-                  .orderBy('timestamp', descending: true)
-                  .snapshots(),
+              stream: _messagesStream,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator(color: Colors.blueAccent));
+                  return const Center(
+                    child: CircularProgressIndicator(color: Colors.blueAccent),
+                  );
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(
+                  return const Center(
                     child: Text(
                       "No hay mensajes aún.\n¡Escribe algo para empezar!",
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white.withOpacity(0.4)),
+                      style: TextStyle(color: _white40),
                     ),
                   );
                 }
@@ -182,19 +226,28 @@ class _ChatScreenState extends State<ChatScreen> {
 
                 return ListView.builder(
                   reverse: true,
-                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 20),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 15,
+                    vertical: 20,
+                  ),
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
-                    final msgData = messages[index].data() as Map<String, dynamic>;
+                    final msgData =
+                        messages[index].data() as Map<String, dynamic>;
                     final isMe = msgData['senderId'] == currentUserId;
-                    
+
                     String timeString = '';
                     if (msgData['timestamp'] != null) {
-                      DateTime date = (msgData['timestamp'] as Timestamp).toDate();
+                      DateTime date = (msgData['timestamp'] as Timestamp)
+                          .toDate();
                       timeString = DateFormat('hh:mm a').format(date);
                     }
 
-                    return _buildMessageBubble(msgData['text'], isMe, timeString);
+                    return _buildMessageBubble(
+                      msgData['text'],
+                      isMe,
+                      timeString,
+                    );
                   },
                 );
               },
@@ -210,7 +263,9 @@ class _ChatScreenState extends State<ChatScreen> {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Column(
-        crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        crossAxisAlignment: isMe
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: [
           Container(
             margin: EdgeInsets.only(
@@ -220,21 +275,21 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              gradient: isMe 
-                ? LinearGradient(colors: [Colors.blue.shade700, Colors.blue.shade500])
-                : const LinearGradient(colors: [Color(0xFF334155), Color(0xFF1E293B)]),
+              gradient: isMe
+                  ? LinearGradient(
+                      colors: [Colors.blue.shade700, Colors.blue.shade500],
+                    )
+                  : const LinearGradient(
+                      colors: [Color(0xFF334155), _surfaceDark],
+                    ),
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(18),
                 topRight: const Radius.circular(18),
                 bottomLeft: Radius.circular(isMe ? 18 : 4),
                 bottomRight: Radius.circular(isMe ? 4 : 18),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 5,
-                  offset: const Offset(0, 2),
-                )
+              boxShadow: const [
+                BoxShadow(color: _black10, blurRadius: 5, offset: Offset(0, 2)),
               ],
             ),
             child: Text(
@@ -246,7 +301,7 @@ class _ChatScreenState extends State<ChatScreen> {
             padding: const EdgeInsets.only(bottom: 12, left: 4, right: 4),
             child: Text(
               time,
-              style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 10),
+              style: const TextStyle(color: _white30, fontSize: 10),
             ),
           ),
         ],
@@ -258,27 +313,33 @@ class _ChatScreenState extends State<ChatScreen> {
     return Container(
       padding: const EdgeInsets.only(left: 15, right: 15, bottom: 25, top: 10),
       decoration: const BoxDecoration(
-        color: Color(0xFF1E293B),
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+        color: _surfaceDark,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
       ),
       child: Row(
         children: [
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: const Color(0xFF0F172A),
+                color: _bgDark,
                 borderRadius: BorderRadius.circular(25),
-                border: Border.all(color: Colors.white.withOpacity(0.1)),
+                border: Border.all(color: _white10),
               ),
               child: TextField(
                 controller: _messageController,
                 style: const TextStyle(color: Colors.white),
                 textCapitalization: TextCapitalization.sentences,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: "Escribe un mensaje...",
-                  hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                  hintStyle: TextStyle(color: _white30),
                   border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
+                  ),
                 ),
               ),
             ),
@@ -292,7 +353,11 @@ class _ChatScreenState extends State<ChatScreen> {
                 color: Colors.blueAccent,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.send_rounded, color: Colors.white, size: 22),
+              child: const Icon(
+                Icons.send_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
             ),
           ),
         ],
