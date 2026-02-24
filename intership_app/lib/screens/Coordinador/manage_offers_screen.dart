@@ -145,9 +145,8 @@ class _OfferCard extends StatelessWidget {
     String title = data['title'] ?? 'Sin título';
     String type = data['type'] ?? data['modality'] ?? 'Presencial';
 
-    // OPTIMIZADO: Usar applicantsCount directamente del documento
-    // en lugar de un StreamBuilder anidado que abre otra conexión Firestore
-    final int applicantsCount = (data['applicantsCount'] as int?) ?? 0;
+    // Recuperamos el valor local solo como fallback u omitimos ya que usaremos un StreamBuilder real.
+    // final int applicantsCount = (data['applicantsCount'] as int?) ?? 0;
 
     return Dismissible(
       key: Key(docId),
@@ -301,28 +300,40 @@ class _OfferCard extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // OPTIMIZADO: Sin StreamBuilder anidado, usa applicantsCount del documento
-            Row(
-              children: [
-                _buildTag(
-                  text: type,
-                  icon: Icons.location_on_outlined,
-                  color: Colors.blueAccent,
-                ),
-                const SizedBox(width: 10),
-                _buildTag(
-                  text: applicantsCount > 0
-                      ? "$applicantsCount Postulados"
-                      : "Sin postulantes",
-                  icon: applicantsCount > 0
-                      ? Icons.people_alt_rounded
-                      : Icons.person_off_outlined,
-                  color: applicantsCount > 0
-                      ? Colors.orangeAccent
-                      : const Color(0x61FFFFFF),
-                  isFilled: false,
-                ),
-              ],
+            // RECUPERADO: StreamBuilder para contador en tiempo real de postulaciones
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('applications')
+                  .where('offerId', isEqualTo: docId)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                int applicantsCount = 0;
+                if (snapshot.hasData) {
+                  applicantsCount = snapshot.data!.docs.length;
+                }
+                return Row(
+                  children: [
+                    _buildTag(
+                      text: type,
+                      icon: Icons.location_on_outlined,
+                      color: Colors.blueAccent,
+                    ),
+                    const SizedBox(width: 10),
+                    _buildTag(
+                      text: applicantsCount > 0
+                          ? "$applicantsCount Postulados"
+                          : "Sin postulantes",
+                      icon: applicantsCount > 0
+                          ? Icons.people_alt_rounded
+                          : Icons.person_off_outlined,
+                      color: applicantsCount > 0
+                          ? Colors.orangeAccent
+                          : const Color(0x61FFFFFF),
+                      isFilled: false,
+                    ),
+                  ],
+                );
+              },
             ),
 
             const SizedBox(height: 20),

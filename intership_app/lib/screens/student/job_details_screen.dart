@@ -18,6 +18,22 @@ class JobDetailsScreen extends StatefulWidget {
 class _JobDetailsScreenState extends State<JobDetailsScreen> {
   bool _isLoading = false;
   final user = FirebaseAuth.instance.currentUser;
+  late final String applicationId;
+  late final Stream<DocumentSnapshot>? _applicationStream;
+
+  @override
+  void initState() {
+    super.initState();
+    applicationId = user != null ? '${user!.uid}_${widget.offer.id}' : 'guest';
+    if (user != null) {
+      _applicationStream = FirebaseFirestore.instance
+          .collection('applications')
+          .doc(applicationId)
+          .snapshots();
+    } else {
+      _applicationStream = null;
+    }
+  }
 
   // --- 1. LÓGICA PRINCIPAL (POSTULAR O RETIRAR) ---
   Future<void> _handleApplicationButton(bool isApplied) async {
@@ -25,7 +41,9 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
 
     // ID ÚNICO: Combina ID estudiante + ID oferta
     final String applicationId = '${user!.uid}_${widget.offer.id}';
-    final docRef = FirebaseFirestore.instance.collection('applications').doc(applicationId);
+    final docRef = FirebaseFirestore.instance
+        .collection('applications')
+        .doc(applicationId);
 
     if (isApplied) {
       // --- CASO A: YA ESTÁ POSTULADO -> RETIRAR ---
@@ -34,7 +52,10 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         context: context,
         builder: (ctx) => AlertDialog(
           backgroundColor: AppTheme.surfaceDark,
-          title: const Text("Retirar Postulación", style: TextStyle(color: Colors.white)),
+          title: const Text(
+            "Retirar Postulación",
+            style: TextStyle(color: Colors.white),
+          ),
           content: const Text(
             "¿Estás seguro de que deseas cancelar tu postulación a esta oferta? Perderás tu lugar.",
             style: TextStyle(color: Colors.white70),
@@ -42,11 +63,17 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text("Cancelar", style: TextStyle(color: Colors.white54)),
+              child: const Text(
+                "Cancelar",
+                style: TextStyle(color: Colors.white54),
+              ),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text("Retirar", style: TextStyle(color: Colors.redAccent)),
+              child: const Text(
+                "Retirar",
+                style: TextStyle(color: Colors.redAccent),
+              ),
             ),
           ],
         ),
@@ -58,7 +85,10 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           await docRef.delete(); // BORRA EL DOCUMENTO
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Has retirado tu postulación."), backgroundColor: Colors.orange),
+              const SnackBar(
+                content: Text("Has retirado tu postulación."),
+                backgroundColor: Colors.orange,
+              ),
             );
           }
         } catch (e) {
@@ -67,12 +97,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           if (mounted) setState(() => _isLoading = false);
         }
       }
-
     } else {
       // --- CASO B: NO ESTÁ POSTULADO -> POSTULARSE ---
       setState(() => _isLoading = true);
       try {
-        final userDoc = await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user!.uid)
+            .get();
         final userData = userDoc.data() ?? {};
 
         // Usamos .set() en lugar de .add() para usar nuestro ID personalizado
@@ -81,7 +113,8 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           'jobTitle': widget.offer.title,
           'company': widget.offer.company,
           'studentId': user!.uid,
-          'studentName': "${userData['firstName'] ?? 'Estudiante'} ${userData['lastName'] ?? ''}",
+          'studentName':
+              "${userData['firstName'] ?? 'Estudiante'} ${userData['lastName'] ?? ''}",
           'studentEmail': userData['email'] ?? user!.email,
           'status': 'Pendiente',
           'appliedAt': FieldValue.serverTimestamp(),
@@ -106,17 +139,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
 
   void _showError(String msg) {
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg), backgroundColor: Colors.red),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // ID del documento para escuchar cambios en tiempo real
-    final String applicationId = user != null ? '${user!.uid}_${widget.offer.id}' : 'guest';
-
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
       body: Stack(
@@ -129,7 +159,10 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                 pinned: true,
                 backgroundColor: AppTheme.backgroundDark,
                 leading: IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+                  icon: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: Colors.white,
+                  ),
                   onPressed: () => Navigator.pop(context),
                 ),
                 flexibleSpace: FlexibleSpaceBar(
@@ -141,7 +174,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
                             colors: [
-                              widget.offer.brandColor.withOpacity(0.8),
+                              widget.offer.brandColor.withValues(alpha: 0.8),
                               AppTheme.backgroundDark,
                             ],
                           ),
@@ -150,7 +183,11 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                       Center(
                         child: Hero(
                           tag: "list_${widget.offer.id}",
-                          child: Icon(Icons.business_rounded, size: 80, color: Colors.white.withOpacity(0.9)),
+                          child: Icon(
+                            Icons.business_rounded,
+                            size: 80,
+                            color: Colors.white.withValues(alpha: 0.9),
+                          ),
                         ),
                       ),
                     ],
@@ -165,35 +202,69 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(widget.offer.title, style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                      Text(
+                        widget.offer.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 8),
-                      Text(widget.offer.company, style: const TextStyle(color: AppTheme.primaryOrange, fontSize: 18, fontWeight: FontWeight.w500)),
+                      Text(
+                        widget.offer.company,
+                        style: const TextStyle(
+                          color: AppTheme.primaryOrange,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
                       const SizedBox(height: 25),
 
                       Wrap(
                         spacing: 10,
                         runSpacing: 10,
                         children: [
-                          _buildInfoChip(Icons.location_on_outlined, widget.offer.location),
+                          _buildInfoChip(
+                            Icons.location_on_outlined,
+                            widget.offer.location,
+                          ),
                           _buildInfoChip(Icons.work_outline, widget.offer.type),
-                          _buildInfoChip(Icons.monetization_on_outlined, widget.offer.wage),
-                          if (widget.offer.isRemote) _buildInfoChip(Icons.wifi, "Remoto"),
+                          _buildInfoChip(
+                            Icons.monetization_on_outlined,
+                            widget.offer.wage,
+                          ),
+                          if (widget.offer.isRemote)
+                            _buildInfoChip(Icons.wifi, "Remoto"),
                         ],
                       ),
                       const SizedBox(height: 35),
 
-                      const Text("Descripción del Puesto", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                      const Text(
+                        "Descripción del Puesto",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 15),
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.05),
+                          color: Colors.white.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withOpacity(0.1)),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
                         ),
                         child: Text(
                           widget.offer.description,
-                          style: const TextStyle(color: Colors.white70, height: 1.6, fontSize: 15),
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            height: 1.6,
+                            fontSize: 15,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 35),
@@ -201,7 +272,9 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                       // MAPA
                       _buildMapSection(),
 
-                      const SizedBox(height: 100), // Espacio para el botón flotante
+                      const SizedBox(
+                        height: 100,
+                      ), // Espacio para el botón flotante
                     ],
                   ),
                 ),
@@ -214,56 +287,80 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
             bottom: 30,
             left: 20,
             right: 20,
-            child: StreamBuilder<DocumentSnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('applications')
-                  .doc(applicationId)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                // Verificar si existe el documento
-                bool isApplied = snapshot.hasData && snapshot.data!.exists;
-                
-                // Si está cargando la acción del botón
-                if (_isLoading) {
-                  return SizedBox(
-                    height: 55,
-                    child: ElevatedButton(
-                      onPressed: null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.surfaceDark,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                      ),
-                      child: const CircularProgressIndicator(color: AppTheme.primaryOrange),
-                    ),
-                  );
-                }
+            child: _applicationStream == null
+                ? const SizedBox.shrink()
+                : StreamBuilder<DocumentSnapshot>(
+                    stream: _applicationStream,
+                    builder: (context, snapshot) {
+                      // Verificar si existe el documento
+                      bool isApplied =
+                          snapshot.hasData && snapshot.data!.exists;
 
-                return SizedBox(
-                  height: 55,
-                  child: ElevatedButton(
-                    onPressed: () => _handleApplicationButton(isApplied),
-                    style: ElevatedButton.styleFrom(
-                      // CAMBIO DE COLOR SEGÚN ESTADO
-                      backgroundColor: isApplied ? Colors.redAccent.withOpacity(0.9) : AppTheme.primaryOrange,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                      elevation: 10,
-                      shadowColor: (isApplied ? Colors.red : AppTheme.primaryOrange).withOpacity(0.5),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(isApplied ? Icons.delete_forever_rounded : Icons.rocket_launch_rounded, color: Colors.white),
-                        const SizedBox(width: 10),
-                        Text(
-                          isApplied ? "RETIRAR POSTULACIÓN" : "POSTULARME AHORA",
-                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 1),
+                      // Si está cargando la acción del botón
+                      if (_isLoading) {
+                        return SizedBox(
+                          height: 55,
+                          child: ElevatedButton(
+                            onPressed: null,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.surfaceDark,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                            ),
+                            child: const CircularProgressIndicator(
+                              color: AppTheme.primaryOrange,
+                            ),
+                          ),
+                        );
+                      }
+
+                      return SizedBox(
+                        height: 55,
+                        child: ElevatedButton(
+                          onPressed: () => _handleApplicationButton(isApplied),
+                          style: ElevatedButton.styleFrom(
+                            // CAMBIO DE COLOR SEGÚN ESTADO
+                            backgroundColor: isApplied
+                                ? Colors.redAccent.withValues(alpha: 0.9)
+                                : AppTheme.primaryOrange,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            elevation: 10,
+                            shadowColor:
+                                (isApplied
+                                        ? Colors.red
+                                        : AppTheme.primaryOrange)
+                                    .withValues(alpha: 0.5),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                isApplied
+                                    ? Icons.delete_forever_rounded
+                                    : Icons.rocket_launch_rounded,
+                                color: Colors.white,
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                isApplied
+                                    ? "RETIRAR POSTULACIÓN"
+                                    : "POSTULARME AHORA",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
@@ -278,22 +375,40 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("Ubicación Exacta", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+        const Text(
+          "Ubicación Exacta",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         const SizedBox(height: 15),
         Container(
           height: 200,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4))],
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: FlutterMap(
               options: MapOptions(
-                initialCenter: LatLng(widget.offer.latitude!, widget.offer.longitude!),
+                initialCenter: LatLng(
+                  widget.offer.latitude!,
+                  widget.offer.longitude!,
+                ),
                 initialZoom: 15.0,
-                interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.none,
+                ),
               ),
               children: [
                 TileLayer(
@@ -303,10 +418,17 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                 MarkerLayer(
                   markers: [
                     Marker(
-                      point: LatLng(widget.offer.latitude!, widget.offer.longitude!),
+                      point: LatLng(
+                        widget.offer.latitude!,
+                        widget.offer.longitude!,
+                      ),
                       width: 80,
                       height: 80,
-                      child: const Icon(Icons.location_pin, color: Colors.redAccent, size: 45),
+                      child: const Icon(
+                        Icons.location_pin,
+                        color: Colors.redAccent,
+                        size: 45,
+                      ),
                     ),
                   ],
                 ),
@@ -322,7 +444,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08),
+        color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -330,7 +452,10 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         children: [
           Icon(icon, color: Colors.white70, size: 16),
           const SizedBox(width: 6),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 13)),
+          Text(
+            label,
+            style: const TextStyle(color: Colors.white, fontSize: 13),
+          ),
         ],
       ),
     );

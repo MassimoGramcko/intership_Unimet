@@ -39,18 +39,18 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     if (_user != null) {
       _userDataStream = FirebaseFirestore.instance
           .collection('users')
-          .doc(_user!.uid)
+          .doc(_user.uid)
           .snapshots();
 
       _notificationsStream = FirebaseFirestore.instance
           .collection('notifications')
-          .where('userId', isEqualTo: _user!.uid)
+          .where('userId', isEqualTo: _user.uid)
           .where('isRead', isEqualTo: false)
           .snapshots();
 
       _applicationsStream = FirebaseFirestore.instance
           .collection('applications')
-          .where('studentId', isEqualTo: _user!.uid)
+          .where('studentId', isEqualTo: _user.uid)
           .snapshots();
     } else {
       _userDataStream = null;

@@ -7,11 +7,11 @@ class CoordinatorSettingsScreen extends StatefulWidget {
   const CoordinatorSettingsScreen({super.key});
 
   @override
-  State<CoordinatorSettingsScreen> createState() => _CoordinatorSettingsScreenState();
+  State<CoordinatorSettingsScreen> createState() =>
+      _CoordinatorSettingsScreenState();
 }
 
 class _CoordinatorSettingsScreenState extends State<CoordinatorSettingsScreen> {
-  
   // --- FUNCIÓN PARA CERRAR SESIÓN ---
   void _logout(BuildContext context) async {
     // Cuadro de diálogo de confirmación
@@ -19,12 +19,21 @@ class _CoordinatorSettingsScreenState extends State<CoordinatorSettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E293B),
-        title: const Text("Cerrar Sesión", style: TextStyle(color: Colors.white)),
-        content: const Text("¿Estás seguro de que deseas salir?", style: TextStyle(color: Colors.white70)),
+        title: const Text(
+          "Cerrar Sesión",
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          "¿Estás seguro de que deseas salir?",
+          style: TextStyle(color: Colors.white70),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text("Cancelar", style: TextStyle(color: Colors.white54)),
+            child: const Text(
+              "Cancelar",
+              style: TextStyle(color: Colors.white54),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
@@ -54,7 +63,9 @@ class _CoordinatorSettingsScreenState extends State<CoordinatorSettingsScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('¡Correo enviado! Revisa tu bandeja de entrada para cambiar tu contraseña.'),
+              content: Text(
+                '¡Correo enviado! Revisa tu bandeja de entrada para cambiar tu contraseña.',
+              ),
               backgroundColor: Colors.green,
               behavior: SnackBarBehavior.floating,
             ),
@@ -82,7 +93,10 @@ class _CoordinatorSettingsScreenState extends State<CoordinatorSettingsScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -98,10 +112,14 @@ class _CoordinatorSettingsScreenState extends State<CoordinatorSettingsScreen> {
           children: [
             const Text(
               "Cuenta y Seguridad",
-              style: TextStyle(color: Colors.white54, fontSize: 14, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Colors.white54,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 15),
-            
+
             // --- BOTÓN: CAMBIAR CONTRASEÑA ---
             _buildSettingsTile(
               title: "Cambiar Contraseña",
@@ -143,14 +161,14 @@ class _CoordinatorSettingsScreenState extends State<CoordinatorSettingsScreen> {
         decoration: BoxDecoration(
           color: const Color(0xFF1E293B),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.05)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.15),
+                color: iconColor.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: iconColor, size: 24),
@@ -176,7 +194,11 @@ class _CoordinatorSettingsScreenState extends State<CoordinatorSettingsScreen> {
                 ],
               ),
             ),
-            const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white30, size: 16),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Colors.white30,
+              size: 16,
+            ),
           ],
         ),
       ),

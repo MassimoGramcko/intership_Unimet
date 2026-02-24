@@ -292,7 +292,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
                             borderRadius: BorderRadius.circular(15),
 
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.1),
+                              color: Colors.white.withValues(alpha: 0.1),
                             ),
                           ),
                           child: DropdownButtonHideUnderline(

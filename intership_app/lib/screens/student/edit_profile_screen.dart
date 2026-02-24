@@ -12,7 +12,7 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // Controladores solo para los datos Reales
   final _nameController = TextEditingController();
   final _lastNameController = TextEditingController();
@@ -40,7 +40,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   Future<void> _loadUserData() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
       if (doc.exists) {
         final data = doc.data() as Map<String, dynamic>;
         setState(() {
@@ -62,13 +65,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final user = FirebaseAuth.instance.currentUser;
 
     try {
-      await FirebaseFirestore.instance.collection('users').doc(user!.uid).update({
-        'firstName': _nameController.text.trim(),
-        'lastName': _lastNameController.text.trim(),
-        'carnet': _carnetController.text.trim(), // Actualizamos el Carnet
-        'career': _careerController.text.trim(),
-        'lastUpdated': FieldValue.serverTimestamp(),
-      });
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user!.uid)
+          .update({
+            'firstName': _nameController.text.trim(),
+            'lastName': _lastNameController.text.trim(),
+            'carnet': _carnetController.text.trim(), // Actualizamos el Carnet
+            'career': _careerController.text.trim(),
+            'lastUpdated': FieldValue.serverTimestamp(),
+          });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -81,7 +87,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error al guardar: $e"), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text("Error al guardar: $e"),
+          backgroundColor: Colors.red,
+        ),
       );
       setState(() => _isLoading = false);
     }
@@ -98,7 +107,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         centerTitle: true,
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.primaryOrange))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppTheme.primaryOrange),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(25),
               child: Form(
@@ -107,46 +118,54 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      "Información del Estudiante", 
-                      style: TextStyle(color: AppTheme.primaryOrange, fontSize: 18, fontWeight: FontWeight.bold)
+                      "Información del Estudiante",
+                      style: TextStyle(
+                        color: AppTheme.primaryOrange,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 5),
                     Text(
                       "Estos datos aparecerán en tus postulaciones.",
-                      style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: 13,
+                      ),
                     ),
                     const SizedBox(height: 25),
-                    
+
                     // --- CAMPO: NOMBRE ---
                     _buildNeonTextField(
-                      controller: _nameController, 
-                      label: "Nombre", 
-                      icon: Icons.person_outline
+                      controller: _nameController,
+                      label: "Nombre",
+                      icon: Icons.person_outline,
                     ),
                     const SizedBox(height: 20),
 
                     // --- CAMPO: APELLIDO ---
                     _buildNeonTextField(
-                      controller: _lastNameController, 
-                      label: "Apellido", 
-                      icon: Icons.person_outline
+                      controller: _lastNameController,
+                      label: "Apellido",
+                      icon: Icons.person_outline,
                     ),
                     const SizedBox(height: 20),
 
                     // --- CAMPO: CARNET ---
                     _buildNeonTextField(
-                      controller: _carnetController, 
-                      label: "Carnet de Estudiante", 
+                      controller: _carnetController,
+                      label: "Carnet de Estudiante",
                       icon: Icons.badge_outlined,
-                      keyboardType: TextInputType.text // Puede tener letras y números
+                      keyboardType:
+                          TextInputType.text, // Puede tener letras y números
                     ),
                     const SizedBox(height: 20),
 
                     // --- CAMPO: CARRERA ---
                     _buildNeonTextField(
-                      controller: _careerController, 
-                      label: "Carrera", 
-                      icon: Icons.school_outlined
+                      controller: _careerController,
+                      label: "Carrera",
+                      icon: Icons.school_outlined,
                     ),
 
                     const SizedBox(height: 50),
@@ -159,13 +178,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         onPressed: _saveProfile,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.primaryOrange,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                          shadowColor: AppTheme.primaryOrange.withOpacity(0.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          shadowColor: AppTheme.primaryOrange.withValues(
+                            alpha: 0.5,
+                          ),
                           elevation: 10,
                         ),
                         child: const Text(
                           "Guardar Cambios",
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
@@ -189,10 +216,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 10,
             offset: const Offset(0, 5),
-          )
+          ),
         ],
       ),
       child: TextFormField(
@@ -201,7 +228,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+          labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
           prefixIcon: Icon(icon, color: AppTheme.primaryOrange),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
@@ -209,7 +236,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide: const BorderSide(color: AppTheme.primaryOrange, width: 1.5),
+            borderSide: const BorderSide(
+              color: AppTheme.primaryOrange,
+              width: 1.5,
+            ),
           ),
           filled: true,
           fillColor: Colors.transparent,

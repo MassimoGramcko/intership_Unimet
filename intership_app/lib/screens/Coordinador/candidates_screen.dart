@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class AdminOfferCandidatesScreen extends StatelessWidget {
+class AdminOfferCandidatesScreen extends StatefulWidget {
   final String offerId;
   final String offerTitle;
 
@@ -10,6 +10,27 @@ class AdminOfferCandidatesScreen extends StatelessWidget {
     required this.offerId,
     required this.offerTitle,
   });
+
+  @override
+  State<AdminOfferCandidatesScreen> createState() =>
+      _AdminOfferCandidatesScreenState();
+}
+
+class _AdminOfferCandidatesScreenState
+    extends State<AdminOfferCandidatesScreen> {
+  late final Stream<QuerySnapshot> _applicationsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _applicationsStream = FirebaseFirestore.instance
+        .collection('applications')
+        .where(
+          'offerId',
+          isEqualTo: widget.offerId,
+        ) // Filtramos por esta oferta
+        .snapshots();
+  }
 
   // Función para cambiar el estado (Aceptar/Rechazar)
   void _updateStatus(String applicationId, String newStatus) {
@@ -23,15 +44,12 @@ class AdminOfferCandidatesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Candidatos: $offerTitle"),
+        title: Text("Candidatos: ${widget.offerTitle}"),
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
       ),
       body: StreamBuilder(
-        stream: FirebaseFirestore.instance
-            .collection('applications')
-            .where('offerId', isEqualTo: offerId) // Filtramos por esta oferta
-            .snapshots(),
+        stream: _applicationsStream,
         builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -44,7 +62,10 @@ class AdminOfferCandidatesScreen extends StatelessWidget {
                 children: [
                   Icon(Icons.people_outline, size: 60, color: Colors.grey[400]),
                   const SizedBox(height: 10),
-                  Text("Aún no hay postulantes", style: TextStyle(color: Colors.grey[600])),
+                  Text(
+                    "Aún no hay postulantes",
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
                 ],
               ),
             );
@@ -74,17 +95,27 @@ class AdminOfferCandidatesScreen extends StatelessWidget {
                       // --- HEADER: Nombre del Estudiante ---
                       // Usamos FutureBuilder para buscar el nombre usando el ID
                       FutureBuilder<DocumentSnapshot>(
-                        future: FirebaseFirestore.instance.collection('users').doc(studentId).get(),
+                        future: FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(studentId)
+                            .get(),
                         builder: (context, userSnapshot) {
-                          if (!userSnapshot.hasData) return const Text("Cargando nombre...");
-                          var userData = userSnapshot.data!.data() as Map<String, dynamic>?;
+                          if (!userSnapshot.hasData)
+                            return const Text("Cargando nombre...");
+                          var userData =
+                              userSnapshot.data!.data()
+                                  as Map<String, dynamic>?;
                           return Row(
                             children: [
                               CircleAvatar(
                                 backgroundColor: Colors.indigo[100],
                                 child: Text(
-                                  (userData?['nombres']?[0] ?? "E").toUpperCase(),
-                                  style: const TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold),
+                                  (userData?['nombres']?[0] ?? "E")
+                                      .toUpperCase(),
+                                  style: const TextStyle(
+                                    color: Colors.indigo,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -93,25 +124,38 @@ class AdminOfferCandidatesScreen extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      userData?['nombres'] ?? "Estudiante Desconocido",
-                                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                      userData?['nombres'] ??
+                                          "Estudiante Desconocido",
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                     Text(
                                       userData?['email'] ?? "",
-                                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 13,
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
                               Chip(
-                                label: Text(status, style: const TextStyle(color: Colors.white, fontSize: 12)),
+                                label: Text(
+                                  status,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                  ),
+                                ),
                                 backgroundColor: statusColor,
-                              )
+                              ),
                             ],
                           );
                         },
                       ),
-                      
+
                       const Divider(height: 30),
 
                       // --- BOTONES DE ACCIÓN ---
@@ -120,21 +164,36 @@ class AdminOfferCandidatesScreen extends StatelessWidget {
                         children: [
                           if (status != 'Rechazado')
                             OutlinedButton.icon(
-                              onPressed: () => _updateStatus(application.id, 'Rechazado'),
+                              onPressed: () =>
+                                  _updateStatus(application.id, 'Rechazado'),
                               icon: const Icon(Icons.close, color: Colors.red),
-                              label: const Text("Rechazar", style: TextStyle(color: Colors.red)),
-                              style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.red)),
+                              label: const Text(
+                                "Rechazar",
+                                style: TextStyle(color: Colors.red),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Colors.red),
+                              ),
                             ),
                           const SizedBox(width: 10),
                           if (status != 'Aceptado')
                             ElevatedButton.icon(
-                              onPressed: () => _updateStatus(application.id, 'Aceptado'),
-                              icon: const Icon(Icons.check, color: Colors.white),
-                              label: const Text("Aceptar", style: TextStyle(color: Colors.white)),
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                              onPressed: () =>
+                                  _updateStatus(application.id, 'Aceptado'),
+                              icon: const Icon(
+                                Icons.check,
+                                color: Colors.white,
+                              ),
+                              label: const Text(
+                                "Aceptar",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green,
+                              ),
                             ),
                         ],
-                      )
+                      ),
                     ],
                   ),
                 ),
