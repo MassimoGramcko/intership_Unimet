@@ -31,10 +31,29 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // --- LÓGICA PRINCIPAL: LOGIN ---
   Future<void> _login() async {
-    // 1. VALIDACIÓN INICIAL (Evita el error feo de Firebase)
-    if (_emailController.text.trim().isEmpty || _passwordController.text.trim().isEmpty) {
+    // 1. VALIDACIÓN INICIAL Y DE FORMATO
+    final String email = _emailController.text.trim();
+    final String password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
       _showMessage("⚠️ Por favor, ingresa tu correo y contraseña.", isError: true);
-      return; // Detenemos la ejecución aquí
+      return;
+    }
+
+    // Validación de dominio institucional
+    if (!email.endsWith('@correo.unimet.edu.ve')) {
+      _showMessage("⚠️ El correo debe pertenecer al dominio @correo.unimet.edu.ve.", isError: true);
+      return;
+    }
+
+    // Validación básica de formato de contraseña (mismo criterio que registro para consistencia)
+    final passwordRegExp = RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$');
+    if (!passwordRegExp.hasMatch(password)) {
+      _showMessage(
+        "⚠️ Credenciales no válidas. Verifica el formato de tu contraseña.", 
+        isError: true
+      );
+      return;
     }
 
     setState(() => _isLoading = true);

@@ -55,13 +55,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   // --- LÓGICA DE REGISTRO ---
   Future<void> _register() async {
-    // 1. Validaciones básicas
+    // 1. Validaciones básicas y de formato
+    final String email = _emailController.text.trim();
+    final String password = _passwordController.text.trim();
+
     if (_nameController.text.isEmpty || 
         _lastNameController.text.isEmpty ||
         _selectedCareer == null ||
-        _emailController.text.isEmpty ||
-        _passwordController.text.isEmpty) {
-      _showMessage("Por favor completa todos los campos obligatorios.", isError: true);
+        email.isEmpty ||
+        password.isEmpty) {
+      _showMessage("⚠️ Por favor completa todos los campos obligatorios.", isError: true);
+      return;
+    }
+
+    // Validación de dominio institucional
+    if (!email.endsWith('@correo.unimet.edu.ve')) {
+      _showMessage("⚠️ Debes usar tu correo institucional (@correo.unimet.edu.ve).", isError: true);
+      return;
+    }
+
+    // Validación de seguridad de contraseña (Mínimo 8 caracteres, una mayúscula, una minúscula y un número)
+    final passwordRegExp = RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$');
+    if (!passwordRegExp.hasMatch(password)) {
+      _showMessage(
+        "⚠️ La contraseña debe tener al menos 8 caracteres, incluir una mayúscula, una minúscula y un número.", 
+        isError: true
+      );
       return;
     }
 
