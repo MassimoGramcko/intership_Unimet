@@ -442,14 +442,14 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     _buildActionCard(
                       context,
                       width: double.infinity,
-                      title: "Chat con Coordinador",
-                      subtitle: "Consultas directas y soporte",
-                      icon: Icons.chat_bubble_rounded,
+                      title: "Soporte Técnico",
+                      subtitle: "Consultas directas y ayuda",
+                      icon: Icons.support_agent_rounded,
                       accentColor: Colors.tealAccent.shade400,
                       onTap: () async {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text("Buscando coordinador..."),
+                            content: Text("Conectando con soporte..."),
                           ),
                         );
 

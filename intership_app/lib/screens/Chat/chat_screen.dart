@@ -22,6 +22,7 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
+  String? _editingMessageId; // <-- NUEVO: Para saber qué mensaje estamos editando
 
   // --- COLORES PRE-COMPUTADOS ---
   static const Color _bgDark = Color(0xFF0F172A);
@@ -34,8 +35,9 @@ class _ChatScreenState extends State<ChatScreen> {
   // --- STREAM CACHEADO ---
   late final Stream<QuerySnapshot> _messagesStream;
 
-  // --- NOMBRE CACHEADO (se busca UNA sola vez) ---
+  // --- DATOS DEL USUARIO ACTUAL ---
   String _cachedMyName = "Usuario";
+  String _myRole = "student"; // <-- NUEVO: Para saber si soy estudiante o coordinador
 
   @override
   void initState() {
@@ -73,10 +75,14 @@ class _ChatScreenState extends State<ChatScreen> {
         final data = userDoc.data() as Map<String, dynamic>;
         final String firstName = data['firstName'] ?? '';
         final String lastName = data['lastName'] ?? '';
+        final String role = data['role'] ?? 'student'; // Obtener el rol
         final String fullName = '$firstName $lastName'.trim();
 
-        if (fullName.isNotEmpty) {
-          _cachedMyName = fullName;
+        if (mounted) {
+          setState(() {
+            _myRole = role;
+            if (fullName.isNotEmpty) _cachedMyName = fullName;
+          });
         }
       }
     } catch (e) {
@@ -104,37 +110,54 @@ class _ChatScreenState extends State<ChatScreen> {
       'senderId': currentUserId,
       'text': text,
       'timestamp': FieldValue.serverTimestamp(),
+      'isRead': false, // <-- NUEVO: Inicia como no leído
+      'isEdited': false, // <-- NUEVO: Inicia sin editar
     };
 
-    // 1. Guardar el mensaje
-    await FirebaseFirestore.instance
-        .collection('chats')
-        .doc(widget.chatId)
-        .collection('messages')
-        .add(messageData);
+    if (_editingMessageId != null) {
+      // MODO EDICIÓN
+      await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(widget.chatId)
+          .collection('messages')
+          .doc(_editingMessageId)
+          .update({
+        'text': text,
+        'isEdited': true,
+        'lastEditAt': FieldValue.serverTimestamp(),
+      });
+      setState(() => _editingMessageId = null);
+    } else {
+      // MODO ENVÍO NORMAL
+      await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(widget.chatId)
+          .collection('messages')
+          .add(messageData);
 
-    // 2. Actualizar el último mensaje
-    await FirebaseFirestore.instance.collection('chats').doc(widget.chatId).set(
-      {
-        'users': [currentUserId, widget.otherUserId],
-        'lastMessage': text,
-        'lastUpdate': FieldValue.serverTimestamp(),
-      },
-      SetOptions(merge: true),
-    );
+      // 2. Actualizar el último mensaje
+      await FirebaseFirestore.instance.collection('chats').doc(widget.chatId).set(
+        {
+          'users': [currentUserId, widget.otherUserId],
+          'lastMessage': text,
+          'lastUpdate': FieldValue.serverTimestamp(),
+        },
+        SetOptions(merge: true),
+      );
 
-    // 3. Crear notificación con nombre CACHEADO (sin query extra)
-    await FirebaseFirestore.instance.collection('notifications').add({
-      'userId': widget.otherUserId,
-      'senderId': currentUserId,
-      'chatId': widget.chatId,
-      'senderName': _cachedMyName,
-      'title': 'Nuevo mensaje de $_cachedMyName',
-      'body': text,
-      'timestamp': FieldValue.serverTimestamp(),
-      'isRead': false,
-      'type': 'chat',
-    });
+      // 3. Crear notificación con nombre CACHEADO (sin query extra)
+      await FirebaseFirestore.instance.collection('notifications').add({
+        'userId': widget.otherUserId,
+        'senderId': currentUserId,
+        'chatId': widget.chatId,
+        'senderName': _cachedMyName,
+        'title': 'Nuevo mensaje de $_cachedMyName',
+        'body': text,
+        'timestamp': FieldValue.serverTimestamp(),
+        'isRead': false,
+        'type': 'chat',
+      });
+    }
   }
 
   @override
@@ -170,25 +193,22 @@ class _ChatScreenState extends State<ChatScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [
-                    Colors.blueAccent.shade400,
-                    Colors.purpleAccent.shade400,
-                  ],
+                  colors: _myRole == 'student' 
+                    ? [Colors.orange.shade700, Colors.orange.shade400]
+                    : [Colors.blueAccent.shade400, Colors.purpleAccent.shade400],
                 ),
               ),
-              child: Text(
-                _getTwoInitials(widget.otherUserName),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
+              child: _myRole == 'student'
+                ? const Icon(Icons.school_rounded, color: Colors.white, size: 20)
+                : Text(
+                    _getTwoInitials(widget.otherUserName),
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                widget.otherUserName,
+                _myRole == 'student' ? "Coordinación de Pasantías" : widget.otherUserName,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16,
@@ -213,11 +233,26 @@ class _ChatScreenState extends State<ChatScreen> {
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(
-                    child: Text(
-                      "No hay mensajes aún.\n¡Escribe algo para empezar!",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(color: _white40),
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 40),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.support_agent_rounded, size: 80, color: Colors.blueAccent.withValues(alpha: 0.3)),
+                          const SizedBox(height: 20),
+                          const Text(
+                            "Centro de Soporte",
+                            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 10),
+                          const Text(
+                            "Estás en comunicación con el equipo de soporte. Escribe tu duda o inconveniente aquí debajo y te responderemos lo antes posible.",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: _white40, fontSize: 14),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 }
@@ -235,6 +270,17 @@ class _ChatScreenState extends State<ChatScreen> {
                     final msgData =
                         messages[index].data() as Map<String, dynamic>;
                     final isMe = msgData['senderId'] == currentUserId;
+                    final messageId = messages[index].id;
+
+                    // Lógica para marcar como leído si es mensaje del OTRO
+                    if (!isMe && msgData['isRead'] != true) {
+                      FirebaseFirestore.instance
+                          .collection('chats')
+                          .doc(widget.chatId)
+                          .collection('messages')
+                          .doc(messageId)
+                          .update({'isRead': true});
+                    }
 
                     String timeString = '';
                     if (msgData['timestamp'] != null) {
@@ -243,10 +289,15 @@ class _ChatScreenState extends State<ChatScreen> {
                       timeString = DateFormat('hh:mm a').format(date);
                     }
 
-                    return _buildMessageBubble(
-                      msgData['text'],
-                      isMe,
-                      timeString,
+                    return GestureDetector(
+                      onLongPress: isMe ? () => _showEditDialog(messageId, msgData['text']) : null,
+                      child: _buildMessageBubble(
+                        msgData['text'],
+                        isMe,
+                        timeString,
+                        msgData['isRead'] ?? false,
+                        msgData['isEdited'] ?? false,
+                      ),
                     );
                   },
                 );
@@ -259,7 +310,32 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildMessageBubble(String text, bool isMe, String time) {
+  void _showEditDialog(String messageId, String currentText) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: _surfaceDark,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.edit_outlined, color: Colors.blueAccent),
+            title: const Text("Editar mensaje", style: TextStyle(color: Colors.white)),
+            onTap: () {
+              Navigator.pop(context);
+              setState(() {
+                _editingMessageId = messageId;
+                _messageController.text = currentText;
+              });
+            },
+          ),
+          const SizedBox(height: 10),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessageBubble(String text, bool isMe, String time, bool isRead, bool isEdited) {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Column(
@@ -299,9 +375,24 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           Padding(
             padding: const EdgeInsets.only(bottom: 12, left: 4, right: 4),
-            child: Text(
-              time,
-              style: const TextStyle(color: _white30, fontSize: 10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isEdited) 
+                  const Text("(editado) ", style: TextStyle(color: _white30, fontSize: 10, fontStyle: FontStyle.italic)),
+                Text(
+                  time,
+                  style: const TextStyle(color: _white30, fontSize: 10),
+                ),
+                if (isMe) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    isRead ? Icons.done_all_rounded : Icons.done_rounded, // Usamos done_rounded para check simple
+                    size: 15,
+                    color: isRead ? const Color(0xFF4FC3F7) : _white30, // Un azul un poco más vibrante para el visto
+                  ),
+                ]
+              ],
             ),
           ),
         ],
@@ -319,46 +410,70 @@ class _ChatScreenState extends State<ChatScreen> {
           topRight: Radius.circular(20),
         ),
       ),
-      child: Row(
+      child: Column( // Cambiado a Column para apilar la edición sobre el input
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: _bgDark,
-                borderRadius: BorderRadius.circular(25),
-                border: Border.all(color: _white10),
+          if (_editingMessageId != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8, left: 5),
+              child: Row(
+                children: [
+                  const Icon(Icons.edit, color: Colors.blueAccent, size: 16),
+                  const SizedBox(width: 8),
+                  const Text("Editando mensaje...", style: TextStyle(color: Colors.blueAccent, fontSize: 12)),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.redAccent, size: 16),
+                    onPressed: () => setState(() {
+                      _editingMessageId = null;
+                      _messageController.clear();
+                    }),
+                  )
+                ],
               ),
-              child: TextField(
-                controller: _messageController,
-                style: const TextStyle(color: Colors.white),
-                textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(
-                  hintText: "Escribe un mensaje...",
-                  hintStyle: TextStyle(color: _white30),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
+            ),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: _bgDark,
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(color: _editingMessageId != null ? Colors.blueAccent : _white10),
+                  ),
+                  child: TextField(
+                    controller: _messageController,
+                    style: const TextStyle(color: Colors.white),
+                    textCapitalization: TextCapitalization.sentences,
+                    decoration: const InputDecoration(
+                      hintText: "Escribe un mensaje...",
+                      hintStyle: TextStyle(color: _white30),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          GestureDetector(
-            onTap: _sendMessage,
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: const BoxDecoration(
-                color: Colors.blueAccent,
-                shape: BoxShape.circle,
+              const SizedBox(width: 10),
+              GestureDetector(
+                onTap: _sendMessage,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: const BoxDecoration(
+                    color: Colors.blueAccent,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    _editingMessageId != null ? Icons.check_rounded : Icons.send_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
               ),
-              child: const Icon(
-                Icons.send_rounded,
-                color: Colors.white,
-                size: 22,
-              ),
-            ),
+            ],
           ),
         ],
       ),
