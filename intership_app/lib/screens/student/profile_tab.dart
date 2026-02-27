@@ -276,9 +276,36 @@ class _ProfileTabState extends State<ProfileTab> {
                     const SizedBox(height: 15),
 
                     GestureDetector(
-                      onTap: (cvName == null && !_isUploading)
-                          ? _uploadCV
-                          : null,
+                      onTap: () {
+                        if (_isUploading) return;
+                        
+                        // FEEDBACK VISUAL
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Row(
+                              children: [
+                                SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                ),
+                                SizedBox(width: 15),
+                                Text("Abriendo visor de documentos...", style: TextStyle(fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            backgroundColor: AppTheme.primaryOrange,
+                            duration: const Duration(seconds: 2),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        );
+
+                        // SIMULACRO: Espera y abre modal
+                        Future.delayed(const Duration(seconds: 2), () {
+                          if (!context.mounted) return;
+                          _showCVMockup(context);
+                        });
+                      },
                       child: Container(
                         width: double.infinity,
                         height: 100,
@@ -398,6 +425,105 @@ class _ProfileTabState extends State<ProfileTab> {
     );
   }
 
+  // --- SIMULACRO DE VISOR DE CV (HU-21) ---
+  void _showCVMockup(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: const BoxDecoration(
+          color: AppTheme.backgroundDark,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(30),
+            topRight: Radius.circular(30),
+          ),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 50,
+              height: 5,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(25),
+              child: Row(
+                children: [
+                  const Icon(Icons.picture_as_pdf, color: Colors.redAccent, size: 30),
+                  const SizedBox(width: 15),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "CV_Estudiante.pdf",
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                        ),
+                        Text(
+                          "1.2 MB • PDF Document",
+                          style: TextStyle(color: Colors.grey, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, color: Colors.white70),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(color: Colors.white12, height: 1),
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                margin: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.description_outlined,
+                      size: 100,
+                      color: Colors.white.withValues(alpha: 0.1),
+                    ),
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryOrange.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppTheme.primaryOrange.withValues(alpha: 0.3)),
+                      ),
+                      child: const Text(
+                        "Visor en modo de evaluación académica",
+                        style: TextStyle(
+                          color: AppTheme.primaryOrange,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildCvActiveState(String fileName) {
     return Row(
       children: [
@@ -441,12 +567,12 @@ class _ProfileTabState extends State<ProfileTab> {
         ),
 
         IconButton(
-          onPressed: _uploadCV,
+          onPressed: () => _showCVMockup(context), // También ver el mockup al hacer clic en el nombre
           icon: const Icon(
-            Icons.change_circle_outlined,
+            Icons.visibility_outlined,
             color: Colors.blueAccent,
           ),
-          tooltip: "Reemplazar archivo",
+          tooltip: "Ver simulación",
         ),
 
         IconButton(

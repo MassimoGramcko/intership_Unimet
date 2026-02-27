@@ -12,6 +12,9 @@ class ApplicationsTab extends StatefulWidget {
 
 class _ApplicationsTabState extends State<ApplicationsTab> {
   String _selectedFilter = 'Todos';
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
+  final ScrollController _scrollController = ScrollController();
 
   // --- COLORES PRE-COMPUTADOS ---
   static const Color _white05 = Color(0x0DFFFFFF);
@@ -55,6 +58,13 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
     }
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   String _getStatusKey(String? rawStatus) {
     String status = (rawStatus ?? '').toLowerCase();
 
@@ -73,7 +83,7 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
 
   @override
   Widget build(BuildContext context) {
-    final Color primaryColor = const Color(0xFFFF6B00);
+    const Color primaryColor = Color(0xFFFF6B00);
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
@@ -95,6 +105,44 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
       ),
       body: Column(
         children: [
+          // 1. BARRA DE BÚSQUEDA
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: _white05,
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: _white10),
+              ),
+              child: TextField(
+                controller: _searchController,
+                style: const TextStyle(color: Colors.white),
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value.toLowerCase();
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: "Buscar por cargo o empresa...",
+                  hintStyle: const TextStyle(color: _white40, fontSize: 14),
+                  prefixIcon: const Icon(Icons.search_rounded, color: _white40),
+                  suffixIcon: _searchQuery.isNotEmpty 
+                    ? IconButton(
+                        icon: const Icon(Icons.close_rounded, color: _white40),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = "");
+                        },
+                      )
+                    : null,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                ),
+              ),
+            ),
+          ),
+
+          // 2. FILTROS (CHIPS)
           Container(
             height: 60,
             padding: const EdgeInsets.symmetric(vertical: 10),
@@ -113,12 +161,13 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
             ),
           ),
 
+          // 3. LISTA CON SCROLLBAR
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: _applicationsStream,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
+                  return const Center(
                     child: CircularProgressIndicator(color: primaryColor),
                   );
                 }
@@ -129,6 +178,7 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
 
                 var docs = snapshot.data!.docs;
 
+                // Aplicar Filtro de Estado
                 if (_selectedFilter != 'Todos') {
                   docs = docs.where((doc) {
                     final data = doc.data() as Map<String, dynamic>;
@@ -136,15 +186,32 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
                   }).toList();
                 }
 
+                // Aplicar Filtro de Búsqueda
+                if (_searchQuery.isNotEmpty) {
+                  docs = docs.where((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final String jobTitle = (data['jobTitle'] ?? '').toString().toLowerCase();
+                    final String company = (data['company'] ?? '').toString().toLowerCase();
+                    return jobTitle.contains(_searchQuery) || company.contains(_searchQuery);
+                  }).toList();
+                }
+
                 if (docs.isEmpty) return _buildEmptyState();
 
-                return ListView.builder(
-                  padding: const EdgeInsets.all(20),
-                  itemCount: docs.length,
-                  itemBuilder: (context, index) {
-                    final data = docs[index].data() as Map<String, dynamic>;
-                    return _buildApplicationCard(data);
-                  },
+                return Scrollbar(
+                  controller: _scrollController,
+                  thumbVisibility: true,
+                  thickness: 6,
+                  radius: const Radius.circular(10),
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(20),
+                    itemCount: docs.length,
+                    itemBuilder: (context, index) {
+                      final data = docs[index].data() as Map<String, dynamic>;
+                      return _buildApplicationCard(data);
+                    },
+                  ),
                 );
               },
             ),
@@ -349,7 +416,13 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
         children: [
           Icon(Icons.folder_off_outlined, size: 80, color: _white20),
           const SizedBox(height: 15),
-          Text("No hay solicitudes aquí", style: TextStyle(color: _white50)),
+          Text(
+            _searchQuery.isEmpty 
+              ? "No hay solicitudes aquí" 
+              : "No se encontraron coincidencias para '$_searchQuery'", 
+            style: const TextStyle(color: _white50),
+            textAlign: TextAlign.center,
+          ),
         ],
       ),
     );
