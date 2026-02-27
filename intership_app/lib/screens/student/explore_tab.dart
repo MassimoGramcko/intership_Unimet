@@ -76,6 +76,7 @@ class ExploreTab extends StatefulWidget {
 
 class _ExploreTabState extends State<ExploreTab> {
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController(); // <-- NUEVO: Controlador para el Scrollbar
   String _searchQuery = "";
 
   // --- COLORES PRE-COMPUTADOS ---
@@ -106,6 +107,7 @@ class _ExploreTabState extends State<ExploreTab> {
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose(); // <-- IMPORTANTE
     super.dispose();
   }
 
@@ -145,9 +147,15 @@ class _ExploreTabState extends State<ExploreTab> {
           ),
 
           // B. CONTENIDO SCROLLABLE
-          CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
+          Scrollbar(
+            controller: _scrollController,
+            thumbVisibility: true,
+            thickness: 6,
+            radius: const Radius.circular(10),
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const BouncingScrollPhysics(),
+              slivers: [
               // 1. APP BAR
               SliverAppBar(
                 backgroundColor: AppTheme.backgroundDark.withValues(alpha: 0.9),
@@ -377,7 +385,8 @@ class _ExploreTabState extends State<ExploreTab> {
                   );
                 },
               ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
