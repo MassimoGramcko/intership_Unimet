@@ -139,9 +139,10 @@ class _CoordinatorApplicationsScreenState
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: Column(
-        children: [
-          Container(
+      body: SafeArea(
+        child: Column(
+          children: [
+            Container(
             height: 65,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: SingleChildScrollView(
@@ -192,8 +193,9 @@ class _CoordinatorApplicationsScreenState
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildFilterChip(String text, String value) {
     final isSelected = _selectedStatus == value;

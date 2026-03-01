@@ -164,6 +164,10 @@ class _ExploreTabState extends State<ExploreTab> {
                 elevation: 0,
                 centerTitle: true,
                 expandedHeight: 70,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
                 title: const Text(
                   "Descubrir",
                   style: TextStyle(

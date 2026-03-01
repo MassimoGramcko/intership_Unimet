@@ -103,8 +103,9 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
         ),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
+      body: SafeArea(
+        child: Column(
+          children: [
           // 1. BARRA DE BÚSQUEDA
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -218,8 +219,9 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildFilterChip(String label, Color activeColor, {String? dbKey}) {
     final valueToSet = dbKey ?? 'Todos';

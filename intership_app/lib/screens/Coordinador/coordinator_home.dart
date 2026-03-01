@@ -1,9 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:intl/intl.dart';
 
-import '../notifications_screen.dart';
+import '../../config/theme.dart';
+import '../notifications_screen.dart'; // Import agregado para las notificaciones
 import 'coordinator_applications_screen.dart';
 import 'coordinator_settings_screen.dart';
 import 'create_offer_screen.dart';
@@ -208,75 +210,6 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
     }
   }
 
-  // --- WIDGET: Botón de Notificaciones con Badge ---
-  Widget _buildNotificationButton() {
-    if (_notificationsStream == null) return const SizedBox.shrink();
-
-    return StreamBuilder<QuerySnapshot>(
-      stream: _notificationsStream,
-      builder: (context, snapshot) {
-        int unreadCount = 0;
-        if (snapshot.hasData) {
-          unreadCount = snapshot.data!.docs.length;
-        }
-
-        return Stack(
-          clipBehavior: Clip.none,
-          children: [
-            InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const NotificationsScreen(),
-                  ),
-                );
-              },
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: _white05,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _white10),
-                ),
-                child: const Icon(
-                  Icons.notifications_outlined,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
-            ),
-            if (unreadCount > 0)
-              Positioned(
-                top: -5,
-                right: -5,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Colors.redAccent,
-                    shape: BoxShape.circle,
-                  ),
-                  constraints: const BoxConstraints(
-                    minWidth: 18,
-                    minHeight: 18,
-                  ),
-                  child: Text(
-                    unreadCount > 9 ? '9+' : '$unreadCount',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -321,10 +254,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
-                                if (_currentUserId != null) ...[
-                                  const SizedBox(width: 10),
-                                  _buildNotificationButton(),
-                                ],
+
                               ],
                             ),
                             const SizedBox(height: 5),
@@ -372,7 +302,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
 
                 const SliverToBoxAdapter(child: SizedBox(height: 35)),
 
-                // TARJETAS KPI
+                // TARJETAS KPI (Primera fila: 2 columnas)
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -427,6 +357,39 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
                     ),
                   ),
                 ),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 15)),
+
+                // TARJETA KPI (Segunda fila: 1 columna completa para Notificaciones)
+                if (_notificationsStream != null)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Row(
+                        children: [
+                          _buildModernKpiCard(
+                            title: "Notificaciones Pendientes",
+                            stream: _notificationsStream!,
+                            countFilter: (docs) => docs.length,
+                            icon: Icons.notifications_active_rounded,
+                            accentColor: Colors.purpleAccent,
+                            gradientColors: [
+                              Colors.purpleAccent.withValues(alpha: 0.8),
+                              Colors.purple[800]!,
+                            ],
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const NotificationsScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
                 const SliverToBoxAdapter(child: SizedBox(height: 35)),
 
