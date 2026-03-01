@@ -106,6 +106,8 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
             .doc(user!.uid)
             .get();
         final userData = userDoc.data() ?? {};
+        
+        final studentName = "${userData['firstName'] ?? 'Estudiante'} ${userData['lastName'] ?? ''}".trim();
 
         // Usamos .set() en lugar de .add() para usar nuestro ID personalizado
         await docRef.set({
@@ -113,12 +115,35 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           'jobTitle': widget.offer.title,
           'company': widget.offer.company,
           'studentId': user!.uid,
-          'studentName':
-              "${userData['firstName'] ?? 'Estudiante'} ${userData['lastName'] ?? ''}",
+          'studentName': studentName,
           'studentEmail': userData['email'] ?? user!.email,
           'status': 'Pendiente',
           'appliedAt': FieldValue.serverTimestamp(),
         });
+
+        // --- NUEVA LÓGICA: Enviar notificación a los coordinadores ---
+        final coordinatorsSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('role', whereIn: ['coordinator', 'coordinador', 'admin'])
+            .get();
+
+        final batch = FirebaseFirestore.instance.batch();
+        for (var coordDoc in coordinatorsSnapshot.docs) {
+          final notifRef = FirebaseFirestore.instance.collection('notifications').doc();
+          batch.set(notifRef, {
+            'userId': coordDoc.id,
+            'type': 'application',
+            'title': 'Nueva Postulación: ${widget.offer.title}',
+            'body': '$studentName se ha postulado a tu oferta.',
+            'applicationId': applicationId,
+            'isRead': false,
+            'timestamp': FieldValue.serverTimestamp(),
+            'senderId': user!.uid,
+            'senderName': studentName,
+          });
+        }
+        await batch.commit();
+        // --- FIN NUEVA LÓGICA ---
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
 import 'Chat/chat_screen.dart';
+import 'Coordinador/coordinator_applications_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -241,6 +242,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   otherUserId: data['senderId'],
                                   otherUserName: displaySenderName,
                                 ),
+                              ),
+                            );
+                          } else if (data['type'] == 'application') {
+                            // Redirigir a la pantalla de solicitudes del coordinador
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const CoordinatorApplicationsScreen(),
                               ),
                             );
                           }
