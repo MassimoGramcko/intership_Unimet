@@ -37,6 +37,10 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
   // Variable de estado para el filtro
   String _filtroStatus = 'Todos';
 
+  // Variables del buscador
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
   // Variables para la animación del Speed Dial
   late AnimationController _animationController;
   bool _isDialOpen = false;
@@ -55,6 +59,12 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
       vsync: this,
       duration: const Duration(milliseconds: 250),
     );
+
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
 
     // Cachear el userId
     _currentUserId = FirebaseAuth.instance.currentUser?.uid;
@@ -87,6 +97,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
 
   @override
   void dispose() {
+    _searchController.dispose();
     _animationController.dispose();
     super.dispose();
   }
@@ -154,10 +165,9 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
     );
 
     if (confirm == true) {
-      // OPTIMIZADO: Solo traer documentos que necesitan actualizarse
+      // OPTIMIZADO: Consultar todas para evitar omitir documentos que no tengan el campo isArchived
       var snapshot = await FirebaseFirestore.instance
           .collection('applications')
-          .where('isArchived', isEqualTo: false)
           .get();
 
       final batch = FirebaseFirestore.instance.batch();
@@ -165,14 +175,19 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
 
       for (var doc in snapshot.docs) {
         var data = doc.data();
-        var status = (data['status'] ?? '').toString().toLowerCase();
+        bool isArchived = data['isArchived'] ?? false;
 
-        if (status == 'aceptado' ||
-            status == 'rechazado' ||
-            status == 'accepted' ||
-            status == 'rejected') {
-          batch.update(doc.reference, {'isArchived': true});
-          archivedCount++;
+        // Solo archivar si no está archivado previamente
+        if (!isArchived) {
+          var status = (data['status'] ?? '').toString().toLowerCase();
+
+          if (status == 'aceptado' ||
+              status == 'rechazado' ||
+              status == 'accepted' ||
+              status == 'rejected') {
+            batch.update(doc.reference, {'isArchived': true});
+            archivedCount++;
+          }
         }
       }
 
@@ -526,6 +541,76 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
 
                 const SliverToBoxAdapter(child: SizedBox(height: 15)),
 
+                // BARRA DE BÚSQUEDA
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: SizedBox(
+                      height: 45,
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (value) {
+                          setState(() {
+                            _searchQuery = value.toLowerCase();
+                          });
+                        },
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: "Buscar estudiante u oferta...",
+                          hintStyle: const TextStyle(
+                            color: _white50,
+                            fontSize: 14,
+                          ),
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: _white50,
+                            size: 20,
+                          ),
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(
+                                    Icons.close,
+                                    color: _white50,
+                                    size: 18,
+                                  ),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() {
+                                      _searchQuery = '';
+                                    });
+                                  },
+                                )
+                              : null,
+                          filled: true,
+                          fillColor: _white05,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: _white10),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(color: _white10),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                            borderSide: const BorderSide(
+                              color: Colors.orangeAccent,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 15)),
+
                 // LISTA DE ACTIVIDAD - AHORA COMO SliverList (lazy loading real)
                 StreamBuilder<QuerySnapshot>(
                   stream: _activityStream,
@@ -566,6 +651,20 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
                         final status = (data['status'] ?? '').toString();
                         return status.toLowerCase() ==
                             _filtroStatus.toLowerCase();
+                      }).toList();
+                    }
+
+                    if (_searchQuery.isNotEmpty) {
+                      docs = docs.where((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final studentName = (data['studentName'] ?? '')
+                            .toString()
+                            .toLowerCase();
+                        final jobTitle = (data['jobTitle'] ?? '')
+                            .toString()
+                            .toLowerCase();
+                        return studentName.contains(_searchQuery) ||
+                            jobTitle.contains(_searchQuery);
                       }).toList();
                     }
 
