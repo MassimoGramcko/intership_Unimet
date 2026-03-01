@@ -16,6 +16,9 @@ class _ManageOffersScreenState extends State<ManageOffersScreen> {
   static const Color _white10 = Color(0x1AFFFFFF);
   static const Color _white50 = Color(0x80FFFFFF);
 
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
   // --- STREAM CACHEADO ---
   late final Stream<QuerySnapshot> _offersStream;
 
@@ -26,6 +29,12 @@ class _ManageOffersScreenState extends State<ManageOffersScreen> {
         .collection('job_offers')
         .orderBy('createdAt', descending: true)
         .snapshots();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -67,7 +76,55 @@ class _ManageOffersScreenState extends State<ManageOffersScreen> {
           ),
         ),
         child: SafeArea(
-          child: StreamBuilder<QuerySnapshot>(
+          child: Column(
+            children: [
+              // BARRA DE BÚSQUEDA
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value.toLowerCase();
+                    });
+                  },
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: "Buscar por título de oferta...",
+                    hintStyle: const TextStyle(color: _white50, fontSize: 14),
+                    prefixIcon: const Icon(Icons.search, color: _white50, size: 20),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.close, color: _white50, size: 18),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() {
+                                _searchQuery = '';
+                              });
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: _white10,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: const BorderSide(color: Colors.transparent),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: const BorderSide(color: Colors.transparent),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: const BorderSide(color: Colors.orangeAccent),
+                    ),
+                  ),
+                ),
+              ),
+
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
             stream: _offersStream,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -80,7 +137,23 @@ class _ManageOffersScreenState extends State<ManageOffersScreen> {
                 return _buildEmptyState();
               }
 
-              final docs = snapshot.data!.docs;
+              final allDocs = snapshot.data!.docs;
+              
+              // Filtrado Local por título
+              final docs = allDocs.where((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                final title = (data['title'] ?? '').toString().toLowerCase();
+                return title.contains(_searchQuery);
+              }).toList();
+
+              if (docs.isEmpty) {
+                return const Center(
+                  child: Text(
+                    "No se encontraron resultados",
+                    style: TextStyle(color: _white50, fontSize: 16),
+                  ),
+                );
+              }
 
               return ListView.separated(
                 padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
@@ -89,11 +162,13 @@ class _ManageOffersScreenState extends State<ManageOffersScreen> {
                 itemBuilder: (context, index) {
                   final data = docs[index].data() as Map<String, dynamic>;
                   final docId = docs[index].id;
-                  // OPTIMIZADO: Usamos applicantsCount del documento en lugar de un StreamBuilder anidado
                   return _OfferCard(data: data, docId: docId);
                 },
               );
             },
+          ),
+        ),
+            ],
           ),
         ),
       ),

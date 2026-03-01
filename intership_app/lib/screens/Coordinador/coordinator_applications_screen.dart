@@ -54,6 +54,15 @@ class CoordinatorApplicationsScreen extends StatefulWidget {
 class _CoordinatorApplicationsScreenState
     extends State<CoordinatorApplicationsScreen> {
   String _selectedStatus = 'Todas';
+  
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   // --- COLORES PRE-COMPUTADOS ---
   static const Color _white10 = Color(0x1AFFFFFF);
@@ -142,6 +151,51 @@ class _CoordinatorApplicationsScreenState
       body: SafeArea(
         child: Column(
           children: [
+            // BARRA DE BÚSQUEDA
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value.toLowerCase();
+                  });
+                },
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                decoration: InputDecoration(
+                  hintText: "Buscar estudiante u oferta...",
+                  hintStyle: const TextStyle(color: _white50, fontSize: 14),
+                  prefixIcon: const Icon(Icons.search, color: _white50, size: 20),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.close, color: _white50, size: 18),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchQuery = '';
+                            });
+                          },
+                        )
+                      : null,
+                  filled: true,
+                  fillColor: _white10,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: const BorderSide(color: Colors.transparent),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: const BorderSide(color: Colors.transparent),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    borderSide: const BorderSide(color: AppTheme.primaryOrange),
+                  ),
+                ),
+              ),
+            ),
+
             Container(
             height: 65,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -177,9 +231,27 @@ class _CoordinatorApplicationsScreenState
                   return _buildEmptyState();
                 }
 
-                final apps = snapshot.data!.docs
+                var apps = snapshot.data!.docs
                     .map((doc) => JobApplication.fromFirestore(doc))
                     .toList();
+
+                // Filtrado Local por Estudiante u Oferta
+                if (_searchQuery.isNotEmpty) {
+                  apps = apps.where((app) {
+                    final studentName = app.studentName.toLowerCase();
+                    final jobTitle = app.jobTitle.toLowerCase();
+                    return studentName.contains(_searchQuery) || jobTitle.contains(_searchQuery);
+                  }).toList();
+                }
+
+                if (apps.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      "No se encontraron resultados",
+                      style: TextStyle(color: _white50, fontSize: 16),
+                    ),
+                  );
+                }
 
                 return ListView.builder(
                   padding: const EdgeInsets.all(20),
