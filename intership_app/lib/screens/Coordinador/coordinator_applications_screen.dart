@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../config/theme.dart';
+import 'student_profile_view.dart';
 
 // --- MODELO AJUSTADO ---
 class JobApplication {
@@ -52,7 +53,7 @@ class CoordinatorApplicationsScreen extends StatefulWidget {
 
 class _CoordinatorApplicationsScreenState
     extends State<CoordinatorApplicationsScreen> {
-  String _selectedFilter = 'Pendiente';
+  String _selectedStatus = 'Todas';
 
   // --- COLORES PRE-COMPUTADOS ---
   static const Color _white10 = Color(0x1AFFFFFF);
@@ -63,11 +64,15 @@ class _CoordinatorApplicationsScreenState
 
   // --- STREAM SE RECREA SOLO AL CAMBIAR FILTRO ---
   Stream<QuerySnapshot> _getStream() {
-    return FirebaseFirestore.instance
-        .collection('applications')
-        .where('status', isEqualTo: _selectedFilter)
-        .orderBy('appliedAt', descending: true)
-        .snapshots();
+    final collection = FirebaseFirestore.instance.collection('applications');
+    if (_selectedStatus == 'Todas') {
+      return collection.orderBy('appliedAt', descending: true).snapshots();
+    } else {
+      return collection
+          .where('status', isEqualTo: _selectedStatus)
+          .orderBy('appliedAt', descending: true)
+          .snapshots();
+    }
   }
 
   String _getInitials(String name) {
@@ -81,12 +86,25 @@ class _CoordinatorApplicationsScreenState
     return initials.toUpperCase();
   }
 
-  Future<void> _updateStatus(String docId, String newStatus) async {
+  Future<void> _updateStatus(JobApplication app, String newStatus) async {
     try {
       await FirebaseFirestore.instance
           .collection('applications')
-          .doc(docId)
+          .doc(app.id)
           .update({'status': newStatus});
+
+      // --- NUEVA LÓGICA: Notificación al Estudiante (HU-10) ---
+      await FirebaseFirestore.instance.collection('notifications').add({
+        'userId': app.studentId, // ID del estudiante
+        'type': 'status_change',
+        'title': 'Actualización de Postulación',
+        'body': 'Tu estado en ${app.jobTitle} ha cambiado a $newStatus',
+        'applicationId': app.id,
+        'offerId': app.offerId,
+        'isRead': false,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+      // --- FIN NUEVA LÓGICA ---
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -124,15 +142,21 @@ class _CoordinatorApplicationsScreenState
       body: Column(
         children: [
           Container(
-            height: 60,
+            height: 65,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildFilterBtn('Pendientes', 'Pendiente', Colors.orange),
-                _buildFilterBtn('Aceptados', 'Aceptado', Colors.green),
-                _buildFilterBtn('Rechazados', 'Rechazado', Colors.redAccent),
-              ],
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildFilterChip('Todas', 'Todas'),
+                  const SizedBox(width: 10),
+                  _buildFilterChip('Pendientes', 'Pendiente'),
+                  const SizedBox(width: 10),
+                  _buildFilterChip('Aceptadas', 'Aceptado'),
+                  const SizedBox(width: 10),
+                  _buildFilterChip('Rechazadas', 'Rechazado'),
+                ],
+              ),
             ),
           ),
 
@@ -171,27 +195,34 @@ class _CoordinatorApplicationsScreenState
     );
   }
 
-  Widget _buildFilterBtn(String text, String value, Color color) {
-    final isSelected = _selectedFilter == value;
-    return GestureDetector(
-      onTap: () => setState(() => _selectedFilter = value),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? color.withValues(alpha: 0.2) : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: isSelected ? color : _white24),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            color: isSelected ? color : _white60,
-            fontWeight: FontWeight.bold,
-            fontSize: 13,
-          ),
-        ),
+  Widget _buildFilterChip(String text, String value) {
+    final isSelected = _selectedStatus == value;
+    final primaryColor = AppTheme.primaryOrange;
+    
+    return FilterChip(
+      label: Text(text),
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : _white60,
+        fontWeight: FontWeight.bold,
+        fontSize: 13,
       ),
+      selected: isSelected,
+      onSelected: (bool selected) {
+        if (selected) {
+          setState(() {
+            _selectedStatus = value;
+          });
+        }
+      },
+      backgroundColor: Colors.transparent,
+      selectedColor: primaryColor.withValues(alpha: 0.8),
+      checkmarkColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: isSelected ? primaryColor : _white24),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      showCheckmark: false, // Mantiene el diseño minimalista sin el checkmark por defecto
     );
   }
 
@@ -253,7 +284,18 @@ class _CoordinatorApplicationsScreenState
 
           const Divider(color: _white10, height: 25),
 
-          Row(
+        // --- ENLACE A STUDENT PROFILE (HU-21) ---
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => StudentProfileView(studentId: app.studentId),
+              ),
+            );
+          },
+          behavior: HitTestBehavior.opaque,
+          child: Row(
             children: [
               Container(
                 width: 40,
@@ -305,17 +347,20 @@ class _CoordinatorApplicationsScreenState
                   ],
                 ),
               ),
+              const Icon(Icons.arrow_forward_ios_rounded, color: _white30, size: 14),
             ],
           ),
+        ),
+        // --- FIN ENLACE ---
 
-          const SizedBox(height: 20),
+        const SizedBox(height: 20),
 
           if (app.status == 'Pendiente')
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => _updateStatus(app.id, 'Rechazado'),
+                    onPressed: () => _updateStatus(app, 'Rechazado'),
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.redAccent,
                       side: const BorderSide(color: Colors.redAccent),
@@ -330,7 +375,7 @@ class _CoordinatorApplicationsScreenState
                 const SizedBox(width: 15),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () => _updateStatus(app.id, 'Aceptado'),
+                    onPressed: () => _updateStatus(app, 'Aceptado'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
@@ -384,7 +429,9 @@ class _CoordinatorApplicationsScreenState
           Icon(Icons.assignment_turned_in_outlined, size: 60, color: _white10),
           const SizedBox(height: 15),
           Text(
-            "No hay solicitudes en ${_selectedFilter.toLowerCase()}",
+            _selectedStatus == 'Todas'
+                ? "No hay solicitudes"
+                : "No hay solicitudes en estado ${_selectedStatus.toLowerCase()}",
             style: const TextStyle(color: _white50),
           ),
         ],

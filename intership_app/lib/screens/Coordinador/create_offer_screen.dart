@@ -64,7 +64,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await FirebaseFirestore.instance.collection('job_offers').add({
+      final newOfferRef = await FirebaseFirestore.instance.collection('job_offers').add({
         // 1. Datos básicos
         'title': _titleController.text.trim(),
         'company': _companyController.text.trim(),
@@ -90,6 +90,28 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
         'isFeatured': false,
         'colorHex': '#FF5733',
       });
+
+      // --- NUEVA LÓGICA: Notificar a todos los estudiantes (HU-10) ---
+      final studentsSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('role', whereIn: ['student', 'estudiante'])
+          .get();
+
+      final batch = FirebaseFirestore.instance.batch();
+      for (var studentDoc in studentsSnapshot.docs) {
+        final notifRef = FirebaseFirestore.instance.collection('notifications').doc();
+        batch.set(notifRef, {
+          'userId': studentDoc.id,
+          'type': 'new_offer',
+          'title': 'Nueva Oferta de Pasantía',
+          'body': 'Se ha publicado una nueva oferta: ${_titleController.text.trim()}',
+          'offerId': newOfferRef.id,
+          'isRead': false,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+      }
+      await batch.commit();
+      // --- FIN NUEVA LÓGICA ---
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

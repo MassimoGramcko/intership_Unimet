@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 
 import 'Chat/chat_screen.dart';
 import 'Coordinador/coordinator_applications_screen.dart';
+import 'student/applications_tab.dart';
+import 'student/explore_tab.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -180,12 +182,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     Color iconColor = Colors.blueAccent;
 
                     if (data['type'] == 'chat') {
-                      iconType = Icons.chat_bubble_rounded;
-                      iconColor = Colors.greenAccent;
-                    } else if (data['type'] == 'application') {
-                      iconType = Icons.assignment_turned_in_rounded;
-                      iconColor = Colors.orangeAccent;
-                    }
+                    iconType = Icons.chat_bubble_rounded;
+                    iconColor = Colors.greenAccent;
+                  } else if (data['type'] == 'application') {
+                    // Creada por el estudiante para todos los coordinadores (HU-08)
+                    iconType = Icons.assignment_turned_in_rounded;
+                    iconColor = Colors.orangeAccent;
+                  } else if (data['type'] == 'status_change') {
+                    // Enviada al estudiante por cambio de estado (HU-10)
+                    iconType = Icons.info_outline_rounded;
+                    iconColor = Colors.blueAccent;
+                  } else if (data['type'] == 'new_offer') {
+                    // Enviada a todos los estudiantes (HU-10)
+                    iconType = Icons.new_releases_rounded;
+                    iconColor = Colors.purpleAccent;
+                  }
 
                     String displaySenderName =
                         data['senderName'] ?? 'Coordinador';
@@ -250,6 +261,22 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => const CoordinatorApplicationsScreen(),
+                              ),
+                            );
+                          } else if (data['type'] == 'status_change') {
+                            // HU-10: Redirigir al estudiante a la pestaña de "Mis Solicitudes"
+                            Navigator.pushReplacement( // Usamos pushReplacement para evitar stack gigante
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ApplicationsTab(),
+                              ),
+                            );
+                          } else if (data['type'] == 'new_offer') {
+                            // HU-10: Redirigir al estudiante a la pestaña de "Explorar Ofertas"
+                            Navigator.pushReplacement( // Usamos pushReplacement para evitar stack gigante
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ExploreTab(),
                               ),
                             );
                           }
