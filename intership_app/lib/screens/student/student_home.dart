@@ -322,34 +322,35 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
                       Row(
                         children: [
-                          // Tarjeta 1: Postulaciones
                           Expanded(
                             child: StreamBuilder<QuerySnapshot>(
                               stream: _applicationsStream,
                               builder: (context, snapshot) {
                                 String countStr = "0";
                                 if (snapshot.hasData) {
-                                  countStr = snapshot.data!.docs.length.toString();
+                                  countStr =
+                                      snapshot.data!.docs.length.toString();
                                 }
-                                return GestureDetector(
+                                return _InteractiveStatCard(
+                                  value: countStr,
+                                  label: "Postulaciones",
+                                  icon: Icons.send_rounded,
+                                  color: AppTheme.primaryOrange,
                                   onTap: () {
-                                    if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-                                      _showApplicationSummary(context, snapshot.data!.docs);
+                                    if (snapshot.hasData &&
+                                        snapshot.data!.docs.isNotEmpty) {
+                                      _showApplicationSummary(
+                                          context, snapshot.data!.docs);
                                     } else {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => const ApplicationsTab(),
+                                          builder: (context) =>
+                                              const ApplicationsTab(),
                                         ),
                                       );
                                     }
                                   },
-                                  child: _buildPremiumStatCard(
-                                    countStr,
-                                    "Postulaciones",
-                                    Icons.send_rounded,
-                                    AppTheme.primaryOrange,
-                                  ),
                                 );
                               },
                             ),
@@ -362,23 +363,23 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                               builder: (context, snapshot) {
                                 String countStr = "0";
                                 if (snapshot.hasData) {
-                                  countStr = snapshot.data!.docs.length.toString();
+                                  countStr =
+                                      snapshot.data!.docs.length.toString();
                                 }
-                                return GestureDetector(
+                                return _InteractiveStatCard(
+                                  value: countStr,
+                                  label: "Notificaciones",
+                                  icon: Icons.notifications_active_rounded,
+                                  color: Colors.blueAccent,
                                   onTap: () {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => const NotificationsScreen(),
+                                        builder: (context) =>
+                                            const NotificationsScreen(),
                                       ),
                                     );
                                   },
-                                  child: _buildPremiumStatCard(
-                                    countStr,
-                                    "Notificaciones",
-                                    Icons.notifications_active_rounded,
-                                    Colors.blueAccent,
-                                  ),
                                 );
                               },
                             ),
@@ -406,7 +407,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   ),
                   const SizedBox(height: 12), // Antes 20
 
-                  GestureDetector(
+                  _InteractiveExploreCard(
                     onTap: () {
                       Navigator.push(
                         context,
@@ -415,71 +416,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         ),
                       );
                     },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20), // Antes all(25)
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppTheme.primaryOrange,
-                            AppTheme.primaryOrange.withValues(alpha: 0.7),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primaryOrange.withValues(alpha: 0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(
-                            Icons.rocket_launch_rounded,
-                            color: Colors.white,
-                            size: 30, // Antes 40
-                          ),
-                          const SizedBox(height: 15), // Antes 20
-                          const Text(
-                            "Explorar Ofertas",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20, // Antes 24
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            "Encuentra la pasantía ideal para tu carrera hoy mismo.",
-                            style: TextStyle(color: _white90, fontSize: 14),
-                          ),
-                          const SizedBox(height: 20), // Antes 25
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 18, // Antes 20
-                              vertical: 10, // Antes 12
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12), // Antes 15
-                            ),
-                            child: const Text(
-                              "Buscar Ahora",
-                              style: TextStyle(
-                                color: AppTheme.primaryOrange,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13, // Nuevo
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
 
                   const SizedBox(height: 30),
@@ -497,8 +433,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     spacing: 20,
                     runSpacing: 20,
                     children: [
-                      _buildActionCard(
-                        context,
+                      _InteractiveActionCard(
                         width: halfCardWidth,
                         title: "Mis Solicitudes",
                         subtitle: "Ver estado",
@@ -513,8 +448,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                           );
                         },
                       ),
-                      _buildActionCard(
-                        context,
+                      _InteractiveActionCard(
                         width: halfCardWidth,
                         title: "Mi Perfil y CV",
                         subtitle: "Editar datos",
@@ -530,8 +464,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         },
                       ),
 
-                      _buildActionCard(
-                        context,
+                      _InteractiveActionCard(
                         width: double.infinity,
                         title: "Soporte Técnico",
                         subtitle: "Consultas directas y ayuda",
@@ -602,126 +535,399 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     );
   }
 
-  // --- WIDGETS DE APOYO ---
-  Widget _buildPremiumStatCard(
-    String value,
-    String label,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(12), // Antes 16
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [const Color(0xFF1E293B), color.withValues(alpha: 0.2)],
-        ),
-        borderRadius: BorderRadius.circular(18), // Antes 20
-        border: Border.all(color: _white08),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8), // Antes 10
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: Colors.white, size: 20), // Antes 22
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18, // Antes 20
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                label,
-                style: const TextStyle(color: _white60, fontSize: 10), // Antes 11
-              ),
-            ],
-          ),
-        ],
-      ),
+}
+
+// --- CLASES INTERACTIVAS (ANIMADAS) ---
+
+class _InteractiveStatCard extends StatefulWidget {
+  final String value;
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _InteractiveStatCard({
+    required this.value,
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  State<_InteractiveStatCard> createState() => _InteractiveStatCardState();
+}
+
+class _InteractiveStatCardState extends State<_InteractiveStatCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  bool _isHovering = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }
 
-  Widget _buildActionCard(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color accentColor,
-    required VoidCallback onTap,
-    double? width,
-  }) {
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: width,
-        height: 160,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color(0xFF1E293B),
-              accentColor.withValues(alpha: 0.15),
-            ],
-          ),
-          borderRadius: BorderRadius.circular(25),
-          border: Border.all(color: _white08),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: Colors.white, size: 26),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 1,
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(
-                      subtitle,
-                      style: const TextStyle(color: _white50, fontSize: 12),
-                    ),
-                    const Spacer(),
-                    const Icon(
-                      Icons.arrow_forward_rounded,
-                      color: Color(0x4DFFFFFF),
-                      size: 16,
-                    ),
-                  ],
-                ),
+      onTapDown: (_) {
+        _controller.forward();
+        setState(() => _isHovering = true);
+      },
+      onTapUp: (_) {
+        _controller.reverse();
+        setState(() => _isHovering = false);
+        widget.onTap();
+      },
+      onTapCancel: () {
+        _controller.reverse();
+        setState(() => _isHovering = false);
+      },
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                _isHovering ? const Color(0xFF2D3748) : const Color(0xFF1E293B),
+                widget.color.withValues(alpha: _isHovering ? 0.4 : 0.2),
               ],
             ),
-          ],
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: _isHovering
+                  ? widget.color.withValues(alpha: 0.5)
+                  : Colors.white.withValues(alpha: 0.08),
+            ),
+            boxShadow: [
+              if (_isHovering)
+                BoxShadow(
+                  color: widget.color.withValues(alpha: 0.2),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
+                ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: widget.color.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(widget.icon, color: Colors.white, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.value,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    widget.label,
+                    style: const TextStyle(color: Colors.white60, fontSize: 10),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InteractiveExploreCard extends StatefulWidget {
+  final VoidCallback onTap;
+
+  const _InteractiveExploreCard({required this.onTap});
+
+  @override
+  State<_InteractiveExploreCard> createState() =>
+      _InteractiveExploreCardState();
+}
+
+class _InteractiveExploreCardState extends State<_InteractiveExploreCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  bool _isHovering = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) {
+        _controller.forward();
+        setState(() => _isHovering = true);
+      },
+      onTapUp: (_) {
+        _controller.reverse();
+        setState(() => _isHovering = false);
+        widget.onTap();
+      },
+      onTapCancel: () {
+        _controller.reverse();
+        setState(() => _isHovering = false);
+      },
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                _isHovering
+                    ? AppTheme.primaryOrange
+                    : AppTheme.primaryOrange.withValues(alpha: 0.9),
+                _isHovering
+                    ? AppTheme.primaryOrange.withValues(alpha: 0.8)
+                    : AppTheme.primaryOrange.withValues(alpha: 0.7),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryOrange.withValues(alpha: _isHovering ? 0.4 : 0.3),
+                blurRadius: _isHovering ? 30 : 20,
+                offset: Offset(0, _isHovering ? 15 : 10),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.rocket_launch_rounded,
+                color: Colors.white,
+                size: 30,
+              ),
+              const SizedBox(height: 15),
+              const Text(
+                "Explorar Ofertas",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                "Encuentra la pasantía ideal para tu carrera hoy mismo.",
+                style: TextStyle(color: Colors.white, fontSize: 14),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  "Buscar Ahora",
+                  style: TextStyle(
+                    color: AppTheme.primaryOrange,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InteractiveActionCard extends StatefulWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color accentColor;
+  final VoidCallback onTap;
+  final double? width;
+
+  const _InteractiveActionCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.accentColor,
+    required this.onTap,
+    this.width,
+  });
+
+  @override
+  State<_InteractiveActionCard> createState() => _InteractiveActionCardState();
+}
+
+class _InteractiveActionCardState extends State<_InteractiveActionCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  bool _isHovering = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.94).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) {
+        _controller.forward();
+        setState(() => _isHovering = true);
+      },
+      onTapUp: (_) {
+        _controller.reverse();
+        setState(() => _isHovering = false);
+        widget.onTap();
+      },
+      onTapCancel: () {
+        _controller.reverse();
+        setState(() => _isHovering = false);
+      },
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: widget.width,
+          height: 160,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                _isHovering ? const Color(0xFF2D3748) : const Color(0xFF1E293B),
+                widget.accentColor.withValues(alpha: _isHovering ? 0.3 : 0.15),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(
+              color: _isHovering
+                  ? widget.accentColor.withValues(alpha: 0.4)
+                  : Colors.white.withValues(alpha: 0.08),
+            ),
+            boxShadow: [
+              if (_isHovering)
+                BoxShadow(
+                  color: widget.accentColor.withValues(alpha: 0.2),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
+                ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: widget.accentColor.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(widget.icon, color: Colors.white, size: 26),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        widget.subtitle,
+                        style: const TextStyle(
+                          color: Color(0x80FFFFFF),
+                          fontSize: 12,
+                        ),
+                      ),
+                      const Spacer(),
+                      const Icon(
+                        Icons.arrow_forward_rounded,
+                        color: Color(0x4DFFFFFF),
+                        size: 16,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

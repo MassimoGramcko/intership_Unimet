@@ -14,7 +14,9 @@ class ListaUsuariosScreen extends StatefulWidget {
 
 class _ListaUsuariosScreenState extends State<ListaUsuariosScreen> {
   // 2. CONTROLADORES PARA LA BÚSQUEDA
+  // 2. CONTROLADORES
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   String _searchQuery = '';
 
   // Stream cacheado
@@ -30,6 +32,7 @@ class _ListaUsuariosScreenState extends State<ListaUsuariosScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -177,8 +180,12 @@ class _ListaUsuariosScreenState extends State<ListaUsuariosScreen> {
                   );
                 }
 
-                return ListView.builder(
-                  itemCount: users.length,
+                return Scrollbar(
+                  controller: _scrollController,
+                  thumbVisibility: true,
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    itemCount: users.length,
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   itemBuilder: (context, index) {
                     final userDoc = users[index];
@@ -255,6 +262,7 @@ class _ListaUsuariosScreenState extends State<ListaUsuariosScreen> {
                       ),
                     );
                   },
+                  ),
                 );
               },
             ),

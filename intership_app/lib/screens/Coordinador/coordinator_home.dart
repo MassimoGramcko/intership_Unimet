@@ -39,8 +39,9 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
   // Variable de estado para el filtro
   String _filtroStatus = 'Todos';
 
-  // Variables del buscador
+  // --- VARIABLES DE CONTROL ---
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController(); // <-- Controlador para el Scrollbar
   String _searchQuery = '';
 
   // Variables para la animación del Speed Dial
@@ -100,6 +101,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose(); // <-- Liberamos el controlador
     _animationController.dispose();
     super.dispose();
   }
@@ -230,10 +232,16 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
             ),
           ),
 
-          // CAPA 2: Contenido - AHORA USA CustomScrollView con Slivers
+          // CAPA 2: Contenido - AHORA CON SCROLLBAR
           SafeArea(
-            child: CustomScrollView(
-              slivers: [
+            child: Scrollbar(
+              controller: _scrollController,
+              thumbVisibility: true,
+              thickness: 6,
+              radius: const Radius.circular(10),
+              child: CustomScrollView(
+                controller: _scrollController,
+                slivers: [
                 // HEADER
                 SliverToBoxAdapter(
                   child: Padding(
@@ -258,13 +266,23 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
                               ],
                             ),
                             const SizedBox(height: 5),
-                            const Text(
-                              "Hola, Coordinador 👋",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 26,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            const SizedBox(height: 5),
+                            StreamBuilder<DocumentSnapshot>(
+                              stream: FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(_currentUserId)
+                                  .snapshots(),
+                              builder: (context, snapshot) {
+                                // Saludo simplificado para evitar overflow
+                                return const Text(
+                                  "Hola, Coordinador 👋",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -308,7 +326,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Row(
                       children: [
-                        _buildModernKpiCard(
+                        _InteractiveKpiCard(
                           title: "Solicitudes",
                           stream: _applicationsKpiStream,
                           countFilter: (docs) => docs
@@ -331,7 +349,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
                           },
                         ),
                         const SizedBox(width: 15),
-                        _buildModernKpiCard(
+                        _InteractiveKpiCard(
                           title: "Ofertas Activas",
                           stream: _offersKpiStream,
                           countFilter: (docs) => docs
@@ -367,7 +385,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Row(
                         children: [
-                          _buildModernKpiCard(
+                          _InteractiveKpiCard(
                             title: "Notificaciones Pendientes",
                             stream: _notificationsStream!,
                             countFilter: (docs) => docs.length,
@@ -381,7 +399,8 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const NotificationsScreen(),
+                                  builder: (context) =>
+                                      const NotificationsScreen(),
                                 ),
                               );
                             },
@@ -469,22 +488,63 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
                       padding: const EdgeInsets.fromLTRB(24, 10, 24, 5),
                       child: Row(
                         children: [
-                          const Icon(
-                            Icons.filter_alt_outlined,
-                            size: 14,
-                            color: _white50,
-                          ),
-                          const SizedBox(width: 5),
                           const Text(
                             "Filtrando por: ",
                             style: TextStyle(color: _white50, fontSize: 12),
                           ),
-                          Text(
-                            _filtroStatus,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                          const SizedBox(width: 5),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: (_filtroStatus == 'Pendiente'
+                                      ? Colors.orangeAccent
+                                      : _filtroStatus == 'Aceptado'
+                                          ? Colors.greenAccent
+                                          : Colors.redAccent)
+                                  .withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: (_filtroStatus == 'Pendiente'
+                                        ? Colors.orangeAccent
+                                        : _filtroStatus == 'Aceptado'
+                                            ? Colors.greenAccent
+                                            : Colors.redAccent)
+                                    .withValues(alpha: 0.2),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  _filtroStatus == 'Pendiente'
+                                      ? Icons.hourglass_empty_rounded
+                                      : _filtroStatus == 'Aceptado'
+                                          ? Icons.check_circle_outline_rounded
+                                          : Icons.cancel_outlined,
+                                  size: 14,
+                                  color: _filtroStatus == 'Pendiente'
+                                      ? Colors.orangeAccent
+                                      : _filtroStatus == 'Aceptado'
+                                          ? Colors.greenAccent
+                                          : Colors.redAccent,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  _filtroStatus,
+                                  style: TextStyle(
+                                    color: _filtroStatus == 'Pendiente'
+                                        ? Colors.orangeAccent
+                                        : _filtroStatus == 'Aceptado'
+                                            ? Colors.greenAccent
+                                            : Colors.redAccent,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -670,6 +730,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
               ],
             ),
           ),
+        ),
 
           if (_isDialOpen)
             GestureDetector(
@@ -694,46 +755,19 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
             parent: _animationController,
             curve: Curves.easeOutBack,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+          child: _InteractiveDialButton(
+            label: "Mensajes",
+            icon: Icons.chat_bubble_rounded,
+            backgroundColor: Colors.blueAccent,
+            onTap: () {
+              _toggleDial();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const ListaUsuariosScreen(),
                 ),
-                decoration: BoxDecoration(
-                  color: _surfaceDark,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: _white10),
-                ),
-                child: const Text(
-                  "Mensajes",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 15),
-              FloatingActionButton.small(
-                heroTag: "chat_btn",
-                backgroundColor: Colors.blueAccent,
-                onPressed: () {
-                  _toggleDial();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const ListaUsuariosScreen(),
-                    ),
-                  );
-                },
-                child: const Icon(
-                  Icons.chat_bubble_rounded,
-                  color: Colors.white,
-                ),
-              ),
-            ],
+              );
+            },
           ),
         ),
 
@@ -745,46 +779,19 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
             parent: _animationController,
             curve: Curves.easeOutBack,
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+          child: _InteractiveDialButton(
+            label: "Crear Oferta",
+            icon: Icons.add_business_rounded,
+            backgroundColor: primaryOrange,
+            onTap: () {
+              _toggleDial();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const CreateOfferScreen(),
                 ),
-                decoration: BoxDecoration(
-                  color: _surfaceDark,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: _white10),
-                ),
-                child: const Text(
-                  "Crear Oferta",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 15),
-              FloatingActionButton.small(
-                heroTag: "offer_btn",
-                backgroundColor: primaryOrange,
-                onPressed: () {
-                  _toggleDial();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const CreateOfferScreen(),
-                    ),
-                  );
-                },
-                child: const Icon(
-                  Icons.add_business_rounded,
-                  color: Colors.white,
-                ),
-              ),
-            ],
+              );
+            },
           ),
         ),
 
@@ -844,105 +851,6 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
     );
   }
 
-  Widget _buildModernKpiCard({
-    required String title,
-    required Stream<QuerySnapshot> stream,
-    required int Function(List<QueryDocumentSnapshot>) countFilter,
-    required IconData icon,
-    required Color accentColor,
-    required List<Color> gradientColors,
-    VoidCallback? onTap,
-  }) {
-    return Expanded(
-      child: StreamBuilder<QuerySnapshot>(
-        stream: stream,
-        builder: (context, snapshot) {
-          int count = 0;
-          if (snapshot.hasData) {
-            count = countFilter(snapshot.data!.docs);
-          }
-
-          return GestureDetector(
-            onTap: onTap,
-            child: Container(
-              height: 160,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(25),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    gradientColors[0].withValues(alpha: 0.2),
-                    gradientColors[1].withValues(alpha: 0.1),
-                  ],
-                ),
-                border: Border.all(color: _white08),
-                boxShadow: const [
-                  BoxShadow(
-                    color: _black20,
-                    blurRadius: 15,
-                    offset: Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    right: -20,
-                    bottom: -20,
-                    child: Icon(
-                      icon,
-                      size: 100,
-                      color: accentColor.withValues(alpha: 0.05),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: accentColor.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(icon, color: accentColor, size: 24),
-                        ),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "$count",
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 36,
-                                fontWeight: FontWeight.w900,
-                                height: 1,
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            Text(
-                              title,
-                              style: const TextStyle(
-                                color: _white70,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
 
   Widget _buildModernReviewTile(Map<String, dynamic> data, String docId) {
     String status = (data['status'] ?? 'Pendiente').toString().toLowerCase();
@@ -1175,6 +1083,298 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
           ),
         ],
       ),
+    );
+  }
+}
+
+class _InteractiveKpiCard extends StatefulWidget {
+  final String title;
+  final Stream<QuerySnapshot> stream;
+  final int Function(List<QueryDocumentSnapshot>) countFilter;
+  final IconData icon;
+  final Color accentColor;
+  final List<Color> gradientColors;
+  final VoidCallback? onTap;
+
+  const _InteractiveKpiCard({
+    required this.title,
+    required this.stream,
+    required this.countFilter,
+    required this.icon,
+    required this.accentColor,
+    required this.gradientColors,
+    this.onTap,
+  });
+
+  @override
+  State<_InteractiveKpiCard> createState() => _InteractiveKpiCardState();
+}
+
+class _InteractiveKpiCardState extends State<_InteractiveKpiCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  bool _isHovering = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: StreamBuilder<QuerySnapshot>(
+        stream: widget.stream,
+        builder: (context, snapshot) {
+          int count = 0;
+          if (snapshot.hasData) {
+            count = widget.countFilter(snapshot.data!.docs);
+          }
+
+          return GestureDetector(
+            onTapDown: (_) {
+              _controller.forward();
+              setState(() => _isHovering = true);
+            },
+            onTapUp: (_) {
+              _controller.reverse();
+              setState(() => _isHovering = false);
+              if (widget.onTap != null) widget.onTap!();
+            },
+            onTapCancel: () {
+              _controller.reverse();
+              setState(() => _isHovering = false);
+            },
+            child: ScaleTransition(
+              scale: _scaleAnimation,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: 160,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(25),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      widget.gradientColors[0].withValues(
+                        alpha: _isHovering ? 0.4 : 0.2,
+                      ),
+                      widget.gradientColors[1].withValues(
+                        alpha: _isHovering ? 0.3 : 0.1,
+                      ),
+                    ],
+                  ),
+                  border: Border.all(
+                    color: _isHovering
+                        ? widget.accentColor.withValues(alpha: 0.5)
+                        : const Color(0x14FFFFFF),
+                    width: _isHovering ? 2 : 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: _isHovering ? 0.4 : 0.2,
+                      ),
+                      blurRadius: _isHovering ? 20 : 15,
+                      offset: Offset(0, _isHovering ? 12 : 10),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: -20,
+                      bottom: -20,
+                      child: Icon(
+                        widget.icon,
+                        size: 100,
+                        color: widget.accentColor.withValues(
+                          alpha: _isHovering ? 0.1 : 0.05,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: widget.accentColor.withValues(
+                                alpha: _isHovering ? 0.4 : 0.2,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: _isHovering
+                                  ? [
+                                      BoxShadow(
+                                        color: widget.accentColor.withValues(
+                                          alpha: 0.3,
+                                        ),
+                                        blurRadius: 8,
+                                        spreadRadius: 1,
+                                      )
+                                    ]
+                                  : [],
+                            ),
+                            child: Icon(
+                              widget.icon,
+                              color: widget.accentColor,
+                              size: 24,
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "$count",
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1,
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              Text(
+                                widget.title,
+                                style: const TextStyle(
+                                  color: Color(0xB3FFFFFF),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _InteractiveDialButton extends StatefulWidget {
+  final IconData icon;
+  final Color backgroundColor;
+  final VoidCallback onTap;
+  final String label;
+
+  const _InteractiveDialButton({
+    required this.icon,
+    required this.backgroundColor,
+    required this.onTap,
+    required this.label,
+  });
+
+  @override
+  State<_InteractiveDialButton> createState() => _InteractiveDialButtonState();
+}
+
+class _InteractiveDialButtonState extends State<_InteractiveDialButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  bool _isHovering = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 100));
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Etiqueta
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E293B),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+          ),
+          child: Text(
+            widget.label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+            ),
+          ),
+        ),
+        const SizedBox(width: 15),
+        // Botón con icono
+        GestureDetector(
+          onTapDown: (_) {
+            _controller.forward();
+            setState(() => _isHovering = true);
+          },
+          onTapUp: (_) {
+            _controller.reverse();
+            setState(() => _isHovering = false);
+            widget.onTap();
+          },
+          onTapCancel: () {
+            _controller.reverse();
+            setState(() => _isHovering = false);
+          },
+          child: ScaleTransition(
+            scale: _scaleAnimation,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: _isHovering
+                    ? widget.backgroundColor.withValues(alpha: 0.8)
+                    : widget.backgroundColor,
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                    color: widget.backgroundColor.withValues(alpha: 0.4),
+                    blurRadius: _isHovering ? 15 : 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Icon(widget.icon, color: Colors.white, size: 24),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

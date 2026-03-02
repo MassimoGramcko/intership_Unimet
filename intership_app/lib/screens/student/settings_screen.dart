@@ -12,9 +12,15 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  final ScrollController _scrollController = ScrollController(); // <-- Controlador para el Scrollbar
   bool _isLoading = false;
   bool _pushNotifications = true;
-  bool _emailNotifications = true;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -34,7 +40,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         if (mounted) {
           setState(() {
             _pushNotifications = data['settings_push'] ?? true;
-            _emailNotifications = data['settings_email'] ?? true;
           });
         }
       }
@@ -51,7 +56,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // Actualizamos el estado local inmediatamente para fluidez
     setState(() {
       if (field == 'settings_push') _pushNotifications = value;
-      if (field == 'settings_email') _emailNotifications = value;
     });
 
     try {
@@ -64,7 +68,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         // Revertimos en caso de error
         setState(() {
           if (field == 'settings_push') _pushNotifications = !value;
-          if (field == 'settings_email') _emailNotifications = !value;
         });
       }
     }
@@ -243,24 +246,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       body: Stack(
         children: [
-          ListView(
-            padding: const EdgeInsets.all(24.0),
+          Scrollbar(
+            controller: _scrollController,
+            thumbVisibility: true,
+            thickness: 6,
+            radius: const Radius.circular(10),
+            child: ListView(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(24.0),
             children: [
               // SECCIÓN: PERSONALIZACIÓN
               _buildSectionTitle("Personalización"),
               _buildSwitchTile(
                 icon: Icons.notifications_active_outlined,
+                iconColor: Colors.purpleAccent,
                 title: "Notificaciones Push",
                 subtitle: "Alertas sobre nuevas ofertas de pasantías",
                 value: _pushNotifications,
                 onChanged: (val) => _updateSetting('settings_push', val),
-              ),
-              _buildSwitchTile(
-                icon: Icons.alternate_email_rounded,
-                title: "Alertas por Correo",
-                subtitle: "Recibe nuevas ofertas en tu @unimet.edu.ve",
-                value: _emailNotifications,
-                onChanged: (val) => _updateSetting('settings_email', val),
               ),
 
               const SizedBox(height: 30),
@@ -268,6 +271,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildSectionTitle("Seguridad"),
               _buildSettingsTile(
                 icon: Icons.lock_outline_rounded,
+                iconColor: Colors.orangeAccent,
                 title: "Cambiar Contraseña",
                 subtitle: "Te enviaremos un correo de recuperación",
                 onTap: _resetPassword,
@@ -278,12 +282,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildSectionTitle("Legal y Soporte"),
               _buildSettingsTile(
                 icon: Icons.support_agent_rounded,
+                iconColor: Colors.blueAccent,
                 title: "Centro de Ayuda",
                 subtitle: "Chatea con un coordinador",
                 onTap: _openSupportChat,
               ),
               _buildSettingsTile(
                 icon: Icons.description_outlined,
+                iconColor: Colors.amberAccent,
                 title: "Términos y Condiciones",
                 subtitle: "Uso legal de la plataforma",
                 onTap: () => _showLegalSheet(
@@ -293,6 +299,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               _buildSettingsTile(
                 icon: Icons.privacy_tip_outlined,
+                iconColor: Colors.greenAccent,
                 title: "Política de Privacidad",
                 subtitle: "Cómo protegemos tus datos",
                 onTap: () => _showLegalSheet(
@@ -306,6 +313,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildSectionTitle("Sesión"),
               _buildSettingsTile(
                 icon: Icons.logout_rounded,
+                iconColor: Colors.redAccent,
                 title: "Cerrar Sesión",
                 subtitle: "Salir de tu cuenta en este dispositivo",
                 isDestructive: true,
@@ -315,6 +323,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const SizedBox(height: 20),
             ],
           ),
+        ),
 
           if (_isLoading)
             Container(
@@ -338,33 +347,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildSettingsTile({
     required IconData icon,
+    required Color iconColor,
     required String title,
     required String subtitle,
     required VoidCallback onTap,
     bool isDestructive = false,
   }) {
     final Color itemColor = isDestructive ? Colors.redAccent : Colors.white;
-    final Color iconColor = isDestructive ? Colors.redAccent : Colors.white70;
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(15),
+      borderRadius: BorderRadius.circular(18),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E293B),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        ),
         child: Row(
           children: [
-            Icon(icon, color: iconColor, size: 24),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: iconColor, size: 22),
+            ),
             const SizedBox(width: 15),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: TextStyle(color: itemColor, fontSize: 15, fontWeight: FontWeight.w600)),
-                  Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                  Text(title,
+                      style: TextStyle(
+                          color: itemColor,
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 2),
+                  Text(subtitle,
+                      style:
+                          const TextStyle(color: Colors.white54, fontSize: 12)),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios_rounded, color: Colors.white10, size: 14),
+            Icon(Icons.arrow_forward_ios_rounded,
+                color: Colors.white24, size: 14),
           ],
         ),
       ),
@@ -373,31 +403,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildSwitchTile({
     required IconData icon,
+    required Color iconColor,
     required String title,
     required String subtitle,
     required bool value,
     required ValueChanged<bool> onChanged,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+      ),
       child: Row(
         children: [
-          Icon(icon, color: Colors.white70, size: 24),
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: iconColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: iconColor, size: 22),
+          ),
           const SizedBox(width: 15),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600)),
-                Text(subtitle, style: const TextStyle(color: Colors.white38, fontSize: 12)),
+                Text(title,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold)),
+                const SizedBox(height: 2),
+                Text(subtitle,
+                    style:
+                        const TextStyle(color: Colors.white54, fontSize: 12)),
               ],
             ),
           ),
-          Switch(
+          Switch.adaptive(
             value: value,
             onChanged: onChanged,
             activeColor: Colors.orangeAccent,
-            activeTrackColor: Colors.orangeAccent.withValues(alpha: 0.3),
           ),
         ],
       ),

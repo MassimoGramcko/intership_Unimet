@@ -151,13 +151,13 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 20),
               children: [
-                _buildFilterChip("Todos", primaryColor),
+                _buildInteractiveFilterChip("Todos", primaryColor),
                 const SizedBox(width: 10),
-                _buildFilterChip("Pendiente", primaryColor, dbKey: "pending"),
+                _buildInteractiveFilterChip("Pendiente", primaryColor, dbKey: "pending"),
                 const SizedBox(width: 10),
-                _buildFilterChip("Aceptado", primaryColor, dbKey: "accepted"),
+                _buildInteractiveFilterChip("Aceptado", primaryColor, dbKey: "accepted"),
                 const SizedBox(width: 10),
-                _buildFilterChip("Rechazado", primaryColor, dbKey: "rejected"),
+                _buildInteractiveFilterChip("Rechazado", primaryColor, dbKey: "rejected"),
               ],
             ),
           ),
@@ -210,7 +210,11 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
                     itemCount: docs.length,
                     itemBuilder: (context, index) {
                       final data = docs[index].data() as Map<String, dynamic>;
-                      return _buildApplicationCard(data);
+                      return _InteractiveApplicationCard(
+                        data: data,
+                        statusConfig: statusConfig,
+                        getStatusKey: _getStatusKey,
+                      );
                     },
                   ),
                 );
@@ -223,171 +227,15 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
   );
 }
 
-  Widget _buildFilterChip(String label, Color activeColor, {String? dbKey}) {
+  Widget _buildInteractiveFilterChip(String label, Color activeColor, {String? dbKey}) {
     final valueToSet = dbKey ?? 'Todos';
     final isSelected = _selectedFilter == valueToSet;
 
-    return GestureDetector(
+    return _AnimatedFilterChip(
+      label: label,
+      isSelected: isSelected,
+      activeColor: activeColor,
       onTap: () => setState(() => _selectedFilter = valueToSet),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected ? activeColor : _white05,
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: isSelected ? activeColor : _white10),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? Colors.white : _white60,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildApplicationCard(Map<String, dynamic> data) {
-    final statusKey = _getStatusKey(data['status']);
-
-    final config = statusConfig[statusKey]!;
-    final Color statusColor = config['color'];
-    final String statusLabel = config['label'];
-    final int currentStep = config['step'];
-
-    String dateStr = "Reciente";
-    if (data['appliedAt'] != null) {
-      try {
-        DateTime date = (data['appliedAt'] as Timestamp).toDate();
-        dateStr = DateFormat('dd MMM, hh:mm a').format(date);
-      } catch (e) {
-        dateStr = "Fecha desconocida";
-      }
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _white05),
-        boxShadow: const [
-          BoxShadow(color: _black20, blurRadius: 10, offset: Offset(0, 5)),
-        ],
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(Icons.business, color: statusColor, size: 28),
-                ),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        data['jobTitle'] ?? 'Puesto',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        data['company'] ?? 'Empresa',
-                        style: const TextStyle(color: _white60, fontSize: 13),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: statusColor.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Text(
-                    statusLabel,
-                    style: TextStyle(
-                      color: statusColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const Divider(color: _white05, height: 1),
-
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      "Progreso:",
-                      style: TextStyle(color: _white40, fontSize: 11),
-                    ),
-                    Text(
-                      dateStr,
-                      style: TextStyle(color: _white40, fontSize: 11),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                SizedBox(
-                  height: 6,
-                  child: Row(
-                    children: [
-                      _buildProgressSegment(
-                        isActive: currentStep >= 1,
-                        color: statusColor,
-                        isFirst: true,
-                      ),
-                      const SizedBox(width: 4),
-                      _buildProgressSegment(
-                        isActive: currentStep >= 2,
-                        color: statusColor,
-                      ),
-                      const SizedBox(width: 4),
-                      _buildProgressSegment(
-                        isActive: currentStep >= 3,
-                        color: statusColor,
-                        isLast: true,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -426,6 +274,326 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
             textAlign: TextAlign.center,
           ),
         ],
+      ),
+    );
+  }
+}
+
+// --- CLASES INTERACTIVAS (ANIMADAS) ---
+
+class _AnimatedFilterChip extends StatefulWidget {
+  final String label;
+  final bool isSelected;
+  final Color activeColor;
+  final VoidCallback onTap;
+
+  const _AnimatedFilterChip({
+    required this.label,
+    required this.isSelected,
+    required this.activeColor,
+    required this.onTap,
+  });
+
+  @override
+  State<_AnimatedFilterChip> createState() => _AnimatedFilterChipState();
+}
+
+class _AnimatedFilterChipState extends State<_AnimatedFilterChip>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) {
+        _controller.reverse();
+        widget.onTap();
+      },
+      onTapCancel: () => _controller.reverse(),
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          decoration: BoxDecoration(
+            color: widget.isSelected ? widget.activeColor : const Color(0x0DFFFFFF),
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: widget.isSelected ? widget.activeColor : const Color(0x1AFFFFFF),
+            ),
+            boxShadow: [
+              if (widget.isSelected)
+                BoxShadow(
+                  color: widget.activeColor.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              widget.label,
+              style: TextStyle(
+                color: widget.isSelected ? Colors.white : const Color(0x99FFFFFF),
+                fontWeight: widget.isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InteractiveApplicationCard extends StatefulWidget {
+  final Map<String, dynamic> data;
+  final Map<String, dynamic> statusConfig;
+  final String Function(String?) getStatusKey;
+
+  const _InteractiveApplicationCard({
+    required this.data,
+    required this.statusConfig,
+    required this.getStatusKey,
+  });
+
+  @override
+  State<_InteractiveApplicationCard> createState() =>
+      _InteractiveApplicationCardState();
+}
+
+class _InteractiveApplicationCardState extends State<_InteractiveApplicationCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  bool _isPressed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final statusKey = widget.getStatusKey(widget.data['status']);
+    final config = widget.statusConfig[statusKey]!;
+    final Color statusColor = config['color'];
+    final String statusLabel = config['label'];
+    final int currentStep = config['step'];
+
+    String dateStr = "Reciente";
+    if (widget.data['appliedAt'] != null) {
+      try {
+        DateTime date = (widget.data['appliedAt'] as Timestamp).toDate();
+        dateStr = DateFormat('dd MMM, hh:mm a').format(date);
+      } catch (e) {
+        dateStr = "Fecha desconocida";
+      }
+    }
+
+    return GestureDetector(
+      onTapDown: (_) {
+        _controller.forward();
+        setState(() => _isPressed = true);
+      },
+      onTapUp: (_) {
+        _controller.reverse();
+        setState(() => _isPressed = false);
+      },
+      onTapCancel: () {
+        _controller.reverse();
+        setState(() => _isPressed = false);
+      },
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.only(bottom: 20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                _isPressed ? const Color(0xFF2D3748) : const Color(0xFF1E293B),
+                statusColor.withValues(alpha: _isPressed ? 0.15 : 0.05),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: _isPressed
+                  ? statusColor.withValues(alpha: 0.3)
+                  : Colors.white.withValues(alpha: 0.05),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: _isPressed ? 0.3 : 0.2),
+                blurRadius: _isPressed ? 15 : 10,
+                offset: Offset(0, _isPressed ? 8 : 5),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(Icons.business, color: statusColor, size: 28),
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.data['jobTitle'] ?? 'Puesto',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.data['company'] ?? 'Empresa',
+                            style: const TextStyle(
+                                color: Color(0x99FFFFFF), fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: statusColor.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Text(
+                        statusLabel,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(color: Color(0x0DFFFFFF), height: 1),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Progreso:",
+                          style: TextStyle(color: Color(0x66FFFFFF), fontSize: 11),
+                        ),
+                        Text(
+                          dateStr,
+                          style: const TextStyle(color: Color(0x66FFFFFF), fontSize: 11),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      height: 6,
+                      child: Row(
+                        children: [
+                          _buildSegment(
+                            isActive: currentStep >= 1,
+                            color: statusColor,
+                            isFirst: true,
+                          ),
+                          const SizedBox(width: 4),
+                          _buildSegment(
+                            isActive: currentStep >= 2,
+                            color: statusColor,
+                          ),
+                          const SizedBox(width: 4),
+                          _buildSegment(
+                            isActive: currentStep >= 3,
+                            color: statusColor,
+                            isLast: true,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSegment({
+    required bool isActive,
+    required Color color,
+    bool isFirst = false,
+    bool isLast = false,
+  }) {
+    return Expanded(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 500),
+        decoration: BoxDecoration(
+          color: isActive ? color : const Color(0x1AFFFFFF),
+          borderRadius: BorderRadius.horizontal(
+            left: isFirst ? const Radius.circular(5) : Radius.zero,
+            right: isLast ? const Radius.circular(5) : Radius.zero,
+          ),
+        ),
       ),
     );
   }

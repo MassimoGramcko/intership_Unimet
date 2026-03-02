@@ -315,7 +315,8 @@ class _ExploreTabState extends State<ExploreTab> {
                                     padding: const EdgeInsets.only(left: 20),
                                     itemCount: featuredOffers.length,
                                     itemBuilder: (context, i) =>
-                                        _buildFeaturedCard(featuredOffers[i]),
+                                        _InteractiveFeaturedCard(
+                                            offer: featuredOffers[i]),
                                   ),
                                 ),
                               ],
@@ -367,8 +368,8 @@ class _ExploreTabState extends State<ExploreTab> {
                         }
 
                         if (currentIndex < filteredOffers.length) {
-                          return _buildVerticalCard(
-                            filteredOffers[currentIndex],
+                          return _InteractiveVerticalCard(
+                            offer: filteredOffers[currentIndex],
                           );
                         }
 
@@ -397,7 +398,25 @@ class _ExploreTabState extends State<ExploreTab> {
     );
   }
 
-  // --- WIDGETS AUXILIARES ---
+  Widget _buildTag(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
   Widget _buildEmptyState() {
     return Container(
       padding: const EdgeInsets.only(top: 50),
@@ -416,176 +435,159 @@ class _ExploreTabState extends State<ExploreTab> {
       ),
     );
   }
+}
 
-  Widget _buildFeaturedCard(JobOffer offer) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => JobDetailsScreen(offer: offer),
-          ),
-        );
-      },
-      child: Container(
-        width: 280,
-        margin: const EdgeInsets.only(right: 15),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF2A2D3E), Color(0xFF1F212E)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: _white05),
-          boxShadow: const [
-            BoxShadow(color: _black30, blurRadius: 15, offset: Offset(0, 10)),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: _white10,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Hero(
-                    tag: "featured_${offer.id}",
-                    child: Icon(
-                      Icons.business,
-                      color: offer.brandColor,
-                      size: 24,
-                    ),
-                  ),
-                ),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryOrange.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    offer.wage,
-                    style: const TextStyle(
-                      color: AppTheme.primaryOrange,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const Spacer(),
-            Text(
-              offer.title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 5),
-            Text(
-              offer.company,
-              style: const TextStyle(color: _white60, fontSize: 14),
-            ),
-            const SizedBox(height: 15),
-            Row(
-              children: [
-                _buildTag(offer.type, Colors.purpleAccent),
-                const SizedBox(width: 8),
-                if (offer.isRemote) _buildTag("Remoto", Colors.tealAccent),
-              ],
-            ),
-          ],
-        ),
-      ),
+// --- CLASES INTERACTIVAS (ANIMADAS) ---
+
+class _InteractiveFeaturedCard extends StatefulWidget {
+  final JobOffer offer;
+  const _InteractiveFeaturedCard({required this.offer});
+
+  @override
+  State<_InteractiveFeaturedCard> createState() =>
+      _InteractiveFeaturedCardState();
+}
+
+class _InteractiveFeaturedCardState extends State<_InteractiveFeaturedCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  bool _isPressed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 100));
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }
 
-  Widget _buildVerticalCard(JobOffer offer) {
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
+      onTapDown: (_) {
+        _controller.forward();
+        setState(() => _isPressed = true);
+      },
+      onTapUp: (_) {
+        _controller.reverse();
+        setState(() => _isPressed = false);
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => JobDetailsScreen(offer: offer),
+            builder: (context) => JobDetailsScreen(offer: widget.offer),
           ),
         );
       },
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceDark,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: _white03),
-          boxShadow: const [
-            BoxShadow(color: _black10, blurRadius: 5, offset: Offset(0, 2)),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: offer.brandColor.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: Hero(
-                tag: "list_${offer.id}",
-                child: Icon(Icons.work_outline, color: offer.brandColor),
-              ),
+      onTapCancel: () {
+        _controller.reverse();
+        setState(() => _isPressed = false);
+      },
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: 280,
+          margin: const EdgeInsets.only(right: 15, bottom: 10),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                _isPressed ? const Color(0xFF32364A) : const Color(0xFF2A2D3E),
+                _isPressed ? const Color(0xFF252838) : const Color(0xFF1F212E),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: _isPressed
+                  ? widget.offer.brandColor.withValues(alpha: 0.3)
+                  : Colors.white.withValues(alpha: 0.05),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: _isPressed ? 0.4 : 0.3),
+                blurRadius: _isPressed ? 20 : 15,
+                offset: Offset(0, _isPressed ? 12 : 10),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Text(
-                    offer.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Hero(
+                      tag: "featured_${widget.offer.id}",
+                      child: Icon(
+                        Icons.business,
+                        color: widget.offer.brandColor,
+                        size: 24,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "${offer.company} • ${offer.location}",
-                    style: const TextStyle(color: _white50, fontSize: 12),
+                  const Spacer(),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryOrange.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      widget.offer.wage,
+                      style: const TextStyle(
+                        color: AppTheme.primaryOrange,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ],
               ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  _calculateTimeAgo(offer.postedAt),
-                  style: const TextStyle(color: _white30, fontSize: 10),
+              const Spacer(),
+              Text(
+                widget.offer.title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
-                const SizedBox(height: 8),
-                const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  color: _white24,
-                  size: 16,
-                ),
-              ],
-            ),
-          ],
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 5),
+              Text(
+                widget.offer.company,
+                style: const TextStyle(
+                    color: Color(0x99FFFFFF), fontSize: 14),
+              ),
+              const SizedBox(height: 15),
+              Row(
+                children: [
+                  _buildTag(widget.offer.type, Colors.purpleAccent),
+                  const SizedBox(width: 8),
+                  if (widget.offer.isRemote)
+                    _buildTag("Remoto", Colors.tealAccent),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -608,5 +610,151 @@ class _ExploreTabState extends State<ExploreTab> {
         ),
       ),
     );
+  }
+}
+
+class _InteractiveVerticalCard extends StatefulWidget {
+  final JobOffer offer;
+  const _InteractiveVerticalCard({required this.offer});
+
+  @override
+  State<_InteractiveVerticalCard> createState() =>
+      _InteractiveVerticalCardState();
+}
+
+class _InteractiveVerticalCardState extends State<_InteractiveVerticalCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  bool _isPressed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 100));
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) {
+        _controller.forward();
+        setState(() => _isPressed = true);
+      },
+      onTapUp: (_) {
+        _controller.reverse();
+        setState(() => _isPressed = false);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => JobDetailsScreen(offer: widget.offer),
+          ),
+        );
+      },
+      onTapCancel: () {
+        _controller.reverse();
+        setState(() => _isPressed = false);
+      },
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: _isPressed ? const Color(0xFF2D3748) : AppTheme.surfaceDark,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: _isPressed
+                  ? widget.offer.brandColor.withValues(alpha: 0.3)
+                  : Colors.white.withValues(alpha: 0.03),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: _isPressed ? 0.2 : 0.1),
+                blurRadius: _isPressed ? 10 : 5,
+                offset: Offset(0, _isPressed ? 4 : 2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: widget.offer.brandColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Hero(
+                  tag: "list_${widget.offer.id}",
+                  child: Icon(Icons.work_outline, color: widget.offer.brandColor),
+                ),
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.offer.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      "${widget.offer.company} • ${widget.offer.location}",
+                      style: const TextStyle(
+                        color: Color(0x80FFFFFF),
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    _calculateTimeAgo(widget.offer.postedAt),
+                    style: const TextStyle(
+                      color: Color(0x4DFFFFFF),
+                      fontSize: 10,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: Color(0x3DFFFFFF),
+                    size: 16,
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _calculateTimeAgo(Timestamp? timestamp) {
+    if (timestamp == null) return "Reciente";
+    final diff = DateTime.now().difference(timestamp.toDate());
+    if (diff.inDays > 0) return "Hace ${diff.inDays}d";
+    if (diff.inHours > 0) return "Hace ${diff.inHours}h";
+    return "Hace ${diff.inMinutes}m";
   }
 }

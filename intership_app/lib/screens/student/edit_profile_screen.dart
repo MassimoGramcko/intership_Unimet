@@ -18,6 +18,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _lastNameController = TextEditingController();
   final _carnetController = TextEditingController();
   final _careerController = TextEditingController();
+  final _semesterController = TextEditingController();
+  final _academicIndexController = TextEditingController();
+  final _aboutMeController = TextEditingController();
+  final _skillsController = TextEditingController();
 
   bool _isLoading = true;
 
@@ -33,6 +37,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _lastNameController.dispose();
     _carnetController.dispose();
     _careerController.dispose();
+    _semesterController.dispose();
+    _academicIndexController.dispose();
+    _aboutMeController.dispose();
+    _skillsController.dispose();
     super.dispose();
   }
 
@@ -51,6 +59,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           _lastNameController.text = data['lastName'] ?? '';
           _carnetController.text = data['carnet'] ?? '';
           _careerController.text = data['career'] ?? '';
+          _semesterController.text = data['semester'] ?? '';
+          _academicIndexController.text = data['academicIndex'] ?? '';
+          _aboutMeController.text = data['aboutMe'] ?? '';
+          // Convertir lista de habilidades a texto separado por comas
+          final skills = data['skills'];
+          if (skills is List) {
+            _skillsController.text = skills.join(', ');
+          } else if (skills is String) {
+            _skillsController.text = skills;
+          }
           _isLoading = false;
         });
       }
@@ -71,8 +89,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           .update({
             'firstName': _nameController.text.trim(),
             'lastName': _lastNameController.text.trim(),
-            'carnet': _carnetController.text.trim(), // Actualizamos el Carnet
+            'carnet': _carnetController.text.trim(),
             'career': _careerController.text.trim(),
+            'semester': _semesterController.text.trim(),
+            'academicIndex': _academicIndexController.text.trim(),
+            'aboutMe': _aboutMeController.text.trim(),
+            // Guardar habilidades como lista
+            'skills': _skillsController.text
+                .split(',')
+                .map((s) => s.trim())
+                .where((s) => s.isNotEmpty)
+                .toList(),
             'lastUpdated': FieldValue.serverTimestamp(),
           });
 
@@ -171,6 +198,65 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       label: "Carrera",
                       icon: Icons.school_outlined,
                     ),
+                    const SizedBox(height: 20),
+
+                    const SizedBox(height: 10),
+                    const Text(
+                      "Datos Académicos",
+                      style: TextStyle(
+                        color: AppTheme.primaryOrange,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      "Esta información es visible para los coordinadores.",
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 25),
+
+                    // --- CAMPO: SEMESTRE ---
+                    _buildNeonTextField(
+                      controller: _semesterController,
+                      label: "Semestre actual",
+                      icon: Icons.calendar_today_outlined,
+                      keyboardType: TextInputType.number,
+                      required: false,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // --- CAMPO: ÍNDICE ACADÉMICO ---
+                    _buildNeonTextField(
+                      controller: _academicIndexController,
+                      label: "Índice Académico (Ej: 15.5)",
+                      icon: Icons.workspace_premium_outlined,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      required: false,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // --- CAMPO: SOBRE MÍ ---
+                    _buildNeonTextField(
+                      controller: _aboutMeController,
+                      label: "Sobre mí",
+                      icon: Icons.info_outline_rounded,
+                      maxLines: 3,
+                      required: false,
+                    ),
+                    const SizedBox(height: 20),
+
+                    // --- CAMPO: HABILIDADES ---
+                    _buildNeonTextField(
+                      controller: _skillsController,
+                      label: "Habilidades (separadas por coma)",
+                      icon: Icons.code_rounded,
+                      hint: "Flutter, Python, Excel...",
+                      required: false,
+                    ),
 
                     const SizedBox(height: 50),
 
@@ -213,10 +299,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     required String label,
     required IconData icon,
     TextInputType keyboardType = TextInputType.text,
+    int maxLines = 1,
+    String? hint,
+    bool required = true,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B), // surfaceDark
+        color: const Color(0xFF1E293B),
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
@@ -229,9 +318,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       child: TextFormField(
         controller: controller,
         keyboardType: keyboardType,
+        maxLines: maxLines,
         style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           labelText: label,
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.25)),
           labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
           prefixIcon: Icon(icon, color: AppTheme.primaryOrange),
           border: OutlineInputBorder(
@@ -248,12 +340,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           filled: true,
           fillColor: Colors.transparent,
         ),
-        validator: (value) {
+        validator: required ? (value) {
           if (value == null || value.isEmpty) {
             return "Este campo es obligatorio";
           }
           return null;
-        },
+        } : null,
       ),
     );
   }

@@ -16,8 +16,15 @@ class _ManageOffersScreenState extends State<ManageOffersScreen> {
   static const Color _white10 = Color(0x1AFFFFFF);
   static const Color _white50 = Color(0x80FFFFFF);
 
-  // --- STREAM CACHEADO ---
+  // --- CONTROLADORES ---
   late final Stream<QuerySnapshot> _offersStream;
+  final ScrollController _scrollController = ScrollController(); // <-- Controlador para la barra de desplazamiento
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -82,16 +89,23 @@ class _ManageOffersScreenState extends State<ManageOffersScreen> {
 
               final docs = snapshot.data!.docs;
 
-              return ListView.separated(
-                padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-                itemCount: docs.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 20),
-                itemBuilder: (context, index) {
-                  final data = docs[index].data() as Map<String, dynamic>;
-                  final docId = docs[index].id;
-                  // OPTIMIZADO: Usamos applicantsCount del documento en lugar de un StreamBuilder anidado
-                  return _OfferCard(data: data, docId: docId);
-                },
+              return Scrollbar(
+                controller: _scrollController,
+                thumbVisibility: true,
+                thickness: 6,
+                radius: const Radius.circular(10),
+                child: ListView.separated(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                  itemCount: docs.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 20),
+                  itemBuilder: (context, index) {
+                    final data = docs[index].data() as Map<String, dynamic>;
+                    final docId = docs[index].id;
+                    // OPTIMIZADO: Usamos applicantsCount del documento en lugar de un StreamBuilder anidado
+                    return _OfferCard(data: data, docId: docId);
+                  },
+                ),
               );
             },
           ),

@@ -54,6 +54,16 @@ class CoordinatorApplicationsScreen extends StatefulWidget {
 class _CoordinatorApplicationsScreenState
     extends State<CoordinatorApplicationsScreen> {
   String _selectedStatus = 'Todas';
+  String _searchQuery = ''; // Variable para almacenar la búsqueda
+  final TextEditingController _searchController = TextEditingController(); // Controlador del buscador
+  final ScrollController _scrollController = ScrollController(); // <-- Controlador para la barra de desplazamiento
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
 
   // --- COLORES PRE-COMPUTADOS ---
   static const Color _white10 = Color(0x1AFFFFFF);
@@ -143,23 +153,61 @@ class _CoordinatorApplicationsScreenState
         child: Column(
           children: [
             Container(
-            height: 65,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildFilterChip('Todas', 'Todas'),
-                  const SizedBox(width: 10),
-                  _buildFilterChip('Pendientes', 'Pendiente'),
-                  const SizedBox(width: 10),
-                  _buildFilterChip('Aceptadas', 'Aceptado'),
-                  const SizedBox(width: 10),
-                  _buildFilterChip('Rechazadas', 'Rechazado'),
-                ],
+              height: 65,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildFilterChip('Todas', 'Todas'),
+                    const SizedBox(width: 10),
+                    _buildFilterChip('Pendientes', 'Pendiente'),
+                    const SizedBox(width: 10),
+                    _buildFilterChip('Aceptadas', 'Aceptado'),
+                    const SizedBox(width: 10),
+                    _buildFilterChip('Rechazadas', 'Rechazado'),
+                  ],
+                ),
               ),
             ),
-          ),
+
+            // --- BARRA DE BÚSQUEDA ---
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+              child: Container(
+                height: 45,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E202B),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: _white10),
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value.toLowerCase();
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: "Buscar por nombre u oferta...",
+                    hintStyle: const TextStyle(color: _white50, fontSize: 13),
+                    prefixIcon: const Icon(Icons.search, color: AppTheme.primaryOrange, size: 20),
+                    suffixIcon: _searchQuery.isNotEmpty 
+                      ? IconButton(
+                          icon: const Icon(Icons.close, color: _white50, size: 18),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _searchQuery = '');
+                          },
+                        )
+                      : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  ),
+                ),
+              ),
+            ),
 
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
@@ -177,16 +225,40 @@ class _CoordinatorApplicationsScreenState
                   return _buildEmptyState();
                 }
 
-                final apps = snapshot.data!.docs
+                // Filtrado por estado realizado por Firestore o localmente si es necesario
+                var docs = snapshot.data!.docs;
+
+                // Filtrado local por búsqueda
+                if (_searchQuery.isNotEmpty) {
+                  docs = docs.where((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final student = (data['studentName'] ?? '').toString().toLowerCase();
+                    final job = (data['jobTitle'] ?? '').toString().toLowerCase();
+                    return student.contains(_searchQuery) || job.contains(_searchQuery);
+                  }).toList();
+                }
+
+                if (docs.isEmpty) {
+                  return _buildEmptyState();
+                }
+
+                final apps = docs
                     .map((doc) => JobApplication.fromFirestore(doc))
                     .toList();
 
-                return ListView.builder(
-                  padding: const EdgeInsets.all(20),
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: apps.length,
-                  itemBuilder: (context, index) =>
-                      _buildApplicationCard(apps[index]),
+                return Scrollbar(
+                  controller: _scrollController,
+                  thumbVisibility: true,
+                  thickness: 6,
+                  radius: const Radius.circular(10),
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(20),
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: apps.length,
+                    itemBuilder: (context, index) =>
+                        _buildApplicationCard(apps[index]),
+                  ),
                 );
               },
             ),

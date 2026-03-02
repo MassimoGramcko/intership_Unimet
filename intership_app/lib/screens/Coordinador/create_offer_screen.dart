@@ -14,7 +14,8 @@ class CreateOfferScreen extends StatefulWidget {
 class _CreateOfferScreenState extends State<CreateOfferScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Controladores de texto
+  // Controladores
+  final _scrollController = ScrollController();
   final _titleController = TextEditingController();
   final _companyController = TextEditingController();
   final _descController = TextEditingController();
@@ -99,6 +100,9 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
 
       final batch = FirebaseFirestore.instance.batch();
       for (var studentDoc in studentsSnapshot.docs) {
+        final studentData = studentDoc.data();
+        
+        // 1. Notificación interna en la App
         final notifRef = FirebaseFirestore.instance.collection('notifications').doc();
         batch.set(notifRef, {
           'userId': studentDoc.id,
@@ -109,6 +113,33 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
           'isRead': false,
           'timestamp': FieldValue.serverTimestamp(),
         });
+
+        // 2. Email (Si el usuario tiene la opción habilitada)
+        // Por defecto es true si no existe el campo
+        final bool emailEnabled = studentData['settings_email'] ?? true;
+        final String? studentEmail = studentData['email'];
+
+        if (emailEnabled && studentEmail != null) {
+          final mailRef = FirebaseFirestore.instance.collection('mail').doc();
+          batch.set(mailRef, {
+            'to': [studentEmail],
+            'message': {
+              'subject': '🚀 Nueva Pasantía: ${_titleController.text.trim()}',
+              'html': '''
+                <h3>¡Hola ${studentData['firstName'] ?? 'Estudiante'}!</h3>
+                <p>Se ha publicado una nueva oportunidad que podría interesarte en <b>Intership Unimet</b>.</p>
+                <hr>
+                <p><b>Puesto:</b> ${_titleController.text.trim()}</p>
+                <p><b>Empresa:</b> ${_companyController.text.trim()}</p>
+                <p><b>Modalidad:</b> $_modality</p>
+                <br>
+                <p>Entra a la aplicación para ver todos los detalles y postularte.</p>
+                <p><i>Atentamente, el equipo de Coordinación de Pasantías UNIMET.</i></p>
+              ''',
+            },
+            'timestamp': FieldValue.serverTimestamp(),
+          });
+        }
       }
       await batch.commit();
       // --- FIN NUEVA LÓGICA ---
@@ -135,6 +166,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _titleController.dispose();
     _companyController.dispose();
     _descController.dispose();
@@ -160,8 +192,12 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+      body: Scrollbar(
+        controller: _scrollController,
+        thumbVisibility: true,
+        child: SingleChildScrollView(
+          controller: _scrollController,
+          padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
           child: Column(
@@ -411,6 +447,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 

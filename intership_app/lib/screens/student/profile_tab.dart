@@ -17,6 +17,7 @@ class ProfileTab extends StatefulWidget {
 class _ProfileTabState extends State<ProfileTab> {
   bool _isUploading = false;
   final User? user = FirebaseAuth.instance.currentUser;
+  final ScrollController _scrollController = ScrollController();
 
   // --- COLORES PRE-COMPUTADOS ---
 
@@ -40,6 +41,12 @@ class _ProfileTabState extends State<ProfileTab> {
     } else {
       _userStream = null;
     }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _uploadCV() async {
@@ -219,13 +226,19 @@ class _ProfileTabState extends State<ProfileTab> {
                 ),
               ),
 
-              SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 25,
-                  vertical: 60,
-                ),
-                child: Column(
-                  children: [
+              Scrollbar(
+                controller: _scrollController,
+                thumbVisibility: true,
+                thickness: 6,
+                radius: const Radius.circular(10),
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 25,
+                    vertical: 60,
+                  ),
+                  child: Column(
+                    children: [
                     // 1. AVATAR GLOW
                     Center(
                       child: Container(
@@ -313,7 +326,7 @@ class _ProfileTabState extends State<ProfileTab> {
                         // SIMULACRO: Espera y abre modal
                         Future.delayed(const Duration(seconds: 2), () {
                           if (!context.mounted) return;
-                          _showCVMockup(context);
+                          _showCVMockup(context, "$name $lastName".trim());
                         });
                       },
                       child: Container(
@@ -338,7 +351,7 @@ class _ProfileTabState extends State<ProfileTab> {
                                 ),
                               )
                             : cvName != null
-                            ? _buildCvActiveState(cvName)
+                            ? _buildCvActiveState(cvName, "$name $lastName".trim())
                             : _buildCvEmptyState(),
                       ),
                     ),
@@ -372,8 +385,92 @@ class _ProfileTabState extends State<ProfileTab> {
                       "Carnet",
                       data['carnet'] ?? 'Sin asignar',
                     ),
+                    const SizedBox(height: 15),
+                    _buildInfoTile(
+                      Icons.calendar_today_outlined,
+                      "Semestre",
+                      (data['semester'] ?? '').toString().isNotEmpty
+                          ? data['semester'].toString()
+                          : 'Sin registrar',
+                    ),
+                    const SizedBox(height: 15),
+                    _buildInfoTile(
+                      Icons.workspace_premium_outlined,
+                      "Índice Académico",
+                      (data['academicIndex'] ?? '').toString().isNotEmpty
+                          ? data['academicIndex'].toString()
+                          : 'Sin registrar',
+                    ),
+
+                    // --- SOBRE MÍ ---
+                    if ((data['aboutMe'] ?? '').toString().isNotEmpty) ...[
+                      const SizedBox(height: 30),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "Sobre mí",
+                          style: TextStyle(
+                            color: _white80,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          data['aboutMe'],
+                          style: const TextStyle(color: _white60, height: 1.5, fontSize: 14),
+                        ),
+                      ),
+                    ],
+
+                    // --- HABILIDADES ---
+                    Builder(builder: (context) {
+                      final skillsRaw = data['skills'];
+                      List<String> skills = [];
+                      if (skillsRaw is List) {
+                        skills = skillsRaw.map((e) => e.toString()).toList();
+                      } else if (skillsRaw is String && skillsRaw.isNotEmpty) {
+                        skills = skillsRaw.split(',').map((e) => e.trim()).toList();
+                      }
+                      if (skills.isEmpty) return const SizedBox.shrink();
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 30),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              "Habilidades / Stack",
+                              style: TextStyle(
+                                color: _white80,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: skills.map((skill) => Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryOrange.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: AppTheme.primaryOrange.withValues(alpha: 0.3)),
+                              ),
+                              child: Text(skill, style: const TextStyle(color: AppTheme.primaryOrange, fontWeight: FontWeight.w500, fontSize: 13)),
+                            )).toList(),
+                          ),
+                        ],
+                      );
+                    }),
 
                     const SizedBox(height: 40),
+
 
                     SizedBox(
                       width: double.infinity,
@@ -411,9 +508,10 @@ class _ProfileTabState extends State<ProfileTab> {
                         ),
                       ),
                     ),
-                  ],
-                ),
-              ),
+                   ],
+                 ),
+               ),
+             ),
             ],
           );
         },
@@ -436,7 +534,7 @@ class _ProfileTabState extends State<ProfileTab> {
   }
 
   // --- SIMULACRO DE VISOR DE CV (HU-21) ---
-  void _showCVMockup(BuildContext context) {
+  void _showCVMockup(BuildContext context, String studentName) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -467,15 +565,15 @@ class _ProfileTabState extends State<ProfileTab> {
                 children: [
                   const Icon(Icons.picture_as_pdf, color: Colors.redAccent, size: 30),
                   const SizedBox(width: 15),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "CV_Estudiante.pdf",
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                          "CV_${studentName.replaceAll(' ', '_')}.pdf",
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                         ),
-                        Text(
+                        const Text(
                           "1.2 MB • PDF Document",
                           style: TextStyle(color: Colors.grey, fontSize: 12),
                         ),
@@ -534,7 +632,7 @@ class _ProfileTabState extends State<ProfileTab> {
     );
   }
 
-  Widget _buildCvActiveState(String fileName) {
+  Widget _buildCvActiveState(String fileName, String studentName) {
     return Row(
       children: [
         const SizedBox(width: 20),
@@ -577,7 +675,7 @@ class _ProfileTabState extends State<ProfileTab> {
         ),
 
         IconButton(
-          onPressed: () => _showCVMockup(context), // También ver el mockup al hacer clic en el nombre
+          onPressed: () => _showCVMockup(context, studentName), 
           icon: const Icon(
             Icons.visibility_outlined,
             color: Colors.blueAccent,
