@@ -18,11 +18,14 @@ class _ManageOffersScreenState extends State<ManageOffersScreen> {
 
   // --- CONTROLADORES ---
   late final Stream<QuerySnapshot> _offersStream;
-  final ScrollController _scrollController = ScrollController(); // <-- Controlador para la barra de desplazamiento
+  final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void dispose() {
     _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -74,40 +77,117 @@ class _ManageOffersScreenState extends State<ManageOffersScreen> {
           ),
         ),
         child: SafeArea(
-          child: StreamBuilder<QuerySnapshot>(
-            stream: _offersStream,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: CircularProgressIndicator(color: Colors.orangeAccent),
-                );
-              }
+          child: Column(
+            children: [
+              // --- BUSCADOR ---
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+                child: Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: _white10,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: _white10),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    onChanged: (value) =>
+                        setState(() => _searchQuery = value.toLowerCase()),
+                    decoration: InputDecoration(
+                      hintText: 'Buscar oferta o empresa...',
+                      hintStyle: const TextStyle(color: _white50, fontSize: 14),
+                      prefixIcon: const Icon(Icons.search_rounded,
+                          color: _white50, size: 20),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.close_rounded,
+                                  color: _white50, size: 18),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchQuery = '');
+                              },
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      contentPadding:
+                          const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                  ),
+                ),
+              ),
 
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return _buildEmptyState();
-              }
+              // --- LISTA ---
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: _offersStream,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(
+                        child: CircularProgressIndicator(
+                            color: Colors.orangeAccent),
+                      );
+                    }
 
-              final docs = snapshot.data!.docs;
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return _buildEmptyState();
+                    }
 
-              return Scrollbar(
-                controller: _scrollController,
-                thumbVisibility: true,
-                thickness: 6,
-                radius: const Radius.circular(10),
-                child: ListView.separated(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-                  itemCount: docs.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 20),
-                  itemBuilder: (context, index) {
-                    final data = docs[index].data() as Map<String, dynamic>;
-                    final docId = docs[index].id;
-                    // OPTIMIZADO: Usamos applicantsCount del documento en lugar de un StreamBuilder anidado
-                    return _OfferCard(data: data, docId: docId);
+                    // Filtrar por búsqueda
+                    var docs = snapshot.data!.docs.where((doc) {
+                      if (_searchQuery.isEmpty) return true;
+                      final data = doc.data() as Map<String, dynamic>;
+                      final title =
+                          (data['title'] ?? '').toString().toLowerCase();
+                      final company =
+                          (data['company'] ?? '').toString().toLowerCase();
+                      return title.contains(_searchQuery) ||
+                          company.contains(_searchQuery);
+                    }).toList();
+
+                    if (docs.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.search_off_rounded,
+                                size: 60, color: _white10),
+                            const SizedBox(height: 15),
+                            Text(
+                              'Sin resultados para "$_searchQuery"',
+                              style: const TextStyle(
+                                  color: _white50, fontSize: 14),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return Scrollbar(
+                      controller: _scrollController,
+                      thumbVisibility: true,
+                      trackVisibility: true,
+                      thickness: 6,
+                      radius: const Radius.circular(10),
+                      child: ListView.separated(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                        itemCount: docs.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: 20),
+                        itemBuilder: (context, index) {
+                          final data =
+                              docs[index].data() as Map<String, dynamic>;
+                          final docId = docs[index].id;
+                          return _OfferCard(data: data, docId: docId);
+                        },
+                      ),
+                    );
                   },
                 ),
-              );
-            },
+              ),
+            ],
           ),
         ),
       ),

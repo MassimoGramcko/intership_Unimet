@@ -20,6 +20,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   final user = FirebaseAuth.instance.currentUser;
   late final String applicationId;
   late final Stream<DocumentSnapshot>? _applicationStream;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -171,13 +172,26 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   }
 
   @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
       body: Stack(
         children: [
-          CustomScrollView(
-            slivers: [
+          Scrollbar(
+            controller: _scrollController,
+            thumbVisibility: true,
+            trackVisibility: true,
+            thickness: 6,
+            radius: const Radius.circular(10),
+            child: CustomScrollView(
+              controller: _scrollController,
+              slivers: [
               // 1. HEADER (Igual a tu código)
               SliverAppBar(
                 expandedHeight: 250,
@@ -305,7 +319,8 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                 ),
               ),
             ],
-          ),
+            ),
+          ),  // cierre Scrollbar
 
           // 3. BOTÓN FLOTANTE (CON STREAMBUILDER)
           Positioned(
@@ -468,6 +483,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   Widget _buildInfoChip(IconData icon, String label) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      constraints: const BoxConstraints(maxWidth: 220),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(20),
@@ -477,9 +493,13 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         children: [
           Icon(icon, color: Colors.white70, size: 16),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white, fontSize: 13),
+          Flexible(
+            child: Text(
+              label,
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
           ),
         ],
       ),

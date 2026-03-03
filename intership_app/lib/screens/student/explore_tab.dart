@@ -150,11 +150,12 @@ class _ExploreTabState extends State<ExploreTab> {
           Scrollbar(
             controller: _scrollController,
             thumbVisibility: true,
+            trackVisibility: true,
             thickness: 6,
             radius: const Radius.circular(10),
             child: CustomScrollView(
               controller: _scrollController,
-              physics: const BouncingScrollPhysics(),
+              physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
               // 1. APP BAR
               SliverAppBar(

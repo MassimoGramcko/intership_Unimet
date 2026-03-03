@@ -15,6 +15,7 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";
   final ScrollController _scrollController = ScrollController();
+  final ScrollController _filtersScrollController = ScrollController(); // para los chips horizontales
 
   // --- COLORES PRE-COMPUTADOS ---
   static const Color _white05 = Color(0x0DFFFFFF);
@@ -62,6 +63,7 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
   void dispose() {
     _searchController.dispose();
     _scrollController.dispose();
+    _filtersScrollController.dispose();
     super.dispose();
   }
 
@@ -143,22 +145,30 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
             ),
           ),
 
-          // 2. FILTROS (CHIPS)
+          // 2. FILTROS (CHIPS) con scrollbar horizontal
           Container(
-            height: 60,
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              children: [
-                _buildInteractiveFilterChip("Todos", primaryColor),
-                const SizedBox(width: 10),
-                _buildInteractiveFilterChip("Pendiente", primaryColor, dbKey: "pending"),
-                const SizedBox(width: 10),
-                _buildInteractiveFilterChip("Aceptado", primaryColor, dbKey: "accepted"),
-                const SizedBox(width: 10),
-                _buildInteractiveFilterChip("Rechazado", primaryColor, dbKey: "rejected"),
-              ],
+            height: 72,
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Scrollbar(
+              controller: _filtersScrollController,
+              thumbVisibility: true,
+              scrollbarOrientation: ScrollbarOrientation.bottom,
+              thickness: 3,
+              radius: const Radius.circular(10),
+              child: ListView(
+                controller: _filtersScrollController,
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+                children: [
+                  _buildInteractiveFilterChip("Todos", primaryColor),
+                  const SizedBox(width: 10),
+                  _buildInteractiveFilterChip("Pendiente", primaryColor, dbKey: "pending"),
+                  const SizedBox(width: 10),
+                  _buildInteractiveFilterChip("Aceptado", primaryColor, dbKey: "accepted"),
+                  const SizedBox(width: 10),
+                  _buildInteractiveFilterChip("Rechazado", primaryColor, dbKey: "rejected"),
+                ],
+              ),
             ),
           ),
 

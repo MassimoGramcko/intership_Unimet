@@ -206,6 +206,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                 return Scrollbar(
                   controller: _scrollController,
                   thumbVisibility: true,
+                  trackVisibility: true,
                   thickness: 6,
                   radius: const Radius.circular(10),
                   child: ListView.builder(
