@@ -11,6 +11,7 @@ import 'coordinator_settings_screen.dart';
 import 'create_offer_screen.dart';
 import 'lista_usuarios_screen.dart';
 import 'manage_offers_screen.dart';
+import 'student_profile_view.dart';
 
 class CoordinatorHome extends StatefulWidget {
   const CoordinatorHome({super.key});
@@ -41,7 +42,8 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
 
   // --- VARIABLES DE CONTROL ---
   final TextEditingController _searchController = TextEditingController();
-  final ScrollController _scrollController = ScrollController(); // <-- Controlador para el Scrollbar
+  final ScrollController _scrollController =
+      ScrollController(); // <-- Controlador para el Scrollbar
   String _searchQuery = '';
 
   // Variables para la animación del Speed Dial
@@ -212,7 +214,6 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     String formattedDate = DateFormat('EEEE, d MMMM').format(DateTime.now());
@@ -242,165 +243,130 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
               child: CustomScrollView(
                 controller: _scrollController,
                 slivers: [
-                // HEADER
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  formattedDate,
-                                  style: const TextStyle(
-                                    color: _white60,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
+                  // HEADER
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    formattedDate,
+                                    style: const TextStyle(
+                                      color: _white60,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
+                                ],
+                              ),
+                              const SizedBox(height: 5),
+                              const SizedBox(height: 5),
+                              StreamBuilder<DocumentSnapshot>(
+                                stream: FirebaseFirestore.instance
+                                    .collection('users')
+                                    .doc(_currentUserId)
+                                    .snapshots(),
+                                builder: (context, snapshot) {
+                                  // Saludo simplificado para evitar overflow
+                                  return const Text(
+                                    "Hola, Coordinador 👋",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 26,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
+
+                          IconButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const CoordinatorSettingsScreen(),
                                 ),
-
-                              ],
-                            ),
-                            const SizedBox(height: 5),
-                            const SizedBox(height: 5),
-                            StreamBuilder<DocumentSnapshot>(
-                              stream: FirebaseFirestore.instance
-                                  .collection('users')
-                                  .doc(_currentUserId)
-                                  .snapshots(),
-                              builder: (context, snapshot) {
-                                // Saludo simplificado para evitar overflow
-                                return const Text(
-                                  "Hola, Coordinador 👋",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-
-                        IconButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const CoordinatorSettingsScreen(),
+                              );
+                            },
+                            icon: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: const BoxDecoration(
+                                color: _white05,
+                                shape: BoxShape.circle,
+                                border: Border.fromBorderSide(
+                                  BorderSide(color: _white10),
+                                ),
                               ),
-                            );
-                          },
-                          icon: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: const BoxDecoration(
-                              color: _white05,
-                              shape: BoxShape.circle,
-                              border: Border.fromBorderSide(
-                                BorderSide(color: _white10),
+                              child: const Icon(
+                                Icons.settings_outlined,
+                                color: Colors.white,
+                                size: 22,
                               ),
-                            ),
-                            child: const Icon(
-                              Icons.settings_outlined,
-                              color: Colors.white,
-                              size: 22,
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
 
-                const SliverToBoxAdapter(child: SizedBox(height: 35)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 35)),
 
-                // TARJETAS KPI (Primera fila: 2 columnas)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Row(
-                      children: [
-                        _InteractiveKpiCard(
-                          title: "Solicitudes",
-                          stream: _applicationsKpiStream,
-                          countFilter: (docs) => docs
-                              .where((doc) => doc['status'] == 'Pendiente')
-                              .length,
-                          icon: Icons.people_alt_rounded,
-                          accentColor: Colors.orangeAccent,
-                          gradientColors: [
-                            primaryOrange.withValues(alpha: 0.8),
-                            Colors.orange[800]!,
-                          ],
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const CoordinatorApplicationsScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(width: 15),
-                        _InteractiveKpiCard(
-                          title: "Ofertas Activas",
-                          stream: _offersKpiStream,
-                          countFilter: (docs) => docs
-                              .where((doc) => doc['isActive'] == true)
-                              .length,
-                          icon: Icons.business_center_rounded,
-                          accentColor: Colors.blueAccent,
-                          gradientColors: [
-                            Colors.blueAccent.withValues(alpha: 0.8),
-                            Colors.blue[800]!,
-                          ],
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const ManageOffersScreen(),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SliverToBoxAdapter(child: SizedBox(height: 15)),
-
-                // TARJETA KPI (Segunda fila: 1 columna completa para Notificaciones)
-                if (_notificationsStream != null)
+                  // TARJETAS KPI (Primera fila: 2 columnas)
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Row(
                         children: [
                           _InteractiveKpiCard(
-                            title: "Notificaciones Pendientes",
-                            stream: _notificationsStream!,
-                            countFilter: (docs) => docs.length,
-                            icon: Icons.notifications_active_rounded,
-                            accentColor: Colors.purpleAccent,
+                            title: "Solicitudes",
+                            stream: _applicationsKpiStream,
+                            countFilter: (docs) => docs
+                                .where((doc) => doc['status'] == 'Pendiente')
+                                .length,
+                            icon: Icons.people_alt_rounded,
+                            accentColor: Colors.orangeAccent,
                             gradientColors: [
-                              Colors.purpleAccent.withValues(alpha: 0.8),
-                              Colors.purple[800]!,
+                              primaryOrange.withValues(alpha: 0.8),
+                              Colors.orange[800]!,
                             ],
                             onTap: () {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) =>
-                                      const NotificationsScreen(),
+                                      const CoordinatorApplicationsScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(width: 15),
+                          _InteractiveKpiCard(
+                            title: "Ofertas Activas",
+                            stream: _offersKpiStream,
+                            countFilter: (docs) => docs
+                                .where((doc) => doc['isActive'] == true)
+                                .length,
+                            icon: Icons.business_center_rounded,
+                            accentColor: Colors.blueAccent,
+                            gradientColors: [
+                              Colors.blueAccent.withValues(alpha: 0.8),
+                              Colors.blue[800]!,
+                            ],
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const ManageOffersScreen(),
                                 ),
                               );
                             },
@@ -410,327 +376,363 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
                     ),
                   ),
 
-                const SliverToBoxAdapter(child: SizedBox(height: 35)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 15)),
 
-                // TÍTULO SECCIÓN + MENU DE FILTRO
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          "Actividad Reciente",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-
-                        PopupMenuButton<String>(
-                          icon: const Icon(
-                            Icons.more_horiz_rounded,
-                            color: _white70,
-                          ),
-                          color: _surfaceDark,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                            side: const BorderSide(color: _white10),
-                          ),
-                          onSelected: (String valor) {
-                            if (valor == 'Limpiar Historial') {
-                              _clearOldActivity();
-                            } else {
-                              setState(() {
-                                _filtroStatus = valor;
-                              });
-                            }
-                          },
-                          itemBuilder: (BuildContext context) =>
-                              <PopupMenuEntry<String>>[
-                                _buildPopupItem(
-                                  "Todos",
-                                  Icons.dashboard_customize_outlined,
-                                ),
-                                const PopupMenuDivider(height: 1),
-                                _buildPopupItem(
-                                  "Pendiente",
-                                  Icons.hourglass_empty_rounded,
-                                  Colors.orangeAccent,
-                                ),
-                                _buildPopupItem(
-                                  "Aceptado",
-                                  Icons.check_circle_outline_rounded,
-                                  Colors.greenAccent,
-                                ),
-                                _buildPopupItem(
-                                  "Rechazado",
-                                  Icons.cancel_outlined,
-                                  Colors.redAccent,
-                                ),
-                                const PopupMenuDivider(height: 1),
-                                _buildPopupItem(
-                                  "Limpiar Historial",
-                                  Icons.delete_sweep_rounded,
-                                  Colors.orangeAccent,
-                                ),
+                  // TARJETA KPI (Segunda fila: 1 columna completa para Notificaciones)
+                  if (_notificationsStream != null)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Row(
+                          children: [
+                            _InteractiveKpiCard(
+                              title: "Notificaciones Pendientes",
+                              stream: _notificationsStream!,
+                              countFilter: (docs) => docs.length,
+                              icon: Icons.notifications_active_rounded,
+                              accentColor: Colors.purpleAccent,
+                              gradientColors: [
+                                Colors.purpleAccent.withValues(alpha: 0.8),
+                                Colors.purple[800]!,
                               ],
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        const NotificationsScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
-                ),
 
-                if (_filtroStatus != 'Todos')
+                  const SliverToBoxAdapter(child: SizedBox(height: 35)),
+
+                  // TÍTULO SECCIÓN + MENU DE FILTRO
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 10, 24, 5),
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           const Text(
-                            "Filtrando por: ",
-                            style: TextStyle(color: _white50, fontSize: 12),
+                            "Actividad Reciente",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          const SizedBox(width: 5),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
+
+                          PopupMenuButton<String>(
+                            icon: const Icon(
+                              Icons.more_horiz_rounded,
+                              color: _white70,
                             ),
-                            decoration: BoxDecoration(
-                              color: (_filtroStatus == 'Pendiente'
-                                      ? Colors.orangeAccent
-                                      : _filtroStatus == 'Aceptado'
-                                          ? Colors.greenAccent
-                                          : Colors.redAccent)
-                                  .withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: (_filtroStatus == 'Pendiente'
-                                        ? Colors.orangeAccent
-                                        : _filtroStatus == 'Aceptado'
-                                            ? Colors.greenAccent
-                                            : Colors.redAccent)
-                                    .withValues(alpha: 0.2),
-                              ),
+                            color: _surfaceDark,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                              side: const BorderSide(color: _white10),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  _filtroStatus == 'Pendiente'
-                                      ? Icons.hourglass_empty_rounded
-                                      : _filtroStatus == 'Aceptado'
-                                          ? Icons.check_circle_outline_rounded
-                                          : Icons.cancel_outlined,
-                                  size: 14,
-                                  color: _filtroStatus == 'Pendiente'
-                                      ? Colors.orangeAccent
-                                      : _filtroStatus == 'Aceptado'
-                                          ? Colors.greenAccent
-                                          : Colors.redAccent,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  _filtroStatus,
-                                  style: TextStyle(
-                                    color: _filtroStatus == 'Pendiente'
-                                        ? Colors.orangeAccent
-                                        : _filtroStatus == 'Aceptado'
-                                            ? Colors.greenAccent
-                                            : Colors.redAccent,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
+                            onSelected: (String valor) {
+                              if (valor == 'Limpiar Historial') {
+                                _clearOldActivity();
+                              } else {
+                                setState(() {
+                                  _filtroStatus = valor;
+                                });
+                              }
+                            },
+                            itemBuilder: (BuildContext context) =>
+                                <PopupMenuEntry<String>>[
+                                  _buildPopupItem(
+                                    "Todos",
+                                    Icons.dashboard_customize_outlined,
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          InkWell(
-                            onTap: () =>
-                                setState(() => _filtroStatus = 'Todos'),
-                            child: const Icon(
-                              Icons.close,
-                              size: 16,
-                              color: Colors.redAccent,
-                            ),
+                                  const PopupMenuDivider(height: 1),
+                                  _buildPopupItem(
+                                    "Pendiente",
+                                    Icons.hourglass_empty_rounded,
+                                    Colors.orangeAccent,
+                                  ),
+                                  _buildPopupItem(
+                                    "Aceptado",
+                                    Icons.check_circle_outline_rounded,
+                                    Colors.greenAccent,
+                                  ),
+                                  _buildPopupItem(
+                                    "Rechazado",
+                                    Icons.cancel_outlined,
+                                    Colors.redAccent,
+                                  ),
+                                  const PopupMenuDivider(height: 1),
+                                  _buildPopupItem(
+                                    "Limpiar Historial",
+                                    Icons.delete_sweep_rounded,
+                                    Colors.orangeAccent,
+                                  ),
+                                ],
                           ),
                         ],
                       ),
                     ),
                   ),
 
-                const SliverToBoxAdapter(child: SizedBox(height: 15)),
-
-                // BARRA DE BÚSQUEDA
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: SizedBox(
-                      height: 45,
-                      child: TextField(
-                        controller: _searchController,
-                        onChanged: (value) {
-                          setState(() {
-                            _searchQuery = value.toLowerCase();
-                          });
-                        },
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
+                  if (_filtroStatus != 'Todos')
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 10, 24, 5),
+                        child: Row(
+                          children: [
+                            const Text(
+                              "Filtrando por: ",
+                              style: TextStyle(color: _white50, fontSize: 12),
+                            ),
+                            const SizedBox(width: 5),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color:
+                                    (_filtroStatus == 'Pendiente'
+                                            ? Colors.orangeAccent
+                                            : _filtroStatus == 'Aceptado'
+                                            ? Colors.greenAccent
+                                            : Colors.redAccent)
+                                        .withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color:
+                                      (_filtroStatus == 'Pendiente'
+                                              ? Colors.orangeAccent
+                                              : _filtroStatus == 'Aceptado'
+                                              ? Colors.greenAccent
+                                              : Colors.redAccent)
+                                          .withValues(alpha: 0.2),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    _filtroStatus == 'Pendiente'
+                                        ? Icons.hourglass_empty_rounded
+                                        : _filtroStatus == 'Aceptado'
+                                        ? Icons.check_circle_outline_rounded
+                                        : Icons.cancel_outlined,
+                                    size: 14,
+                                    color: _filtroStatus == 'Pendiente'
+                                        ? Colors.orangeAccent
+                                        : _filtroStatus == 'Aceptado'
+                                        ? Colors.greenAccent
+                                        : Colors.redAccent,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _filtroStatus,
+                                    style: TextStyle(
+                                      color: _filtroStatus == 'Pendiente'
+                                          ? Colors.orangeAccent
+                                          : _filtroStatus == 'Aceptado'
+                                          ? Colors.greenAccent
+                                          : Colors.redAccent,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            InkWell(
+                              onTap: () =>
+                                  setState(() => _filtroStatus = 'Todos'),
+                              child: const Icon(
+                                Icons.close,
+                                size: 16,
+                                color: Colors.redAccent,
+                              ),
+                            ),
+                          ],
                         ),
-                        decoration: InputDecoration(
-                          hintText: "Buscar estudiante u oferta...",
-                          hintStyle: const TextStyle(
-                            color: _white50,
+                      ),
+                    ),
+
+                  const SliverToBoxAdapter(child: SizedBox(height: 15)),
+
+                  // BARRA DE BÚSQUEDA
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: SizedBox(
+                        height: 45,
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value.toLowerCase();
+                            });
+                          },
+                          style: const TextStyle(
+                            color: Colors.white,
                             fontSize: 14,
                           ),
-                          prefixIcon: const Icon(
-                            Icons.search,
-                            color: _white50,
-                            size: 20,
-                          ),
-                          suffixIcon: _searchQuery.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(
-                                    Icons.close,
-                                    color: _white50,
-                                    size: 18,
-                                  ),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    setState(() {
-                                      _searchQuery = '';
-                                    });
-                                  },
-                                )
-                              : null,
-                          filled: true,
-                          fillColor: _white05,
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: const BorderSide(color: _white10),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: const BorderSide(color: _white10),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(20),
-                            borderSide: const BorderSide(
-                              color: Colors.orangeAccent,
+                          decoration: InputDecoration(
+                            hintText: "Buscar estudiante u oferta...",
+                            hintStyle: const TextStyle(
+                              color: _white50,
+                              fontSize: 14,
+                            ),
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              color: _white50,
+                              size: 20,
+                            ),
+                            suffixIcon: _searchQuery.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(
+                                      Icons.close,
+                                      color: _white50,
+                                      size: 18,
+                                    ),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() {
+                                        _searchQuery = '';
+                                      });
+                                    },
+                                  )
+                                : null,
+                            filled: true,
+                            fillColor: _white05,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: const BorderSide(color: _white10),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: const BorderSide(color: _white10),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(20),
+                              borderSide: const BorderSide(
+                                color: Colors.orangeAccent,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
 
-                const SliverToBoxAdapter(child: SizedBox(height: 15)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 15)),
 
-                // LISTA DE ACTIVIDAD - AHORA COMO SliverList (lazy loading real)
-                StreamBuilder<QuerySnapshot>(
-                  stream: _activityStream,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return SliverToBoxAdapter(
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(20.0),
-                            child: CircularProgressIndicator(
-                              color: primaryOrange,
+                  // LISTA DE ACTIVIDAD - AHORA COMO SliverList (lazy loading real)
+                  StreamBuilder<QuerySnapshot>(
+                    stream: _activityStream,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return SliverToBoxAdapter(
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(20.0),
+                              child: CircularProgressIndicator(
+                                color: primaryOrange,
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    }
+                        );
+                      }
 
-                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                      return SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: _buildModernEmptyState(
-                            "No hay actividad reciente",
+                      if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                        return SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: _buildModernEmptyState(
+                              "No hay actividad reciente",
+                            ),
+                          ),
+                        );
+                      }
+
+                      var docs = snapshot.data!.docs.where((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        final isArchived = data['isArchived'] ?? false;
+                        return !isArchived;
+                      }).toList();
+
+                      if (_filtroStatus != 'Todos') {
+                        docs = docs.where((doc) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          final status = (data['status'] ?? '').toString();
+                          return status.toLowerCase() ==
+                              _filtroStatus.toLowerCase();
+                        }).toList();
+                      }
+
+                      if (_searchQuery.isNotEmpty) {
+                        docs = docs.where((doc) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          final studentName = (data['studentName'] ?? '')
+                              .toString()
+                              .toLowerCase();
+                          final jobTitle = (data['jobTitle'] ?? '')
+                              .toString()
+                              .toLowerCase();
+                          return studentName.contains(_searchQuery) ||
+                              jobTitle.contains(_searchQuery);
+                        }).toList();
+                      }
+
+                      if (docs.isEmpty) {
+                        return SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 24),
+                            child: _buildModernEmptyState(
+                              "No hay actividad reciente para mostrar.",
+                            ),
+                          ),
+                        );
+                      }
+
+                      final displayDocs = docs.take(20).toList();
+
+                      return SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              if (index == displayDocs.length) {
+                                return const SizedBox(
+                                  height: 80,
+                                ); // Espacio final
+                              }
+                              final doc = displayDocs[index];
+                              final data = doc.data() as Map<String, dynamic>;
+                              final docId = doc.id;
+                              return _buildModernReviewTile(data, docId);
+                            },
+                            childCount:
+                                displayDocs.length +
+                                1, // +1 para el espacio final
                           ),
                         ),
                       );
-                    }
-
-                    var docs = snapshot.data!.docs.where((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      final isArchived = data['isArchived'] ?? false;
-                      return !isArchived;
-                    }).toList();
-
-                    if (_filtroStatus != 'Todos') {
-                      docs = docs.where((doc) {
-                        final data = doc.data() as Map<String, dynamic>;
-                        final status = (data['status'] ?? '').toString();
-                        return status.toLowerCase() ==
-                            _filtroStatus.toLowerCase();
-                      }).toList();
-                    }
-
-                    if (_searchQuery.isNotEmpty) {
-                      docs = docs.where((doc) {
-                        final data = doc.data() as Map<String, dynamic>;
-                        final studentName = (data['studentName'] ?? '')
-                            .toString()
-                            .toLowerCase();
-                        final jobTitle = (data['jobTitle'] ?? '')
-                            .toString()
-                            .toLowerCase();
-                        return studentName.contains(_searchQuery) ||
-                            jobTitle.contains(_searchQuery);
-                      }).toList();
-                    }
-
-                    if (docs.isEmpty) {
-                      return SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 24),
-                          child: _buildModernEmptyState(
-                            "No hay actividad reciente para mostrar.",
-                          ),
-                        ),
-                      );
-                    }
-
-                    final displayDocs = docs.take(20).toList();
-
-                    return SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      sliver: SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            if (index == displayDocs.length) {
-                              return const SizedBox(
-                                height: 80,
-                              ); // Espacio final
-                            }
-                            final doc = displayDocs[index];
-                            final data = doc.data() as Map<String, dynamic>;
-                            final docId = doc.id;
-                            return _buildModernReviewTile(data, docId);
-                          },
-                          childCount:
-                              displayDocs.length +
-                              1, // +1 para el espacio final
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
 
           if (_isDialOpen)
             GestureDetector(
@@ -763,9 +765,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
               _toggleDial();
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const ListaUsuariosScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const ListaUsuariosScreen()),
               );
             },
           ),
@@ -787,9 +787,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
               _toggleDial();
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => const CreateOfferScreen(),
-                ),
+                MaterialPageRoute(builder: (_) => const CreateOfferScreen()),
               );
             },
           ),
@@ -851,6 +849,113 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
     );
   }
 
+  void _showOptionsBottomSheet(Map<String, dynamic> data, String docId) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: _surfaceDark,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: _white10,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  "Opciones de Solicitud",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.blueAccent.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.person_outline_rounded,
+                      color: Colors.blueAccent,
+                    ),
+                  ),
+                  title: const Text(
+                    "Ver información del estudiante",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    if (data['studentId'] != null &&
+                        data['studentId'].toString().isNotEmpty) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              StudentProfileView(studentId: data['studentId']),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("No se encontró el ID del estudiante"),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.orangeAccent.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.assignment_turned_in_outlined,
+                      color: Colors.orangeAccent,
+                    ),
+                  ),
+                  title: const Text(
+                    "Gestionar solicitud",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  subtitle: const Text(
+                    "Ir al apartado de aceptar/rechazar",
+                    style: TextStyle(color: _white50, fontSize: 12),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const CoordinatorApplicationsScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   Widget _buildModernReviewTile(Map<String, dynamic> data, String docId) {
     String status = (data['status'] ?? 'Pendiente').toString().toLowerCase();
@@ -945,104 +1050,118 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
           ),
         );
       },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 15),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: _surfaceDark.withValues(alpha: 0.6),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 15),
+        child: InkWell(
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: _white05),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 50,
-              height: 50,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Colors.blue[400]!, Colors.purple[400]!],
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.purple.withValues(alpha: 0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Text(
-                initials,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  letterSpacing: 1.0,
-                ),
-              ),
+          onTap: () => _showOptionsBottomSheet(data, docId),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: _surfaceDark.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: _white05),
             ),
-
-            const SizedBox(width: 15),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    studentName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+            child: Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Colors.blue[400]!, Colors.purple[400]!],
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.work_outline_rounded,
-                        color: _white50,
-                        size: 14,
-                      ),
-                      const SizedBox(width: 5),
-                      Expanded(
-                        child: Text(
-                          data['jobTitle'] ?? 'Puesto desconocido',
-                          style: const TextStyle(color: _white50, fontSize: 13),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.purple.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: statusColor.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(30),
-                border: Border.all(color: statusColor.withValues(alpha: 0.5)),
-                boxShadow: [
-                  BoxShadow(
-                    color: statusColor.withValues(alpha: 0.2),
-                    blurRadius: 8,
+                  child: Text(
+                    initials,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      letterSpacing: 1.0,
+                    ),
                   ),
-                ],
-              ),
-              child: Text(
-                statusText,
-                style: TextStyle(
-                  color: statusColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
                 ),
-              ),
+
+                const SizedBox(width: 15),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        studentName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.work_outline_rounded,
+                            color: _white50,
+                            size: 14,
+                          ),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              data['jobTitle'] ?? 'Puesto desconocido',
+                              style: const TextStyle(
+                                color: _white50,
+                                fontSize: 13,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(
+                      color: statusColor.withValues(alpha: 0.5),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: statusColor.withValues(alpha: 0.2),
+                        blurRadius: 8,
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    statusText,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -1123,9 +1242,10 @@ class _InteractiveKpiCardState extends State<_InteractiveKpiCard>
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -1229,7 +1349,7 @@ class _InteractiveKpiCardState extends State<_InteractiveKpiCard>
                                         ),
                                         blurRadius: 8,
                                         spreadRadius: 1,
-                                      )
+                                      ),
                                     ]
                                   : [],
                             ),
@@ -1302,9 +1422,13 @@ class _InteractiveDialButtonState extends State<_InteractiveDialButton>
   void initState() {
     super.initState();
     _controller = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 100));
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
-        CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.9,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
