@@ -5,7 +5,8 @@ import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:intl/intl.dart';
 
 import '../../config/theme.dart';
-import '../notifications_screen.dart'; // Import agregado para las notificaciones
+import '../Chat/ai_chatbot_screen.dart';
+import '../notifications_screen.dart';
 import 'coordinator_applications_screen.dart';
 import 'coordinator_settings_screen.dart';
 import 'create_offer_screen.dart';
@@ -751,6 +752,36 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
+        // BOTÓN 0: UNIBOT IA
+        ScaleTransition(
+          scale: CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutBack,
+          ),
+          child: _InteractiveDialButton(
+            label: "UniBot IA ✨",
+            icon: Icons.auto_awesome_rounded,
+            backgroundColor: const Color(0xFF7B2FBE),
+            onTap: () {
+              _toggleDial();
+              // Obtener nombre del coordinador actual
+              final user = FirebaseAuth.instance.currentUser;
+              String coordName = user?.displayName ?? 'Coordinador';
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AiChatbotScreen(
+                    userRole: 'coordinator',
+                    userName: coordName,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(height: 15),
+
         // BOTÓN 1: CHAT
         ScaleTransition(
           scale: CurvedAnimation(

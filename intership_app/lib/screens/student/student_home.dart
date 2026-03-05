@@ -8,6 +8,7 @@ import 'applications_tab.dart';
 import 'settings_screen.dart';
 import 'package:intership_app/services/chat_utils.dart';
 import '../notifications_screen.dart';
+import '../Chat/ai_chatbot_screen.dart';
 
 class StudentHomeScreen extends StatefulWidget {
   const StudentHomeScreen({super.key});
@@ -30,7 +31,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   late final Stream<DocumentSnapshot>? _userDataStream;
   late final Stream<QuerySnapshot>? _notificationsStream;
   late final Stream<QuerySnapshot>? _applicationsStream;
-  final ScrollController _scrollController = ScrollController(); // <-- NUEVO: Controlador para el Scrollbar
+  final ScrollController _scrollController =
+      ScrollController(); // <-- NUEVO: Controlador para el Scrollbar
 
   @override
   void initState() {
@@ -60,14 +62,21 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     }
   }
 
-  void _showApplicationSummary(BuildContext context, List<QueryDocumentSnapshot> docs) {
+  void _showApplicationSummary(
+    BuildContext context,
+    List<QueryDocumentSnapshot> docs,
+  ) {
     int accepted = 0;
     int pending = 0;
     int rejected = 0;
     int reviewing = 0;
 
     for (var doc in docs) {
-      final status = (doc.data() as Map<String, dynamic>)['status']?.toString().toLowerCase() ?? '';
+      final status =
+          (doc.data() as Map<String, dynamic>)['status']
+              ?.toString()
+              .toLowerCase() ??
+          '';
       if (status.contains('aceptado') || status.contains('accepted')) {
         accepted++;
       } else if (status.contains('revisión') || status.contains('reviewing')) {
@@ -109,7 +118,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             const SizedBox(height: 30),
             const Text(
               "Estado de tus Postulaciones",
-              style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 10),
             const Text(
@@ -118,10 +131,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             ),
             const SizedBox(height: 40),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround, // Mejor distribución
+              mainAxisAlignment:
+                  MainAxisAlignment.spaceAround, // Mejor distribución
               children: [
                 _buildInsightItem("Aceptadas", accepted, Colors.greenAccent),
-                _buildInsightItem("Pendientes", pending + reviewing, Colors.orangeAccent),
+                _buildInsightItem(
+                  "Pendientes",
+                  pending + reviewing,
+                  Colors.orangeAccent,
+                ),
                 _buildInsightItem("Rechazadas", rejected, Colors.redAccent),
               ],
             ),
@@ -142,11 +160,18 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           ),
           child: Text(
             "$count",
-            style: TextStyle(color: color, fontSize: 22, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: color,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         const SizedBox(height: 10),
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white70, fontSize: 12),
+        ),
       ],
     );
   }
@@ -328,8 +353,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                               builder: (context, snapshot) {
                                 String countStr = "0";
                                 if (snapshot.hasData) {
-                                  countStr =
-                                      snapshot.data!.docs.length.toString();
+                                  countStr = snapshot.data!.docs.length
+                                      .toString();
                                 }
                                 return _InteractiveStatCard(
                                   value: countStr,
@@ -340,7 +365,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                                     if (snapshot.hasData &&
                                         snapshot.data!.docs.isNotEmpty) {
                                       _showApplicationSummary(
-                                          context, snapshot.data!.docs);
+                                        context,
+                                        snapshot.data!.docs,
+                                      );
                                     } else {
                                       Navigator.push(
                                         context,
@@ -363,8 +390,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                               builder: (context, snapshot) {
                                 String countStr = "0";
                                 if (snapshot.hasData) {
-                                  countStr =
-                                      snapshot.data!.docs.length.toString();
+                                  countStr = snapshot.data!.docs.length
+                                      .toString();
                                 }
                                 return _InteractiveStatCard(
                                   value: countStr,
@@ -393,7 +420,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             ),
 
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 15), // Antes all(25)
+              padding: const EdgeInsets.symmetric(
+                horizontal: 25,
+                vertical: 15,
+              ), // Antes all(25)
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -464,6 +494,26 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         },
                       ),
 
+                      // 🤖 UNIBOT - Asistente IA
+                      _InteractiveActionCard(
+                        width: double.infinity,
+                        title: "UniBot IA ✨",
+                        subtitle: "Asistente inteligente de pasantías",
+                        icon: Icons.auto_awesome_rounded,
+                        accentColor: const Color(0xFFFF6F00),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AiChatbotScreen(
+                                userRole: 'student',
+                                userName: name,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
                       _InteractiveActionCard(
                         width: double.infinity,
                         title: "Soporte Técnico",
@@ -478,7 +528,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                           );
 
                           try {
-                            final querySnapshot = await FirebaseFirestore.instance
+                            final querySnapshot = await FirebaseFirestore
+                                .instance
                                 .collection('users')
                                 .where(
                                   'role',
@@ -498,7 +549,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                                       .trim();
                               if (coordName.isEmpty) coordName = "Coordinador";
 
-                              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                              ScaffoldMessenger.of(
+                                context,
+                              ).hideCurrentSnackBar();
 
                               iniciarOabrirChat(
                                 context: context,
@@ -517,9 +570,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                             }
                           } catch (e) {
                             if (!context.mounted) return;
-                            ScaffoldMessenger.of(
-                              context,
-                            ).showSnackBar(SnackBar(content: Text("Error: $e")));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Error: $e")),
+                            );
                           }
                         },
                       ),
@@ -534,7 +587,6 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       ),
     );
   }
-
 }
 
 // --- CLASES INTERACTIVAS (ANIMADAS) ---
@@ -571,9 +623,10 @@ class _InteractiveStatCardState extends State<_InteractiveStatCard>
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -686,9 +739,10 @@ class _InteractiveExploreCardState extends State<_InteractiveExploreCard>
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -735,7 +789,9 @@ class _InteractiveExploreCardState extends State<_InteractiveExploreCard>
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
-                color: AppTheme.primaryOrange.withValues(alpha: _isHovering ? 0.4 : 0.3),
+                color: AppTheme.primaryOrange.withValues(
+                  alpha: _isHovering ? 0.4 : 0.3,
+                ),
                 blurRadius: _isHovering ? 30 : 20,
                 offset: Offset(0, _isHovering ? 15 : 10),
               ),
@@ -824,9 +880,10 @@ class _InteractiveActionCardState extends State<_InteractiveActionCard>
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.94).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.94,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
