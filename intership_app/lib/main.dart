@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart'; // Este archivo YA lo tienes porque lo configuramos antes
 import 'config/theme.dart';
 import 'screens/auth/login_screen.dart';
@@ -8,12 +9,13 @@ void main() async {
   // 1. Esto es OBLIGATORIO cuando usas Firebase al inicio
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Aquí encendemos la conexión con lo que ya configuraste
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  // 2. Cargamos las variables secretas del archivo .env
+  await dotenv.load(fileName: ".env");
 
-  // 3. Ahora sí, arrancamos la app visual
+  // 3. Aquí encendemos la conexión con lo que ya configuraste
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // 4. Ahora sí, arrancamos la app visual
   runApp(const MyApp());
 }
 

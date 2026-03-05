@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 // =========================================================
@@ -23,8 +24,8 @@ class AiChatbotScreen extends StatefulWidget {
 }
 
 class _AiChatbotScreenState extends State<AiChatbotScreen> {
-  // --- GEMINI ---
-  static const String _apiKey = 'AIzaSyATr3dV6DqCjJeJSvnXxr6BJT96r-YBHmk';
+  // --- GEMINI --- (clave cargada de forma segura desde .env)
+  final String _apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
   late final GenerativeModel _model;
   late final ChatSession _chat;
 
