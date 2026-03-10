@@ -49,3 +49,4 @@ flutter:
     - .env
     - assets/unimet_logo.png
     - assets/Logo_app.jpeg
+    - assets/mascot.png

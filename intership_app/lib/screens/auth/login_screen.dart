@@ -193,7 +193,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   CircleAvatar(
                     radius: 60,
-                    // Nota: Si usas una versión antigua de Flutter y 'withValues' da error, usa 'withOpacity'
                     backgroundColor: Colors.white.withValues(alpha: 0.15), 
                     child: const CircleAvatar(
                       radius: 55,
@@ -244,12 +243,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   // Password
                   TextField(
                     controller: _passwordController,
-                    obscureText: _obscurePassword, // <-- NUEVO: Usa la variable de estado
+                    obscureText: _obscurePassword,
                     style: const TextStyle(color: Colors.white),
                     decoration: InputDecoration(
                       labelText: "Contraseña",
                       prefixIcon: const Icon(Icons.lock_outline, color: AppTheme.primaryOrange),
-                      // <-- NUEVO: Icono interactivo al final del campo
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -326,6 +324,268 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ],
         ),
+      ),
+      // --- BOTÓN DEL CHATBOT ---
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _openChatbot(context),
+        backgroundColor: AppTheme.primaryOrange,
+        elevation: 8,
+        tooltip: "Asistente Virtual",
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Image.asset('assets/mascot.png'),
+        ),
+      ),
+    );
+  }
+
+  void _openChatbot(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const ChatbotBottomSheet(),
+    );
+  }
+}
+
+// --- WIDGET DEL CHATBOT (ESTILO MERCANTIL/MIA) ---
+class ChatbotBottomSheet extends StatefulWidget {
+  const ChatbotBottomSheet({super.key});
+
+  @override
+  State<ChatbotBottomSheet> createState() => _ChatbotBottomSheetState();
+}
+
+class ChatMessage {
+  final String text;
+  final bool isUser;
+  ChatMessage({required this.text, this.isUser = false});
+}
+
+class _ChatbotBottomSheetState extends State<ChatbotBottomSheet> {
+  final List<ChatMessage> _messages = [];
+  final TextEditingController _chatController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  bool _isTyping = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _addBotMessage("¡Hola! 👋 Soy tu asistente de Pasantías. ¿En qué puedo ayudarte hoy?");
+  }
+
+  void _addBotMessage(String text) {
+    setState(() {
+      _messages.add(ChatMessage(text: text, isUser: false));
+    });
+    _scrollToBottom();
+  }
+
+  void _addUserMessage(String text) {
+    setState(() {
+      _messages.add(ChatMessage(text: text, isUser: true));
+    });
+    _scrollToBottom();
+    _handleResponse(text.toLowerCase());
+  }
+
+  void _handleResponse(String query) {
+    setState(() => _isTyping = true);
+    
+    Future.delayed(const Duration(seconds: 1), () {
+      if (!mounted) return;
+      
+      String response = "Lo siento, solo puedo ayudarte con el registro de cuenta o la recuperación de tu clave.";
+      
+      if (query.contains("hola") || query.contains("saludos")) {
+        response = "¡Hola! Soy tu asistente. ¿Necesitas ayuda para registrarte o recuperar tu contraseña?";
+      } else if (query.contains("registro") || query.contains("cuenta") || query.contains("registrar")) {
+        response = "Para registrarte, usa el botón 'Regístrate aquí' en la parte inferior de la pantalla de inicio. Necesitarás tu correo @correo.unimet.edu.ve. ¿Hay algo más en lo que te pueda ayudar?";
+      } else if (query.contains("password") || query.contains("contraseña") || query.contains("clave") || query.contains("olvid")) {
+        response = "Si olvidaste tu clave, presiona el enlace '¿Olvidaste tu contraseña?' arriba del botón ACCEDER. Te enviaremos un email para que crees una nueva. ¿Hay algo más en lo que te pueda ayudar?";
+      } else if (query.contains("no") || query.contains("gracias") || query.contains("nada") || query.contains("chao") || query.contains("adios")) {
+        response = "¡Entendido! Espero haberte ayudado. ¡Éxito en tus pasantías! 👋";
+        setState(() {
+          _isTyping = false;
+          _addBotMessage(response);
+        });
+        // Cerramos el chat automáticamente después de un breve delay para que lean la despedida
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted) Navigator.pop(context);
+        });
+        return;
+      }
+
+      setState(() {
+        _isTyping = false;
+        _addBotMessage(response);
+      });
+    });
+  }
+
+  void _scrollToBottom() {
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.75 + keyboardHeight,
+      decoration: const BoxDecoration(
+        color: AppTheme.backgroundDark,
+        borderRadius: BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
+      ),
+      child: Column(
+        children: [
+          // Header del Chat
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              color: AppTheme.surfaceDark,
+              borderRadius: BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
+            ),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: AppTheme.primaryOrange.withValues(alpha: 0.2),
+                  child: Image.asset('assets/mascot.png'),
+                ),
+                const SizedBox(width: 15),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Asistente Unimet", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text("En línea", style: TextStyle(color: Colors.green, fontSize: 12)),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                )
+              ],
+            ),
+          ),
+          
+          // Mensajes
+          Expanded(
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(16),
+              itemCount: _messages.length + (_messages.length == 1 ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == _messages.length) {
+                  return _buildQuickActions();
+                }
+                final msg = _messages[index];
+                return _buildBubble(msg);
+              },
+            ),
+          ),
+
+          if (_isTyping)
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Align(alignment: Alignment.centerLeft, child: Text("Escribiendo...", style: TextStyle(color: Colors.grey, fontSize: 12))),
+            ),
+
+          // Input
+          Padding(
+            padding: EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 16 + keyboardHeight),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _chatController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: "Escribe tu consulta...",
+                      fillColor: AppTheme.surfaceDark,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                    ),
+                    onSubmitted: (val) {
+                      if (val.trim().isNotEmpty) {
+                        _addUserMessage(val.trim());
+                        _chatController.clear();
+                      }
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                FloatingActionButton.small(
+                  onPressed: () {
+                    if (_chatController.text.trim().isNotEmpty) {
+                      _addUserMessage(_chatController.text.trim());
+                      _chatController.clear();
+                    }
+                  },
+                  backgroundColor: AppTheme.primaryOrange,
+                  child: const Icon(Icons.send, color: Colors.white, size: 18),
+                )
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActions() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          _quickActionChip("¿Cómo me registro?", () => _addUserMessage("¿Cómo me registro?")),
+          _quickActionChip("Olvidé mi clave", () => _addUserMessage("Olvidé mi clave")),
+        ],
+      ),
+    );
+  }
+
+  Widget _quickActionChip(String label, VoidCallback onTap) {
+    return ActionChip(
+      onPressed: onTap,
+      label: Text(label, style: const TextStyle(color: Colors.white, fontSize: 13)),
+      backgroundColor: AppTheme.surfaceDark,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: const BorderSide(color: AppTheme.primaryOrange, width: 1),
+      ),
+    );
+  }
+
+  Widget _buildBubble(ChatMessage msg) {
+    return Align(
+      alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+        decoration: BoxDecoration(
+          color: msg.isUser ? AppTheme.primaryOrange : AppTheme.surfaceDark,
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(20),
+            topRight: const Radius.circular(20),
+            bottomLeft: Radius.circular(msg.isUser ? 20 : 0),
+            bottomRight: Radius.circular(msg.isUser ? 0 : 20),
+          ),
+        ),
+        child: Text(msg.text, style: const TextStyle(color: Colors.white, fontSize: 14)),
       ),
     );
   }
