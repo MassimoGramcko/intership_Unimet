@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'edit_offer_screen.dart';
+import 'candidates_screen.dart';
 
 class ManageOffersScreen extends StatefulWidget {
   const ManageOffersScreen({super.key});
@@ -401,10 +402,10 @@ class _OfferCard extends StatelessWidget {
                   .where('offerId', isEqualTo: docId)
                   .snapshots(),
               builder: (context, snapshot) {
-                int applicantsCount = 0;
-                if (snapshot.hasData) {
-                  applicantsCount = snapshot.data!.docs.length;
-                }
+                int applicantsCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
+                int vacancies = data['vacancies'] ?? 0;
+                bool isFull = vacancies > 0 && applicantsCount >= vacancies;
+
                 return Row(
                   children: [
                     _buildTag(
@@ -413,17 +414,37 @@ class _OfferCard extends StatelessWidget {
                       color: Colors.blueAccent,
                     ),
                     const SizedBox(width: 10),
-                    _buildTag(
-                      text: applicantsCount > 0
-                          ? "$applicantsCount Postulados"
-                          : "Sin postulantes",
-                      icon: applicantsCount > 0
-                          ? Icons.people_alt_rounded
-                          : Icons.person_off_outlined,
-                      color: applicantsCount > 0
-                          ? Colors.orangeAccent
-                          : const Color(0x61FFFFFF),
-                      isFilled: false,
+                    InkWell(
+                      onTap: applicantsCount > 0
+                          ? () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AdminOfferCandidatesScreen(
+                                    offerId: docId,
+                                    offerTitle: title,
+                                  ),
+                                ),
+                              );
+                            }
+                          : null,
+                      borderRadius: BorderRadius.circular(20),
+                      child: _buildTag(
+                        text: vacancies > 0
+                            ? "$applicantsCount / $vacancies Postulados"
+                            : applicantsCount > 0
+                                ? "$applicantsCount Postulados"
+                                : "Sin postulantes",
+                        icon: applicantsCount > 0
+                            ? Icons.people_alt_rounded
+                            : Icons.person_off_outlined,
+                        color: isFull
+                            ? Colors.redAccent
+                            : (applicantsCount > 0
+                                ? Colors.orangeAccent
+                                : const Color(0x61FFFFFF)),
+                        isFilled: isFull,
+                      ),
                     ),
                   ],
                 );

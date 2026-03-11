@@ -24,6 +24,7 @@ class _EditOfferScreenState extends State<EditOfferScreen> {
   late TextEditingController _locationController;
   late TextEditingController _wageController;
   late TextEditingController _descriptionController;
+  late TextEditingController _limitController; // Nuevo
 
   // Variables de estado para selectores
   String _selectedModality = 'Presencial';
@@ -48,6 +49,9 @@ class _EditOfferScreenState extends State<EditOfferScreen> {
     _descriptionController = TextEditingController(
       text: widget.currentData['description'] ?? '',
     );
+    _limitController = TextEditingController(
+      text: (widget.currentData['vacancies'] ?? 0).toString(),
+    );
 
     _selectedModality = widget.currentData['modality'] ?? 'Presencial';
     _isActive = widget.currentData['isActive'] ?? true;
@@ -60,6 +64,7 @@ class _EditOfferScreenState extends State<EditOfferScreen> {
     _locationController.dispose();
     _wageController.dispose();
     _descriptionController.dispose();
+    _limitController.dispose();
     super.dispose();
   }
 
@@ -75,6 +80,7 @@ class _EditOfferScreenState extends State<EditOfferScreen> {
               'location': _locationController.text.trim(),
               'wage': _wageController.text.trim(),
               'description': _descriptionController.text.trim(),
+              'vacancies': int.tryParse(_limitController.text) ?? 0,
               'modality': _selectedModality,
               'isActive': _isActive,
               // 'updatedAt': FieldValue.serverTimestamp(), // Opcional: si quieres rastrear ediciones
@@ -202,10 +208,26 @@ class _EditOfferScreenState extends State<EditOfferScreen> {
                   ],
                 ),
                 const SizedBox(height: 15),
-                _buildCustomTextField(
-                  controller: _wageController,
-                  label: "Remuneración (Opcional)",
-                  icon: Icons.attach_money_rounded,
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: _buildCustomTextField(
+                        controller: _wageController,
+                        label: "Remuneración",
+                        icon: Icons.attach_money_rounded,
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: _buildCustomTextField(
+                        controller: _limitController,
+                        label: "Cupos",
+                        icon: Icons.people_outline,
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
                 ),
 
                 const SizedBox(height: 30),
@@ -304,6 +326,7 @@ class _EditOfferScreenState extends State<EditOfferScreen> {
     required String label,
     required IconData icon,
     int maxLines = 1,
+    TextInputType keyboardType = TextInputType.text,
   }) {
     return Container(
       decoration: BoxDecoration(
@@ -314,6 +337,7 @@ class _EditOfferScreenState extends State<EditOfferScreen> {
       child: TextFormField(
         controller: controller,
         maxLines: maxLines,
+        keyboardType: keyboardType,
         style: const TextStyle(color: Colors.white),
         validator: (value) => value!.isEmpty ? "Campo requerido" : null,
         decoration: InputDecoration(

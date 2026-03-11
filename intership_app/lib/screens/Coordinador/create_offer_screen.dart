@@ -21,6 +21,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   final _descController = TextEditingController();
   final _locationController = TextEditingController();
   final _wageController = TextEditingController();
+  final _limitController = TextEditingController(text: '0'); // Nuevo: Límite de vacantes
 
   // Variables de estado
   String _modality = 'Presencial';
@@ -88,6 +89,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
         // 4. Datos por defecto
         'isActive': true,
         'applicantsCount': 0,
+        'vacancies': int.tryParse(_limitController.text) ?? 0, // Nuevo campo
         'isFeatured': false,
         'colorHex': '#FF5733',
       });
@@ -172,6 +174,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
     _descController.dispose();
     _locationController.dispose();
     _wageController.dispose();
+    _limitController.dispose();
     super.dispose();
   }
 
@@ -391,11 +394,28 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
               // --- FIN DE LA MODIFICACIÓN ---
               const SizedBox(height: 15),
 
-              _buildTextField(
-                _wageController,
-                "Remuneración",
-                "Ej: 100 USD / No remunerado",
-                Icons.attach_money,
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: _buildTextField(
+                      _wageController,
+                      "Remuneración",
+                      "Ej: 100 USD",
+                      Icons.attach_money,
+                    ),
+                  ),
+                  const SizedBox(width: 15),
+                  Expanded(
+                    child: _buildTextField(
+                      _limitController,
+                      "Cupos",
+                      "0 = Ilimitado",
+                      Icons.people_outline,
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ],
               ),
 
               const SizedBox(height: 25),
@@ -469,6 +489,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
     String hint,
     IconData icon, {
     int maxLines = 1,
+    TextInputType keyboardType = TextInputType.text,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -492,6 +513,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
           child: TextFormField(
             controller: controller,
             maxLines: maxLines,
+            keyboardType: keyboardType,
             style: const TextStyle(color: Colors.white),
             validator: (value) => value!.isEmpty ? "Campo requerido" : null,
             decoration: InputDecoration(

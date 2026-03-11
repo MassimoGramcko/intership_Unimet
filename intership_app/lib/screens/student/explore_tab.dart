@@ -18,6 +18,7 @@ class JobOffer {
   final Timestamp? postedAt;
   final double? latitude;
   final double? longitude;
+  final int vacancies; // Nuevo
 
   JobOffer({
     required this.id,
@@ -33,6 +34,7 @@ class JobOffer {
     this.postedAt,
     this.latitude,
     this.longitude,
+    this.vacancies = 0, // Nuevo
   });
 
   factory JobOffer.fromFirestore(DocumentSnapshot doc) {
@@ -51,6 +53,7 @@ class JobOffer {
       brandColor: _parseColor(data['colorHex']),
       latitude: (data['latitude'] as num?)?.toDouble(),
       longitude: (data['longitude'] as num?)?.toDouble(),
+      vacancies: data['vacancies'] ?? 0, // Nuevo
     );
   }
 
