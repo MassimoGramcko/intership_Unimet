@@ -18,9 +18,10 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   bool _isLoading = false;
-  bool _obscurePassword = true; // <-- NUEVO: Variable para el "ojito" de la contraseña
+  bool _obscurePassword =
+      true; // <-- NUEVO: Variable para el "ojito" de la contraseña
 
   @override
   void dispose() {
@@ -36,13 +37,19 @@ class _LoginScreenState extends State<LoginScreen> {
     final String password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      _showMessage("⚠️ Por favor, ingresa tu correo y contraseña.", isError: true);
+      _showMessage(
+        "⚠️ Por favor, ingresa tu correo y contraseña.",
+        isError: true,
+      );
       return;
     }
 
     // Validación de dominio institucional
     if (!email.endsWith('@correo.unimet.edu.ve')) {
-      _showMessage("⚠️ El correo debe pertenecer al dominio @correo.unimet.edu.ve.", isError: true);
+      _showMessage(
+        "⚠️ El correo debe pertenecer al dominio @correo.unimet.edu.ve.",
+        isError: true,
+      );
       return;
     }
 
@@ -50,31 +57,32 @@ class _LoginScreenState extends State<LoginScreen> {
     final passwordRegExp = RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$');
     if (!passwordRegExp.hasMatch(password)) {
       _showMessage(
-        "⚠️ Credenciales no válidas. Verifica el formato de tu contraseña.", 
-        isError: true
+        "⚠️ Credenciales no válidas. Verifica el formato de tu contraseña.",
+        isError: true,
       );
       return;
     }
 
     setState(() => _isLoading = true);
-    
+
     try {
       // 2. INTENTO DE LOGIN
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
+      UserCredential userCredential = await FirebaseAuth.instance
+          .signInWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
 
       // 3. VERIFICAR DATOS EN FIRESTORE
       final userDoc = await FirebaseFirestore.instance
-          .collection('users') 
+          .collection('users')
           .doc(userCredential.user!.uid)
           .get();
 
       if (!userDoc.exists) {
         throw FirebaseAuthException(
-          code: 'user-not-found-db', 
-          message: 'El usuario no tiene datos registrados en la base de datos.'
+          code: 'user-not-found-db',
+          message: 'El usuario no tiene datos registrados en la base de datos.',
         );
       }
 
@@ -95,15 +103,14 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         }
       }
-
     } on FirebaseAuthException catch (e) {
       // 5. MANEJO DE ERRORES DE FIREBASE (Actualizado)
       String message = "Error de autenticación";
-      
+
       switch (e.code) {
         case 'invalid-credential': // <-- NUEVO: El error actual de Firebase
-        case 'user-not-found':     // Por si usas una versión antigua
-        case 'wrong-password':     // Por si usas una versión antigua
+        case 'user-not-found': // Por si usas una versión antigua
+        case 'wrong-password': // Por si usas una versión antigua
           message = "Correo o contraseña incorrectos. Verifica tus datos.";
           break;
         case 'invalid-email':
@@ -121,9 +128,8 @@ class _LoginScreenState extends State<LoginScreen> {
         default:
           message = "Error: ${e.message}";
       }
-      
-      _showMessage(message, isError: true);
 
+      _showMessage(message, isError: true);
     } catch (e) {
       _showMessage("Error de conexión: $e", isError: true);
     } finally {
@@ -135,16 +141,22 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _resetPassword() async {
     final email = _emailController.text.trim();
     if (email.isEmpty) {
-      _showMessage("Escribe tu correo arriba para enviarte el link.", isError: true);
+      _showMessage(
+        "Escribe tu correo arriba para enviarte el link.",
+        isError: true,
+      );
       return;
     }
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-      _showMessage("¡Correo enviado! Revisa tu bandeja de entrada.", isError: false);
+      _showMessage(
+        "¡Correo enviado! Revisa tu bandeja de entrada.",
+        isError: false,
+      );
     } on FirebaseAuthException catch (e) {
       String msg = e.message ?? "Error al enviar correo.";
       if (e.code == 'user-not-found' || e.code == 'invalid-credential') {
-         msg = "No hay cuenta registrada con este correo.";
+        msg = "No hay cuenta registrada con este correo.";
       }
       _showMessage(msg, isError: true);
     }
@@ -154,7 +166,13 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Text(
+          message,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         backgroundColor: isError ? Colors.redAccent : Colors.green,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -177,11 +195,14 @@ class _LoginScreenState extends State<LoginScreen> {
             Container(
               width: double.infinity,
               height: size.height * 0.35,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                  colors: [
+                    AppTheme.primaryOrange,
+                    AppTheme.primaryOrange.withValues(alpha: 0.8),
+                  ],
                 ),
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(40),
@@ -193,7 +214,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   CircleAvatar(
                     radius: 60,
-                    backgroundColor: Colors.white.withValues(alpha: 0.15), 
+                    backgroundColor: Colors.white.withValues(alpha: 0.15),
                     child: const CircleAvatar(
                       radius: 55,
                       backgroundImage: AssetImage('assets/Logo_app.jpeg'),
@@ -203,12 +224,20 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 20),
                   const Text(
                     "Gestión de Pasantías",
-                    style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
+                    ),
                   ),
                   const SizedBox(height: 5),
                   Text(
                     "Universidad Metropolitana",
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontSize: 14,
+                    ),
                   ),
                 ],
               ),
@@ -220,22 +249,38 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Iniciar Sesión", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)),
+                  const Text(
+                    "Iniciar Sesión",
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
                   const SizedBox(height: 10),
-                  const Text("Ingresa tus credenciales para continuar", style: TextStyle(color: Colors.grey)),
+                  const Text(
+                    "Ingresa tus credenciales para continuar",
+                    style: TextStyle(color: AppTheme.textSecondary),
+                  ),
                   const SizedBox(height: 40),
 
                   // Email
                   TextField(
                     controller: _emailController,
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: AppTheme.textPrimary),
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                       labelText: "Correo Institucional",
-                      prefixIcon: const Icon(Icons.email_outlined, color: AppTheme.primaryOrange),
+                      prefixIcon: const Icon(
+                        Icons.email_outlined,
+                        color: AppTheme.primaryOrange,
+                      ),
                       filled: true,
                       fillColor: AppTheme.surfaceDark,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -244,14 +289,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: AppTheme.textPrimary),
                     decoration: InputDecoration(
                       labelText: "Contraseña",
-                      prefixIcon: const Icon(Icons.lock_outline, color: AppTheme.primaryOrange),
+                      prefixIcon: const Icon(
+                        Icons.lock_outline,
+                        color: AppTheme.primaryOrange,
+                      ),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                          color: Colors.white.withValues(alpha: 0.5),
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: AppTheme.iconColor,
                         ),
                         onPressed: () {
                           setState(() {
@@ -261,7 +311,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       filled: true,
                       fillColor: AppTheme.surfaceDark,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
 
@@ -270,7 +323,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: _resetPassword,
-                      child: const Text("¿Olvidaste tu contraseña?", style: TextStyle(color: AppTheme.primaryOrange, fontWeight: FontWeight.w600)),
+                      child: const Text(
+                        "¿Olvidaste tu contraseña?",
+                        style: TextStyle(
+                          color: AppTheme.primaryOrange,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 30),
@@ -283,13 +342,24 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: _isLoading ? null : _login,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryOrange,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
                         elevation: 10,
-                        shadowColor: AppTheme.primaryOrange.withValues(alpha: 0.4),
+                        shadowColor: AppTheme.primaryOrange.withValues(
+                          alpha: 0.4,
+                        ),
                       ),
                       child: _isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text("ACCEDER", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                          : const Text(
+                              "ACCEDER",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
                     ),
                   ),
 
@@ -300,13 +370,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       const Text(
                         '¿No tienes cuenta? ',
-                        style: TextStyle(color: Colors.white70),
+                        style: TextStyle(color: AppTheme.textSecondary),
                       ),
                       TextButton(
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                            MaterialPageRoute(
+                              builder: (context) => const RegisterScreen(),
+                            ),
                           );
                         },
                         child: const Text(
@@ -372,7 +444,9 @@ class _ChatbotBottomSheetState extends State<ChatbotBottomSheet> {
   @override
   void initState() {
     super.initState();
-    _addBotMessage("¡Hola! 👋 Soy tu asistente de Pasantías. ¿En qué puedo ayudarte hoy?");
+    _addBotMessage(
+      "¡Hola! 👋 Soy tu asistente de Pasantías. ¿En qué puedo ayudarte hoy?",
+    );
   }
 
   void _addBotMessage(String text) {
@@ -392,20 +466,34 @@ class _ChatbotBottomSheetState extends State<ChatbotBottomSheet> {
 
   void _handleResponse(String query) {
     setState(() => _isTyping = true);
-    
+
     Future.delayed(const Duration(seconds: 1), () {
       if (!mounted) return;
-      
-      String response = "Lo siento, solo puedo ayudarte con el registro de cuenta o la recuperación de tu clave.";
-      
+
+      String response =
+          "Lo siento, solo puedo ayudarte con el registro de cuenta o la recuperación de tu clave.";
+
       if (query.contains("hola") || query.contains("saludos")) {
-        response = "¡Hola! Soy tu asistente. ¿Necesitas ayuda para registrarte o recuperar tu contraseña?";
-      } else if (query.contains("registro") || query.contains("cuenta") || query.contains("registrar")) {
-        response = "Para registrarte, usa el botón 'Regístrate aquí' en la parte inferior de la pantalla de inicio. Necesitarás tu correo @correo.unimet.edu.ve. ¿Hay algo más en lo que te pueda ayudar?";
-      } else if (query.contains("password") || query.contains("contraseña") || query.contains("clave") || query.contains("olvid")) {
-        response = "Si olvidaste tu clave, presiona el enlace '¿Olvidaste tu contraseña?' arriba del botón ACCEDER. Te enviaremos un email para que crees una nueva. ¿Hay algo más en lo que te pueda ayudar?";
-      } else if (query.contains("no") || query.contains("gracias") || query.contains("nada") || query.contains("chao") || query.contains("adios")) {
-        response = "¡Entendido! Espero haberte ayudado. ¡Éxito en tus pasantías! 👋";
+        response =
+            "¡Hola! Soy tu asistente. ¿Necesitas ayuda para registrarte o recuperar tu contraseña?";
+      } else if (query.contains("registro") ||
+          query.contains("cuenta") ||
+          query.contains("registrar")) {
+        response =
+            "Para registrarte, usa el botón 'Regístrate aquí' en la parte inferior de la pantalla de inicio. Necesitarás tu correo @correo.unimet.edu.ve. ¿Hay algo más en lo que te pueda ayudar?";
+      } else if (query.contains("password") ||
+          query.contains("contraseña") ||
+          query.contains("clave") ||
+          query.contains("olvid")) {
+        response =
+            "Si olvidaste tu clave, presiona el enlace '¿Olvidaste tu contraseña?' arriba del botón ACCEDER. Te enviaremos un email para que crees una nueva. ¿Hay algo más en lo que te pueda ayudar?";
+      } else if (query.contains("no") ||
+          query.contains("gracias") ||
+          query.contains("nada") ||
+          query.contains("chao") ||
+          query.contains("adios")) {
+        response =
+            "¡Entendido! Espero haberte ayudado. ¡Éxito en tus pasantías! 👋";
         setState(() {
           _isTyping = false;
           _addBotMessage(response);
@@ -439,12 +527,15 @@ class _ChatbotBottomSheetState extends State<ChatbotBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-    
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.75 + keyboardHeight,
       decoration: const BoxDecoration(
         color: AppTheme.backgroundDark,
-        borderRadius: BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
       ),
       child: Column(
         children: [
@@ -453,13 +544,18 @@ class _ChatbotBottomSheetState extends State<ChatbotBottomSheet> {
             padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(
               color: AppTheme.surfaceDark,
-              borderRadius: BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(30),
+                topRight: Radius.circular(30),
+              ),
             ),
             child: Row(
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: AppTheme.primaryOrange.withValues(alpha: 0.2),
+                  backgroundColor: AppTheme.primaryOrange.withValues(
+                    alpha: 0.2,
+                  ),
                   child: Image.asset('assets/mascot.png'),
                 ),
                 const SizedBox(width: 15),
@@ -467,19 +563,29 @@ class _ChatbotBottomSheetState extends State<ChatbotBottomSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Asistente Unimet", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      Text("En línea", style: TextStyle(color: Colors.green, fontSize: 12)),
+                      Text(
+                        "Asistente Unimet",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                      Text(
+                        "En línea",
+                        style: TextStyle(color: Colors.green, fontSize: 12),
+                      ),
                     ],
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white),
+                  icon: const Icon(Icons.close, color: AppTheme.iconColor),
                   onPressed: () => Navigator.pop(context),
-                )
+                ),
               ],
             ),
           ),
-          
+
           // Mensajes
           Expanded(
             child: ListView.builder(
@@ -499,22 +605,36 @@ class _ChatbotBottomSheetState extends State<ChatbotBottomSheet> {
           if (_isTyping)
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Align(alignment: Alignment.centerLeft, child: Text("Escribiendo...", style: TextStyle(color: Colors.grey, fontSize: 12))),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Escribiendo...",
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ),
             ),
 
           // Input
           Padding(
-            padding: EdgeInsets.only(left: 16, right: 16, top: 8, bottom: 16 + keyboardHeight),
+            padding: EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 8,
+              bottom: 16 + keyboardHeight,
+            ),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _chatController,
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: AppTheme.textPrimary),
                     decoration: InputDecoration(
                       hintText: "Escribe tu consulta...",
                       fillColor: AppTheme.surfaceDark,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                     onSubmitted: (val) {
                       if (val.trim().isNotEmpty) {
@@ -534,7 +654,7 @@ class _ChatbotBottomSheetState extends State<ChatbotBottomSheet> {
                   },
                   backgroundColor: AppTheme.primaryOrange,
                   child: const Icon(Icons.send, color: Colors.white, size: 18),
-                )
+                ),
               ],
             ),
           ),
@@ -550,8 +670,14 @@ class _ChatbotBottomSheetState extends State<ChatbotBottomSheet> {
         spacing: 8,
         runSpacing: 8,
         children: [
-          _quickActionChip("¿Cómo me registro?", () => _addUserMessage("¿Cómo me registro?")),
-          _quickActionChip("Olvidé mi clave", () => _addUserMessage("Olvidé mi clave")),
+          _quickActionChip(
+            "¿Cómo me registro?",
+            () => _addUserMessage("¿Cómo me registro?"),
+          ),
+          _quickActionChip(
+            "Olvidé mi clave",
+            () => _addUserMessage("Olvidé mi clave"),
+          ),
         ],
       ),
     );
@@ -560,8 +686,11 @@ class _ChatbotBottomSheetState extends State<ChatbotBottomSheet> {
   Widget _quickActionChip(String label, VoidCallback onTap) {
     return ActionChip(
       onPressed: onTap,
-      label: Text(label, style: const TextStyle(color: Colors.white, fontSize: 13)),
-      backgroundColor: AppTheme.surfaceDark,
+      label: Text(
+        label,
+        style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
+      ),
+      backgroundColor: AppTheme.surfaceLight,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
         side: const BorderSide(color: AppTheme.primaryOrange, width: 1),
@@ -575,17 +704,32 @@ class _ChatbotBottomSheetState extends State<ChatbotBottomSheet> {
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 5),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.7,
+        ),
         decoration: BoxDecoration(
-          color: msg.isUser ? AppTheme.primaryOrange : AppTheme.surfaceDark,
+          color: msg.isUser ? AppTheme.primaryOrange : AppTheme.surfaceLight,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20),
             topRight: const Radius.circular(20),
             bottomLeft: Radius.circular(msg.isUser ? 20 : 0),
             bottomRight: Radius.circular(msg.isUser ? 0 : 20),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 5,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
-        child: Text(msg.text, style: const TextStyle(color: Colors.white, fontSize: 14)),
+        child: Text(
+          msg.text,
+          style: TextStyle(
+            color: msg.isUser ? Colors.white : AppTheme.textPrimary,
+            fontSize: 14,
+          ),
+        ),
       ),
     );
   }

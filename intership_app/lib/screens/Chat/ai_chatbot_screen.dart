@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import '../../config/theme.dart';
 
 // =========================================================
 //  🤖  Pantalla del Asistente AI de Pasantías (Gemini)
@@ -36,12 +37,12 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
   bool _isLoading = false;
 
   // --- COLORES DEL PROYECTO ---
-  static const Color _bgDark = Color(0xFF0F172A);
-  static const Color _surfaceDark = Color(0xFF1E293B);
+  static const Color _bgDark = AppTheme.backgroundLight;
+  static const Color _surfaceDark = AppTheme.surfaceLight;
   static const Color _primaryOrange = Color(0xFFFF6F00);
-  static const Color _white10 = Color(0x1AFFFFFF);
-  static const Color _white30 = Color(0x4DFFFFFF);
-  static const Color _white60 = Color(0x99FFFFFF);
+  static const Color _white10 = Color(0xFFE2E8F0);
+  static const Color _white30 = AppTheme.textSecondary;
+  static const Color _white60 = AppTheme.textSecondary;
 
   // ----- SISTEMA DE PROMPT SEGÚN ROL -----
   String get _systemPrompt {
@@ -208,11 +209,11 @@ Si el estudiante pregunta algo muy específico del sistema interno, sugiere cont
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           '🗑️ Limpiar chat',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppTheme.textPrimary),
         ),
         content: const Text(
           'Se borrará toda la conversación actual. El historial no se almacena.',
-          style: TextStyle(color: _white60),
+          style: TextStyle(color: AppTheme.textSecondary),
         ),
         actions: [
           TextButton(
@@ -515,7 +516,10 @@ Si el estudiante pregunta algo muy específico del sistema interno, sugiere cont
               ),
               child: TextField(
                 controller: _controller,
-                style: const TextStyle(color: Colors.white, fontSize: 15),
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 15,
+                ),
                 textCapitalization: TextCapitalization.sentences,
                 maxLines: 4,
                 minLines: 1,
@@ -638,8 +642,8 @@ class _MessageBubble extends StatelessWidget {
 
   const _MessageBubble({required this.message, required this.accentColor});
 
-  static const Color _surfaceDark = Color(0xFF1E293B);
-  static const Color _white60 = Color(0x99FFFFFF);
+  static const Color _surfaceDark = AppTheme.surfaceLight;
+  static const Color _white60 = AppTheme.textSecondary;
   static const Color _black15 = Color(0x26000000);
 
   @override
@@ -701,7 +705,7 @@ class _MessageBubble extends StatelessWidget {
                             end: Alignment.bottomRight,
                           )
                         : const LinearGradient(
-                            colors: [Color(0xFF243044), _surfaceDark],
+                            colors: [Color(0xFFF1F5F9), _surfaceDark],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -726,7 +730,7 @@ class _MessageBubble extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: _buildMessageText(message.text),
+                  child: _buildMessageText(message.text, isUser),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -743,13 +747,13 @@ class _MessageBubble extends StatelessWidget {
   }
 
   /// Renderiza el texto con soporte básico para **negrita**
-  Widget _buildMessageText(String text) {
+  Widget _buildMessageText(String text, bool isUser) {
     final parts = text.split('**');
     if (parts.length <= 1) {
       return Text(
         text,
-        style: const TextStyle(
-          color: Colors.white,
+        style: TextStyle(
+          color: isUser ? Colors.white : AppTheme.textPrimary,
           fontSize: 14.5,
           height: 1.5,
         ),
@@ -761,7 +765,7 @@ class _MessageBubble extends StatelessWidget {
         TextSpan(
           text: parts[i],
           style: TextStyle(
-            color: Colors.white,
+            color: isUser ? Colors.white : AppTheme.textPrimary,
             fontSize: 14.5,
             height: 1.5,
             fontWeight: i.isOdd ? FontWeight.bold : FontWeight.normal,

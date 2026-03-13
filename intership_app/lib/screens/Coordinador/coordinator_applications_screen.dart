@@ -55,8 +55,10 @@ class _CoordinatorApplicationsScreenState
     extends State<CoordinatorApplicationsScreen> {
   String _selectedStatus = 'Todas';
   String _searchQuery = ''; // Variable para almacenar la búsqueda
-  final TextEditingController _searchController = TextEditingController(); // Controlador del buscador
-  final ScrollController _scrollController = ScrollController(); // <-- Controlador para la barra de desplazamiento
+  final TextEditingController _searchController =
+      TextEditingController(); // Controlador del buscador
+  final ScrollController _scrollController =
+      ScrollController(); // <-- Controlador para la barra de desplazamiento
 
   @override
   void dispose() {
@@ -66,11 +68,11 @@ class _CoordinatorApplicationsScreenState
   }
 
   // --- COLORES PRE-COMPUTADOS ---
-  static const Color _white10 = Color(0x1AFFFFFF);
-  static const Color _white24 = Color(0x3DFFFFFF);
-  static const Color _white30 = Color(0x4DFFFFFF);
-  static const Color _white50 = Color(0x80FFFFFF);
-  static const Color _white60 = Color(0x99FFFFFF);
+  static const Color _white10 = Color(0xFFE2E8F0);
+  static const Color _white24 = Color(0xFFCBD5E1);
+  static const Color _white30 = Color(0xFFCBD5E1);
+  static const Color _white50 = AppTheme.textSecondary;
+  static const Color _white60 = AppTheme.textSecondary;
 
   // --- STREAM SE RECREA SOLO AL CAMBIAR FILTRO ---
   Stream<QuerySnapshot> _getStream() {
@@ -135,17 +137,11 @@ class _CoordinatorApplicationsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundDark,
+      backgroundColor: AppTheme.backgroundLight,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          "Solicitudes",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        title: const Text("Solicitudes"),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -153,18 +149,18 @@ class _CoordinatorApplicationsScreenState
         child: Column(
           children: [
             Container(
-              height: 65,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              height: 50,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
                     _buildFilterChip('Todas', 'Todas'),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
                     _buildFilterChip('Pendientes', 'Pendiente'),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
                     _buildFilterChip('Aceptadas', 'Aceptado'),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
                     _buildFilterChip('Rechazadas', 'Rechazado'),
                   ],
                 ),
@@ -177,13 +173,16 @@ class _CoordinatorApplicationsScreenState
               child: Container(
                 height: 45,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E202B),
+                  color: AppTheme.surfaceLight,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: _white10),
                 ),
                 child: TextField(
                   controller: _searchController,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: const TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 14,
+                  ),
                   onChanged: (value) {
                     setState(() {
                       _searchQuery = value.toLowerCase();
@@ -192,16 +191,24 @@ class _CoordinatorApplicationsScreenState
                   decoration: InputDecoration(
                     hintText: "Buscar por nombre u oferta...",
                     hintStyle: const TextStyle(color: _white50, fontSize: 13),
-                    prefixIcon: const Icon(Icons.search, color: AppTheme.primaryOrange, size: 20),
-                    suffixIcon: _searchQuery.isNotEmpty 
-                      ? IconButton(
-                          icon: const Icon(Icons.close, color: _white50, size: 18),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() => _searchQuery = '');
-                          },
-                        )
-                      : null,
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      color: AppTheme.primaryOrange,
+                      size: 20,
+                    ),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(
+                              Icons.close,
+                              color: _white50,
+                              size: 18,
+                            ),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = '');
+                            },
+                          )
+                        : null,
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 10),
                   ),
@@ -209,76 +216,81 @@ class _CoordinatorApplicationsScreenState
               ),
             ),
 
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _getStream(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      color: AppTheme.primaryOrange,
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: _getStream(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: AppTheme.primaryOrange,
+                      ),
+                    );
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return _buildEmptyState();
+                  }
+
+                  // Filtrado por estado realizado por Firestore o localmente si es necesario
+                  var docs = snapshot.data!.docs;
+
+                  // Filtrado local por búsqueda
+                  if (_searchQuery.isNotEmpty) {
+                    docs = docs.where((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      final student = (data['studentName'] ?? '')
+                          .toString()
+                          .toLowerCase();
+                      final job = (data['jobTitle'] ?? '')
+                          .toString()
+                          .toLowerCase();
+                      return student.contains(_searchQuery) ||
+                          job.contains(_searchQuery);
+                    }).toList();
+                  }
+
+                  if (docs.isEmpty) {
+                    return _buildEmptyState();
+                  }
+
+                  final apps = docs
+                      .map((doc) => JobApplication.fromFirestore(doc))
+                      .toList();
+
+                  return Scrollbar(
+                    controller: _scrollController,
+                    thumbVisibility: true,
+                    thickness: 6,
+                    radius: const Radius.circular(10),
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(20),
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: apps.length,
+                      itemBuilder: (context, index) =>
+                          _buildApplicationCard(apps[index]),
                     ),
                   );
-                }
-
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return _buildEmptyState();
-                }
-
-                // Filtrado por estado realizado por Firestore o localmente si es necesario
-                var docs = snapshot.data!.docs;
-
-                // Filtrado local por búsqueda
-                if (_searchQuery.isNotEmpty) {
-                  docs = docs.where((doc) {
-                    final data = doc.data() as Map<String, dynamic>;
-                    final student = (data['studentName'] ?? '').toString().toLowerCase();
-                    final job = (data['jobTitle'] ?? '').toString().toLowerCase();
-                    return student.contains(_searchQuery) || job.contains(_searchQuery);
-                  }).toList();
-                }
-
-                if (docs.isEmpty) {
-                  return _buildEmptyState();
-                }
-
-                final apps = docs
-                    .map((doc) => JobApplication.fromFirestore(doc))
-                    .toList();
-
-                return Scrollbar(
-                  controller: _scrollController,
-                  thumbVisibility: true,
-                  thickness: 6,
-                  radius: const Radius.circular(10),
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(20),
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: apps.length,
-                    itemBuilder: (context, index) =>
-                        _buildApplicationCard(apps[index]),
-                  ),
-                );
-              },
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildFilterChip(String text, String value) {
     final isSelected = _selectedStatus == value;
     final primaryColor = AppTheme.primaryOrange;
-    
+
     return FilterChip(
       label: Text(text),
       labelStyle: TextStyle(
-        color: isSelected ? Colors.white : _white60,
-        fontWeight: FontWeight.bold,
-        fontSize: 13,
+        color: isSelected ? Colors.white : AppTheme.textSecondary,
+        fontWeight: FontWeight.w600,
+        fontSize: 12,
       ),
       selected: isSelected,
       onSelected: (bool selected) {
@@ -295,13 +307,15 @@ class _CoordinatorApplicationsScreenState
         borderRadius: BorderRadius.circular(20),
         side: BorderSide(color: isSelected ? primaryColor : _white24),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      showCheckmark: false, // Mantiene el diseño minimalista sin el checkmark por defecto
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      visualDensity: VisualDensity.compact,
+      showCheckmark: false,
     );
   }
 
   Widget _buildApplicationCard(JobApplication app) {
-    final cardColor = const Color(0xFF1E202B);
+    final cardColor = AppTheme.surfaceLight;
     final brandColor = Colors.blueAccent;
 
     String initials = _getInitials(app.studentName);
@@ -336,7 +350,7 @@ class _CoordinatorApplicationsScreenState
                     Text(
                       app.jobTitle,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.textPrimary,
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -358,76 +372,81 @@ class _CoordinatorApplicationsScreenState
 
           const Divider(color: _white10, height: 25),
 
-        // --- ENLACE A STUDENT PROFILE (HU-21) ---
-        GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => StudentProfileView(studentId: app.studentId),
-              ),
-            );
-          },
-          behavior: HitTestBehavior.opaque,
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Colors.blue[400]!, Colors.purple[400]!],
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.purple.withValues(alpha: 0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
+          // --- ENLACE A STUDENT PROFILE (HU-21) ---
+          GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      StudentProfileView(studentId: app.studentId),
+                ),
+              );
+            },
+            behavior: HitTestBehavior.opaque,
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Colors.blue[400]!, Colors.purple[400]!],
                     ),
-                  ],
-                ),
-                child: Text(
-                  initials,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    letterSpacing: 1.0,
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      app.studentName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.purple.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
                       ),
+                    ],
+                  ),
+                  child: Text(
+                    initials,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      letterSpacing: 1.0,
                     ),
-                    Text(
-                      app.studentEmail,
-                      style: const TextStyle(color: _white50, fontSize: 12),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-              const Icon(Icons.arrow_forward_ios_rounded, color: _white30, size: 14),
-            ],
-          ),
-        ),
-        // --- FIN ENLACE ---
 
-        const SizedBox(height: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        app.studentName,
+                        style: const TextStyle(
+                          color: AppTheme.textPrimary,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      Text(
+                        app.studentEmail,
+                        style: const TextStyle(color: _white50, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: _white30,
+                  size: 14,
+                ),
+              ],
+            ),
+          ),
+
+          // --- FIN ENLACE ---
+          const SizedBox(height: 20),
 
           if (app.status == 'Pendiente')
             Row(

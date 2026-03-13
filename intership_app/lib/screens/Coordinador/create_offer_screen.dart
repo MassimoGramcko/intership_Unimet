@@ -21,7 +21,9 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   final _descController = TextEditingController();
   final _locationController = TextEditingController();
   final _wageController = TextEditingController();
-  final _limitController = TextEditingController(text: '0'); // Nuevo: Límite de vacantes
+  final _limitController = TextEditingController(
+    text: '0',
+  ); // Nuevo: Límite de vacantes
 
   // Variables de estado
   String _modality = 'Presencial';
@@ -66,33 +68,36 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final newOfferRef = await FirebaseFirestore.instance.collection('job_offers').add({
-        // 1. Datos básicos
-        'title': _titleController.text.trim(),
-        'company': _companyController.text.trim(),
-        'description': _descController.text.trim(),
-        'location': _locationController.text.trim(), // Nombre del lugar
-        'wage': _wageController.text.trim(),
+      final newOfferRef = await FirebaseFirestore.instance
+          .collection('job_offers')
+          .add({
+            // 1. Datos básicos
+            'title': _titleController.text.trim(),
+            'company': _companyController.text.trim(),
+            'description': _descController.text.trim(),
+            'location': _locationController.text.trim(), // Nombre del lugar
+            'wage': _wageController.text.trim(),
 
-        // NUEVO: Guardamos las coordenadas (pueden ser null si no eligió mapa)
-        'latitude': _latitude,
-        'longitude': _longitude,
+            // NUEVO: Guardamos las coordenadas (pueden ser null si no eligió mapa)
+            'latitude': _latitude,
+            'longitude': _longitude,
 
-        // 2. FECHAS
-        'createdAt': FieldValue.serverTimestamp(),
+            // 2. FECHAS
+            'createdAt': FieldValue.serverTimestamp(),
 
-        // 3. MODALIDAD
-        'modality': _modality,
-        'type': _modality,
-        'isRemote': _modality == 'Remoto',
+            // 3. MODALIDAD
+            'modality': _modality,
+            'type': _modality,
+            'isRemote': _modality == 'Remoto',
 
-        // 4. Datos por defecto
-        'isActive': true,
-        'applicantsCount': 0,
-        'vacancies': int.tryParse(_limitController.text) ?? 0, // Nuevo campo
-        'isFeatured': false,
-        'colorHex': '#FF5733',
-      });
+            // 4. Datos por defecto
+            'isActive': true,
+            'applicantsCount': 0,
+            'vacancies':
+                int.tryParse(_limitController.text) ?? 0, // Nuevo campo
+            'isFeatured': false,
+            'colorHex': '#FF5733',
+          });
 
       // --- NUEVA LÓGICA: Notificar a todos los estudiantes (HU-10) ---
       final studentsSnapshot = await FirebaseFirestore.instance
@@ -103,14 +108,17 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
       final batch = FirebaseFirestore.instance.batch();
       for (var studentDoc in studentsSnapshot.docs) {
         final studentData = studentDoc.data();
-        
+
         // 1. Notificación interna en la App
-        final notifRef = FirebaseFirestore.instance.collection('notifications').doc();
+        final notifRef = FirebaseFirestore.instance
+            .collection('notifications')
+            .doc();
         batch.set(notifRef, {
           'userId': studentDoc.id,
           'type': 'new_offer',
           'title': 'Nueva Oferta de Pasantía',
-          'body': 'Se ha publicado una nueva oferta: ${_titleController.text.trim()}',
+          'body':
+              'Se ha publicado una nueva oferta: ${_titleController.text.trim()}',
           'offerId': newOfferRef.id,
           'isRead': false,
           'timestamp': FieldValue.serverTimestamp(),
@@ -127,7 +135,8 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
             'to': [studentEmail],
             'message': {
               'subject': '🚀 Nueva Pasantía: ${_titleController.text.trim()}',
-              'html': '''
+              'html':
+                  '''
                 <h3>¡Hola ${studentData['firstName'] ?? 'Estudiante'}!</h3>
                 <p>Se ha publicado una nueva oportunidad que podría interesarte en <b>Intership Unimet</b>.</p>
                 <hr>
@@ -181,19 +190,13 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A), // Fondo Dark Slate
+      backgroundColor: AppTheme.backgroundLight,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.white),
+          icon: const Icon(Icons.close),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          "Nueva Oferta",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
+        title: const Text("Nueva Oferta"),
       ),
       body: Scrollbar(
         controller: _scrollController,
@@ -201,273 +204,274 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
         child: SingleChildScrollView(
           controller: _scrollController,
           padding: const EdgeInsets.all(24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSectionTitle("Información del Puesto"),
-              const SizedBox(height: 15),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSectionTitle("Información del Puesto"),
+                const SizedBox(height: 15),
 
-              _buildTextField(
-                _titleController,
-                "Título",
-                "Ej: Desarrollador Mobile",
-                Icons.work_outline,
-              ),
-              const SizedBox(height: 15),
-              _buildTextField(
-                _companyController,
-                "Empresa",
-                "Ej: Tech Solutions",
-                Icons.business,
-              ),
-
-              const SizedBox(height: 25),
-              _buildSectionTitle("Detalles"),
-              const SizedBox(height: 15),
-
-              // --- AQUI MODIFICAMOS LA FILA DE UBICACIÓN Y MODALIDAD ---
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Columna Izquierda: Ubicación (Texto + Botón Mapa)
-                  Expanded(
-                    flex: 3, // Le damos más espacio a la ubicación
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Ubicación",
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            // Campo de Texto
-                            Expanded(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.05),
-                                  borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(15),
-                                    bottomLeft: Radius.circular(15),
-                                  ),
-                                  border: Border.all(
-                                    color: Colors.white.withValues(alpha: 0.1),
-                                  ),
-                                ),
-                                child: TextFormField(
-                                  controller: _locationController,
-                                  style: const TextStyle(color: Colors.white),
-                                  validator: (value) =>
-                                      value!.isEmpty ? "Requerido" : null,
-                                  decoration: InputDecoration(
-                                    hintText: "Ej: Torre A",
-                                    hintStyle: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.2,
-                                      ),
-                                    ),
-
-                                    prefixIcon: const Icon(
-                                      Icons.location_on_outlined,
-                                      color: Colors.white54,
-                                    ),
-                                    border: InputBorder.none,
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      vertical: 14,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            // Botón del Mapa
-                            InkWell(
-                              onTap: _pickLocation,
-                              child: Container(
-                                height: 50, // Misma altura aprox que el input
-                                width: 50,
-                                decoration: BoxDecoration(
-                                  // Si ya seleccionó coordenadas, se pone verde
-                                  color: _latitude != null
-                                      ? Colors.green.withValues(alpha: 0.8)
-                                      : Colors.orange,
-
-                                  borderRadius: const BorderRadius.only(
-                                    topRight: Radius.circular(15),
-                                    bottomRight: Radius.circular(15),
-                                  ),
-                                ),
-                                child: Icon(
-                                  _latitude != null ? Icons.check : Icons.map,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (_latitude != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4, left: 4),
-                            child: Text(
-                              "Coordenadas guardadas",
-                              style: TextStyle(
-                                color: Colors.greenAccent[400],
-                                fontSize: 10,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(width: 15),
-
-                  // Columna Derecha: Modalidad
-                  Expanded(
-                    flex: 2,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Modalidad",
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Container(
-                          width: double.infinity,
-                          height:
-                              50, // Altura fija para alinear con el de al lado
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.05),
-                            borderRadius: BorderRadius.circular(15),
-
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.1),
-                            ),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: _modality,
-                              isExpanded: true,
-                              dropdownColor: const Color(0xFF1E293B),
-                              icon: const Icon(
-                                Icons.arrow_drop_down,
-                                color: Colors.white,
-                              ),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 13,
-                              ),
-                              items: ['Presencial', 'Remoto', 'Híbrido'].map((
-                                String value,
-                              ) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(
-                                    value,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (newValue) =>
-                                  setState(() => _modality = newValue!),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              // --- FIN DE LA MODIFICACIÓN ---
-              const SizedBox(height: 15),
-
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: _buildTextField(
-                      _wageController,
-                      "Remuneración",
-                      "Ej: 100 USD",
-                      Icons.attach_money,
-                    ),
-                  ),
-                  const SizedBox(width: 15),
-                  Expanded(
-                    child: _buildTextField(
-                      _limitController,
-                      "Cupos",
-                      "0 = Ilimitado",
-                      Icons.people_outline,
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 25),
-              _buildSectionTitle("Descripción"),
-              const SizedBox(height: 15),
-              _buildTextField(
-                _descController,
-                "Requisitos y funciones...",
-                "",
-                Icons.description,
-                maxLines: 5,
-              ),
-
-              const SizedBox(height: 40),
-
-              // Botón Publicar
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _submitOffer,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryOrange,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text(
-                          "PUBLICAR AHORA",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
+                _buildTextField(
+                  _titleController,
+                  "Título",
+                  "Ej: Desarrollador Mobile",
+                  Icons.work_outline,
                 ),
-              ),
-              const SizedBox(height: 20),
-            ],
+                const SizedBox(height: 15),
+                _buildTextField(
+                  _companyController,
+                  "Empresa",
+                  "Ej: Tech Solutions",
+                  Icons.business,
+                ),
+
+                const SizedBox(height: 25),
+                _buildSectionTitle("Detalles"),
+                const SizedBox(height: 15),
+
+                // --- AQUI MODIFICAMOS LA FILA DE UBICACIÓN Y MODALIDAD ---
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Columna Izquierda: Ubicación (Texto + Botón Mapa)
+                    Expanded(
+                      flex: 3, // Le damos más espacio a la ubicación
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Ubicación",
+                            style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              // Campo de Texto
+                              Expanded(
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.surfaceLight,
+                                    borderRadius: const BorderRadius.only(
+                                      topLeft: Radius.circular(15),
+                                      bottomLeft: Radius.circular(15),
+                                    ),
+                                    border: Border.all(
+                                      color: const Color(0xFFE2E8F0),
+                                    ),
+                                  ),
+                                  child: TextFormField(
+                                    controller: _locationController,
+                                    style: const TextStyle(
+                                      color: AppTheme.textPrimary,
+                                    ),
+                                    validator: (value) =>
+                                        value!.isEmpty ? "Requerido" : null,
+                                    decoration: const InputDecoration(
+                                      hintText: "Ej: Torre A",
+                                      hintStyle: TextStyle(
+                                        color: AppTheme.textSecondary,
+                                      ),
+
+                                      prefixIcon: Icon(
+                                        Icons.location_on_outlined,
+                                        color: AppTheme.iconColor,
+                                      ),
+                                      border: InputBorder.none,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            vertical: 14,
+                                          ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              // Botón del Mapa
+                              InkWell(
+                                onTap: _pickLocation,
+                                child: Container(
+                                  height: 50, // Misma altura aprox que el input
+                                  width: 50,
+                                  decoration: BoxDecoration(
+                                    // Si ya seleccionó coordenadas, se pone verde
+                                    color: _latitude != null
+                                        ? Colors.green.withValues(alpha: 0.8)
+                                        : Colors.orange,
+
+                                    borderRadius: const BorderRadius.only(
+                                      topRight: Radius.circular(15),
+                                      bottomRight: Radius.circular(15),
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    _latitude != null ? Icons.check : Icons.map,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          if (_latitude != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4, left: 4),
+                              child: Text(
+                                "Coordenadas guardadas",
+                                style: TextStyle(
+                                  color: Colors.greenAccent[400],
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(width: 15),
+
+                    // Columna Derecha: Modalidad
+                    Expanded(
+                      flex: 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Modalidad",
+                            style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            width: double.infinity,
+                            height:
+                                50, // Altura fija para alinear con el de al lado
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.surfaceLight,
+                              borderRadius: BorderRadius.circular(15),
+
+                              border: Border.all(
+                                color: const Color(0xFFE2E8F0),
+                              ),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _modality,
+                                isExpanded: true,
+                                dropdownColor: AppTheme.surfaceLight,
+                                icon: const Icon(
+                                  Icons.arrow_drop_down,
+                                  color: AppTheme.iconColor,
+                                ),
+                                style: const TextStyle(
+                                  color: AppTheme.textPrimary,
+                                  fontSize: 13,
+                                ),
+                                items: ['Presencial', 'Remoto', 'Híbrido'].map((
+                                  String value,
+                                ) {
+                                  return DropdownMenuItem<String>(
+                                    value: value,
+                                    child: Text(
+                                      value,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (newValue) =>
+                                    setState(() => _modality = newValue!),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                // --- FIN DE LA MODIFICACIÓN ---
+                const SizedBox(height: 15),
+
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: _buildTextField(
+                        _wageController,
+                        "Remuneración",
+                        "Ej: 100 USD",
+                        Icons.attach_money,
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: _buildTextField(
+                        _limitController,
+                        "Cupos",
+                        "0 = Ilimitado",
+                        Icons.people_outline,
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 25),
+                _buildSectionTitle("Descripción"),
+                const SizedBox(height: 15),
+                _buildTextField(
+                  _descController,
+                  "Requisitos y funciones...",
+                  "",
+                  Icons.description,
+                  maxLines: 5,
+                ),
+
+                const SizedBox(height: 40),
+
+                // Botón Publicar
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _submitOffer,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryOrange,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            "PUBLICAR AHORA",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 
@@ -498,7 +502,7 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
           Text(
             label,
             style: const TextStyle(
-              color: Colors.white70,
+              color: AppTheme.textPrimary,
               fontSize: 13,
               fontWeight: FontWeight.w500,
             ),
@@ -506,22 +510,22 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
         if (label.isNotEmpty) const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
+            color: AppTheme.surfaceLight,
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
           ),
           child: TextFormField(
             controller: controller,
             maxLines: maxLines,
             keyboardType: keyboardType,
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: AppTheme.textPrimary),
             validator: (value) => value!.isEmpty ? "Campo requerido" : null,
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.2)),
+              hintStyle: const TextStyle(color: AppTheme.textSecondary),
 
               prefixIcon: maxLines == 1
-                  ? Icon(icon, color: Colors.white54)
+                  ? Icon(icon, color: AppTheme.iconColor)
                   : null,
               border: InputBorder.none,
               contentPadding: const EdgeInsets.all(16),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import '../config/theme.dart';
 
 import 'Chat/chat_screen.dart';
 import 'Coordinador/coordinator_applications_screen.dart';
@@ -18,12 +19,12 @@ class NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState extends State<NotificationsScreen>
     with SingleTickerProviderStateMixin {
   // --- COLORES PRE-COMPUTADOS ---
-  static const Color _bgDark = Color(0xFF0F172A);
-  static const Color _surfaceDark = Color(0xFF1E293B);
-  static const Color _white20 = Color(0x33FFFFFF);
-  static const Color _white50 = Color(0x80FFFFFF);
-  static const Color _white40 = Color(0x66FFFFFF);
-  static const Color _white70 = Color(0xB3FFFFFF);
+  static const Color _bgDark = AppTheme.backgroundLight;
+  static const Color _surfaceDark = AppTheme.surfaceLight;
+  static const Color _white20 = Color(0xFFE2E8F0);
+  static const Color _white50 = AppTheme.textSecondary;
+  static const Color _white40 = AppTheme.textSecondary;
+  static const Color _white70 = AppTheme.textSecondary;
 
   // --- CONTROLADORES ---
   final ScrollController _scrollController = ScrollController();
@@ -79,7 +80,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         backgroundColor: _surfaceDark,
         title: const Text(
           'Vaciar Notificaciones',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppTheme.textPrimary),
         ),
         content: const Text(
           '¿Estás seguro de que quieres eliminar todas tus notificaciones?',
@@ -129,13 +130,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
     return Scaffold(
       backgroundColor: _bgDark,
       appBar: AppBar(
-        title: const Text(
-          'Notificaciones',
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: _surfaceDark,
-        iconTheme: const IconThemeData(color: Colors.white),
-        elevation: 0,
+        title: const Text('Notificaciones'),
         actions: [
           if (_currentUserId != null)
             Padding(
@@ -151,12 +146,10 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                   scale: _deleteScale,
                   child: Container(
                     padding: const EdgeInsets.all(10),
-                    decoration: const BoxDecoration(
-                      color: Colors.transparent,
-                    ),
+                    decoration: const BoxDecoration(color: Colors.transparent),
                     child: const Icon(
                       Icons.delete_sweep_rounded,
-                      color: Colors.redAccent,
+                      color: Colors.white,
                       size: 26,
                     ),
                   ),
@@ -169,7 +162,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           ? const Center(
               child: Text(
                 "Error de sesión",
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: AppTheme.textPrimary),
               ),
             )
           : StreamBuilder<QuerySnapshot>(
@@ -216,40 +209,41 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                       final notif = notifications[index];
                       final data = notif.data() as Map<String, dynamic>;
                       final bool isRead = data['isRead'] ?? false;
-  
+
                       String timeStr = '';
                       if (data['timestamp'] != null) {
-                        DateTime date = (data['timestamp'] as Timestamp).toDate();
+                        DateTime date = (data['timestamp'] as Timestamp)
+                            .toDate();
                         timeStr = DateFormat('dd MMM, hh:mm a').format(date);
                       }
-  
+
                       IconData iconType = Icons.notifications;
                       Color iconColor = Colors.blueAccent;
-  
+
                       if (data['type'] == 'chat') {
-                      iconType = Icons.chat_bubble_rounded;
-                      iconColor = Colors.greenAccent;
-                    } else if (data['type'] == 'application') {
-                      // Creada por el estudiante para todos los coordinadores (HU-08)
-                      iconType = Icons.assignment_turned_in_rounded;
-                      iconColor = Colors.orangeAccent;
-                    } else if (data['type'] == 'status_change') {
-                      // Enviada al estudiante por cambio de estado (HU-10)
-                      iconType = Icons.info_outline_rounded;
-                      iconColor = Colors.blueAccent;
-                    } else if (data['type'] == 'new_offer') {
-                      // Enviada a todos los estudiantes (HU-10)
-                      iconType = Icons.new_releases_rounded;
-                      iconColor = Colors.purpleAccent;
-                    }
-  
+                        iconType = Icons.chat_bubble_rounded;
+                        iconColor = Colors.greenAccent;
+                      } else if (data['type'] == 'application') {
+                        // Creada por el estudiante para todos los coordinadores (HU-08)
+                        iconType = Icons.assignment_turned_in_rounded;
+                        iconColor = Colors.orangeAccent;
+                      } else if (data['type'] == 'status_change') {
+                        // Enviada al estudiante por cambio de estado (HU-10)
+                        iconType = Icons.info_outline_rounded;
+                        iconColor = Colors.blueAccent;
+                      } else if (data['type'] == 'new_offer') {
+                        // Enviada a todos los estudiantes (HU-10)
+                        iconType = Icons.new_releases_rounded;
+                        iconColor = Colors.purpleAccent;
+                      }
+
                       String displaySenderName =
                           data['senderName'] ?? 'Coordinador';
                       if (displaySenderName.trim() == 'Usuario' ||
                           displaySenderName.trim().isEmpty) {
                         displaySenderName = 'Coordinador';
                       }
-  
+
                       return Container(
                         color: isRead
                             ? Colors.transparent
@@ -262,7 +256,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                           title: Text(
                             data['title'] ?? 'Notificación',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppTheme.textPrimary,
                               fontWeight: isRead
                                   ? FontWeight.normal
                                   : FontWeight.bold,
@@ -287,7 +281,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                           ),
                           onTap: () {
                             if (!isRead) _markAsRead(notif.id);
-  
+
                             if (data['type'] == 'chat' &&
                                 data['chatId'] != null) {
                               Navigator.push(
@@ -305,12 +299,14 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const CoordinatorApplicationsScreen(),
+                                  builder: (context) =>
+                                      const CoordinatorApplicationsScreen(),
                                 ),
                               );
                             } else if (data['type'] == 'status_change') {
                               // HU-10: Redirigir al estudiante a la pestaña de "Mis Solicitudes"
-                              Navigator.pushReplacement( // Usamos pushReplacement para evitar stack gigante
+                              Navigator.pushReplacement(
+                                // Usamos pushReplacement para evitar stack gigante
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => const ApplicationsTab(),
@@ -318,7 +314,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                               );
                             } else if (data['type'] == 'new_offer') {
                               // HU-10: Redirigir al estudiante a la pestaña de "Explorar Ofertas"
-                              Navigator.pushReplacement( // Usamos pushReplacement para evitar stack gigante
+                              Navigator.pushReplacement(
+                                // Usamos pushReplacement para evitar stack gigante
                                 context,
                                 MaterialPageRoute(
                                   builder: (context) => const ExploreTab(),

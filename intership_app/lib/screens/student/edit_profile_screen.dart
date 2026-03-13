@@ -126,14 +126,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundDark,
+      backgroundColor: AppTheme.backgroundLight,
       appBar: AppBar(
-        title: const Text("Editar Datos Personales", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
+        title: const Text("Editar Datos Personales"),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -157,10 +154,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 5),
-                    Text(
+                    const Text(
                       "Estos datos aparecerán en tus postulaciones.",
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.5),
+                        color: AppTheme.textSecondary,
                         fontSize: 13,
                       ),
                     ),
@@ -210,10 +207,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 5),
-                    Text(
+                    const Text(
                       "Esta información es visible para los coordinadores.",
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.5),
+                        color: AppTheme.textSecondary,
                         fontSize: 13,
                       ),
                     ),
@@ -234,7 +231,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       controller: _academicIndexController,
                       label: "Índice Académico (Ej: 15.5)",
                       icon: Icons.workspace_premium_outlined,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       required: false,
                     ),
                     const SizedBox(height: 20),
@@ -305,11 +304,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
+        color: AppTheme.surfaceLight,
         borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -319,12 +319,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         controller: controller,
         keyboardType: keyboardType,
         maxLines: maxLines,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: AppTheme.textPrimary),
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
-          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.25)),
-          labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+          hintStyle: const TextStyle(color: AppTheme.textSecondary),
+          labelStyle: const TextStyle(color: AppTheme.textSecondary),
           prefixIcon: Icon(icon, color: AppTheme.primaryOrange),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
@@ -340,12 +340,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           filled: true,
           fillColor: Colors.transparent,
         ),
-        validator: required ? (value) {
-          if (value == null || value.isEmpty) {
-            return "Este campo es obligatorio";
-          }
-          return null;
-        } : null,
+        validator: required
+            ? (value) {
+                if (value == null || value.isEmpty) {
+                  return "Este campo es obligatorio";
+                }
+                return null;
+              }
+            : null,
       ),
     );
   }

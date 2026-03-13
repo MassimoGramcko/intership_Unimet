@@ -19,11 +19,9 @@ class StudentHomeScreen extends StatefulWidget {
 
 class _StudentHomeScreenState extends State<StudentHomeScreen> {
   // --- COLORES PRE-COMPUTADOS ---
-  static const Color _white05 = Color(0x0DFFFFFF);
   static const Color _white10 = Color(0x1AFFFFFF);
   static const Color _white08 = Color(0x14FFFFFF);
   static const Color _white50 = Color(0x80FFFFFF);
-  static const Color _white60 = Color(0x99FFFFFF);
   static const Color _white90 = Color(0xE6FFFFFF);
 
   // --- STREAMS CACHEADOS ---
@@ -90,12 +88,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.backgroundLight,
       isScrollControlled: true,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.35, // Altura reducida
         decoration: const BoxDecoration(
-          color: Color(0xFF1E293B),
+          color: AppTheme.surfaceLight,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(30),
             topRight: Radius.circular(30),
@@ -119,7 +117,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             const Text(
               "Estado de tus Postulaciones",
               style: TextStyle(
-                color: Colors.white,
+                color: AppTheme.textPrimary,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
@@ -127,7 +125,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             const SizedBox(height: 10),
             const Text(
               "Resumen rápido de tus postulaciones actuales.",
-              style: TextStyle(color: _white60, fontSize: 14),
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
             ),
             const SizedBox(height: 40),
             Row(
@@ -170,7 +168,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         const SizedBox(height: 10),
         Text(
           label,
-          style: const TextStyle(color: Colors.white70, fontSize: 12),
+          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
         ),
       ],
     );
@@ -190,7 +188,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           ? const Center(
               child: Text(
                 "No hay sesión activa",
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: AppTheme.textPrimary),
               ),
             )
           : StreamBuilder<DocumentSnapshot>(
@@ -265,9 +263,16 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     right: 25,
                     bottom: 30, // Antes 40
                   ),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF0F172A),
-                    borderRadius: BorderRadius.only(
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceLight,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                    borderRadius: const BorderRadius.only(
                       bottomLeft: Radius.circular(40),
                       bottomRight: Radius.circular(40),
                     ),
@@ -283,7 +288,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                               Text(
                                 "¡Hola, $name!",
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color: AppTheme.textPrimary,
                                   fontSize: 28,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -295,13 +300,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: _white10,
+                                  color: AppTheme.primaryOrange,
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
                                   career.toUpperCase(),
                                   style: const TextStyle(
-                                    color: AppTheme.primaryOrange,
+                                    color: Colors.white,
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 1,
@@ -326,15 +331,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                                 icon: Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: const BoxDecoration(
-                                    color: _white05,
+                                    color: AppTheme.surfaceLight,
                                     shape: BoxShape.circle,
                                     border: Border.fromBorderSide(
-                                      BorderSide(color: _white10),
+                                      BorderSide(color: Color(0xFFE2E8F0)),
                                     ),
                                   ),
                                   child: const Icon(
                                     Icons.settings_outlined,
-                                    color: Colors.white,
+                                    color: AppTheme.iconColor,
                                     size: 22,
                                   ),
                                 ),
@@ -430,7 +435,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   const Text(
                     "Tu Próximo Paso",
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.textPrimary,
                       fontSize: 18, // Antes 20
                       fontWeight: FontWeight.bold,
                     ),
@@ -452,7 +457,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   const Text(
                     "Accesos Rápidos",
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.textPrimary,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
@@ -657,19 +662,12 @@ class _InteractiveStatCardState extends State<_InteractiveStatCard>
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                _isHovering ? const Color(0xFF2D3748) : const Color(0xFF1E293B),
-                widget.color.withValues(alpha: _isHovering ? 0.4 : 0.2),
-              ],
-            ),
+            color: AppTheme.surfaceLight,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
               color: _isHovering
                   ? widget.color.withValues(alpha: 0.5)
-                  : Colors.white.withValues(alpha: 0.08),
+                  : const Color(0xFFE2E8F0),
             ),
             boxShadow: [
               if (_isHovering)
@@ -683,12 +681,12 @@ class _InteractiveStatCardState extends State<_InteractiveStatCard>
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: widget.color.withValues(alpha: 0.2),
+                  color: widget.color.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(widget.icon, color: Colors.white, size: 20),
+                child: Icon(widget.icon, color: widget.color, size: 22),
               ),
               const SizedBox(width: 12),
               Column(
@@ -697,14 +695,17 @@ class _InteractiveStatCardState extends State<_InteractiveStatCard>
                   Text(
                     widget.value,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.textPrimary,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
                     widget.label,
-                    style: const TextStyle(color: Colors.white60, fontSize: 10),
+                    style: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 10,
+                    ),
                   ),
                 ],
               ),
@@ -916,19 +917,12 @@ class _InteractiveActionCardState extends State<_InteractiveActionCard>
           height: 160,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                _isHovering ? const Color(0xFF2D3748) : const Color(0xFF1E293B),
-                widget.accentColor.withValues(alpha: _isHovering ? 0.3 : 0.15),
-              ],
-            ),
+            color: AppTheme.surfaceLight,
             borderRadius: BorderRadius.circular(25),
             border: Border.all(
               color: _isHovering
                   ? widget.accentColor.withValues(alpha: 0.4)
-                  : Colors.white.withValues(alpha: 0.08),
+                  : const Color(0xFFE2E8F0),
             ),
             boxShadow: [
               if (_isHovering)
@@ -946,10 +940,10 @@ class _InteractiveActionCardState extends State<_InteractiveActionCard>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: widget.accentColor.withValues(alpha: 0.2),
+                  color: widget.accentColor.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(widget.icon, color: Colors.white, size: 26),
+                child: Icon(widget.icon, color: widget.accentColor, size: 26),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -957,7 +951,7 @@ class _InteractiveActionCardState extends State<_InteractiveActionCard>
                   Text(
                     widget.title,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.textPrimary,
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                     ),
@@ -969,14 +963,14 @@ class _InteractiveActionCardState extends State<_InteractiveActionCard>
                       Text(
                         widget.subtitle,
                         style: const TextStyle(
-                          color: Color(0x80FFFFFF),
+                          color: AppTheme.textSecondary,
                           fontSize: 12,
                         ),
                       ),
                       const Spacer(),
                       const Icon(
                         Icons.arrow_forward_rounded,
-                        color: Color(0x4DFFFFFF),
+                        color: AppTheme.textSecondary,
                         size: 16,
                       ),
                     ],

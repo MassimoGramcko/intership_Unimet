@@ -1,0 +1,93 @@
+﻿Analyzing intership_app...                                      
+
+   info - Use 'const' with the constructor to improve performance - lib\screens\Chat\ai_chatbot_screen.dart:436:11 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\Chat\ai_chatbot_screen.dart:438:20 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\Coordinador\candidates_screen.dart:136:12 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\Coordinador\candidates_screen.dart:137:14 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\screens\Coordinador\candidates_screen.dart:139:19 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\screens\Coordinador\candidates_screen.dart:140:11 - prefer_const_constructors
+   info - Statements in an if should be enclosed in a block - lib\screens\Coordinador\candidates_screen.dart:213:21 - curly_braces_in_flow_control_structures
+   info - Use 'const' for final variables initialized to a constant value - lib\screens\Coordinador\coordinator_applications_screen.dart:295:5 - prefer_const_declarations
+   info - Use 'const' for final variables initialized to a constant value - lib\screens\Coordinador\coordinator_applications_screen.dart:326:5 - prefer_const_declarations
+   info - Use 'const' for final variables initialized to a constant value - lib\screens\Coordinador\coordinator_applications_screen.dart:327:5 - prefer_const_declarations
+   info - Use 'const' with the constructor to improve performance - lib\screens\Coordinador\coordinator_applications_screen.dart:530:11 - prefer_const_constructors
+warning - Unused import: 'package:flutter_speed_dial/flutter_speed_dial.dart' - lib\screens\Coordinador\coordinator_home.dart:4:8 - unused_import
+warning - The value of the field '_white08' isn't used - lib\screens\Coordinador\coordinator_home.dart:33:22 - unused_field
+warning - The value of the field '_black20' isn't used - lib\screens\Coordinador\coordinator_home.dart:38:22 - unused_field
+warning - The '!' will have no effect because the receiver can't be null - lib\screens\Coordinador\coordinator_home.dart:391:59 - unnecessary_non_null_assertion
+   info - Use 'const' with the constructor to improve performance - lib\screens\Coordinador\coordinator_home.dart:645:32 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\Coordinador\coordinator_home.dart:646:34 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\Coordinador\coordinator_home.dart:647:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\Coordinador\coordinator_home.dart:649:38 - prefer_const_constructors
+warning - The declaration '_openSupportChat' isn't referenced - lib\screens\Coordinador\coordinator_settings_screen.dart:32:8 - unused_element
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor or activeTrackColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\screens\Coordinador\coordinator_settings_screen.dart:539:13 - deprecated_member_use
+   info - Unnecessary 'const' keyword - lib\screens\Coordinador\create_offer_screen.dart:295:43 - unnecessary_const
+warning - The value of the field '_white05' isn't used - lib\screens\Coordinador\edit_coordinator_profile.dart:30:22 - unused_field
+   info - Don't use 'BuildContext's across async gaps - lib\screens\Coordinador\edit_offer_screen.dart:98:11 - use_build_context_synchronously
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\screens\Coordinador\edit_offer_screen.dart:407:13 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\screens\Coordinador\lista_usuarios_screen.dart:164:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\Coordinador\manage_offers_screen.dart:62:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\Coordinador\manage_offers_screen.dart:215:12 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\Coordinador\manage_offers_screen.dart:216:14 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\screens\Coordinador\manage_offers_screen.dart:218:19 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\screens\Coordinador\manage_offers_screen.dart:219:11 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\Coordinador\manage_offers_screen.dart:332:21 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\screens\Coordinador\manage_offers_screen.dart:335:21 - prefer_const_literals_to_create_immutables
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor or activeTrackColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\screens\Coordinador\manage_offers_screen.dart:392:21 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\screens\Coordinador\student_profile_view.dart:254:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\Coordinador\student_profile_view.dart:255:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\auth\login_screen.dart:207:31 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\auth\login_screen.dart:208:31 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\auth\login_screen.dart:209:32 - prefer_const_constructors
+   info - Statements in an if should be enclosed in a block - lib\screens\auth\register_screen.dart:126:9 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\screens\auth\register_screen.dart:128:9 - curly_braces_in_flow_control_structures
+   info - Use 'const' with the constructor to improve performance - lib\screens\auth\register_screen.dart:174:31 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\auth\register_screen.dart:175:31 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\auth\register_screen.dart:176:32 - prefer_const_constructors
+   info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\screens\auth\register_screen.dart:288:21 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\screens\notifications_screen.dart:185:26 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\notifications_screen.dart:186:28 - prefer_const_constructors
+   info - Use 'const' literals as arguments to constructors of '@immutable' classes - lib\screens\notifications_screen.dart:188:33 - prefer_const_literals_to_create_immutables
+   info - Use 'const' with the constructor to improve performance - lib\screens\notifications_screen.dart:189:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\notifications_screen.dart:195:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\notifications_screen.dart:197:34 - prefer_const_constructors
+warning - The value of the field '_black20' isn't used - lib\screens\student\applications_tab.dart:23:22 - unused_field
+warning - The declaration '_buildProgressSegment' isn't referenced - lib\screens\student\applications_tab.dart:284:10 - unused_element
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\applications_tab.dart:309:11 - prefer_const_constructors
+   info - Don't use 'BuildContext's across async gaps - lib\screens\student\edit_profile_screen.dart:116:28 - use_build_context_synchronously
+warning - The value of the field '_white03' isn't used - lib\screens\student\explore_tab.dart:87:22 - unused_field
+warning - The value of the field '_white30' isn't used - lib\screens\student\explore_tab.dart:89:22 - unused_field
+warning - The value of the field '_black10' isn't used - lib\screens\student\explore_tab.dart:90:22 - unused_field
+warning - The value of the field '_black30' isn't used - lib\screens\student\explore_tab.dart:91:22 - unused_field
+warning - The declaration '_calculateTimeAgo' isn't referenced - lib\screens\student\explore_tab.dart:113:10 - unused_element
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\explore_tab.dart:265:30 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\explore_tab.dart:266:32 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\explore_tab.dart:267:34 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\explore_tab.dart:269:36 - prefer_const_constructors
+warning - The declaration '_buildTag' isn't referenced - lib\screens\student\explore_tab.dart:424:10 - unused_element
+   info - Statements in an if should be enclosed in a block - lib\screens\student\job_details_screen.dart:84:13 - curly_braces_in_flow_control_structures
+   info - Statements in an if should be enclosed in a block - lib\screens\student\job_details_screen.dart:159:11 - curly_braces_in_flow_control_structures
+warning - The declaration '_uploadCV' isn't referenced - lib\screens\student\profile_tab.dart:46:16 - unused_element
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\profile_tab.dart:291:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\profile_tab.dart:293:32 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\profile_tab.dart:295:34 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\profile_tab.dart:378:23 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\profile_tab.dart:380:32 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\profile_tab.dart:382:34 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\profile_tab.dart:424:25 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\profile_tab.dart:426:34 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\profile_tab.dart:428:36 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\profile_tab.dart:470:31 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\profile_tab.dart:472:40 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\profile_tab.dart:474:42 - prefer_const_constructors
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor or activeTrackColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\screens\student\settings_screen.dart:533:13 - deprecated_member_use
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\student_detail_screen.dart:75:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\student_detail_screen.dart:77:22 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\student_detail_screen.dart:79:24 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\student_detail_screen.dart:101:13 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\student_detail_screen.dart:103:22 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - lib\screens\student\student_detail_screen.dart:105:24 - prefer_const_constructors
+warning - The value of the field '_white08' isn't used - lib\screens\student\student_home.dart:23:22 - unused_field
+warning - The value of the field '_white50' isn't used - lib\screens\student\student_home.dart:24:22 - unused_field
+warning - The value of the field '_white90' isn't used - lib\screens\student\student_home.dart:25:22 - unused_field
+

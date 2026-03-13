@@ -4,10 +4,9 @@ import '../../config/theme.dart';
 import 'student_profile_view.dart';
 
 // --- COLORES PRE-COMPUTADOS ---
-const Color _surfaceDark = Color(0xFF1E293B);
-const Color _bgDark = Color(0xFF0F172A);
-const Color _white10 = Color(0x1AFFFFFF);
-const Color _white50 = Color(0x80FFFFFF);
+const Color _bgDark = AppTheme.backgroundLight;
+const Color _white10 = Color(0xFFE2E8F0);
+const Color _white50 = AppTheme.textSecondary;
 
 class AdminOfferCandidatesScreen extends StatefulWidget {
   final String offerId;
@@ -26,8 +25,6 @@ class AdminOfferCandidatesScreen extends StatefulWidget {
 
 class _AdminOfferCandidatesScreenState
     extends State<AdminOfferCandidatesScreen> {
-
-
   Stream<QuerySnapshot> _getFilteredStream() {
     return FirebaseFirestore.instance
         .collection('applications')
@@ -46,36 +43,15 @@ class _AdminOfferCandidatesScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _bgDark,
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text(
-          "Candidatos",
-          style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        leading: Container(
-          margin: const EdgeInsets.all(8),
-          decoration: const BoxDecoration(color: _white10, shape: BoxShape.circle),
-          child: IconButton(
-            icon: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
-            onPressed: () => Navigator.pop(context),
-          ),
+        title: const Text("Candidatos"),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.topRight,
-            radius: 1.5,
-            colors: [_surfaceDark, _bgDark],
-          ),
-        ),
+        decoration: const BoxDecoration(color: _bgDark),
         child: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,7 +61,7 @@ class _AdminOfferCandidatesScreenState
                 child: Text(
                   widget.offerTitle,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: AppTheme.textPrimary,
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                   ),
@@ -93,14 +69,17 @@ class _AdminOfferCandidatesScreenState
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              
 
               Expanded(
                 child: StreamBuilder(
                   stream: _getFilteredStream(),
                   builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator(color: Colors.orangeAccent));
+                      return const Center(
+                        child: CircularProgressIndicator(
+                          color: Colors.orangeAccent,
+                        ),
+                      );
                     }
 
                     if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -112,7 +91,8 @@ class _AdminOfferCandidatesScreenState
                       itemCount: snapshot.data!.docs.length,
                       itemBuilder: (context, index) {
                         var application = snapshot.data!.docs[index];
-                        var appData = application.data() as Map<String, dynamic>;
+                        var appData =
+                            application.data() as Map<String, dynamic>;
                         return _CandidateCard(
                           appId: application.id,
                           appData: appData,
@@ -130,7 +110,6 @@ class _AdminOfferCandidatesScreenState
     );
   }
 
-
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -140,7 +119,11 @@ class _AdminOfferCandidatesScreenState
           const SizedBox(height: 15),
           const Text(
             "Aún no hay postulantes",
-            style: TextStyle(color: _white50, fontSize: 16, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: _white50,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -173,12 +156,12 @@ class _CandidateCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E293B).withValues(alpha: 0.8),
+        color: AppTheme.surfaceLight,
         borderRadius: BorderRadius.circular(25),
-        border: Border.all(color: const Color(0x14FFFFFF), width: 1.5),
+        border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x4D000000),
+            color: Color(0x0A000000),
             blurRadius: 15,
             offset: Offset(0, 8),
           ),
@@ -199,16 +182,22 @@ class _CandidateCard extends StatelessWidget {
           child: Column(
             children: [
               FutureBuilder<DocumentSnapshot>(
-                future: FirebaseFirestore.instance.collection('users').doc(studentId).get(),
+                future: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(studentId)
+                    .get(),
                 builder: (context, snapshot) {
-                  if (!snapshot.hasData) return const Center(child: LinearProgressIndicator(minHeight: 2));
-                  
+                  if (!snapshot.hasData)
+                    return const Center(
+                      child: LinearProgressIndicator(minHeight: 2),
+                    );
+
                   var userData = snapshot.data?.data() as Map<String, dynamic>?;
-                  
+
                   // Intentamos obtener el nombre completo del documento de usuario
                   String? firstName = userData?['firstName'];
                   String? lastName = userData?['lastName'];
-                  
+
                   // Fallback al nombre que ya trae la postulación si el documento de usuario falla
                   String name = "Estudiante";
                   if (firstName != null || lastName != null) {
@@ -216,24 +205,32 @@ class _CandidateCard extends StatelessWidget {
                   } else if (appData['studentName'] != null) {
                     name = appData['studentName'];
                   }
-                  
-                  String email = userData?['email'] ?? appData['studentEmail'] ?? "Sin correo";
-                  
+
+                  String email =
+                      userData?['email'] ??
+                      appData['studentEmail'] ??
+                      "Sin correo";
+
                   return Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.all(2),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.blueAccent.withValues(alpha: 0.3), width: 2),
+                          border: Border.all(
+                            color: Colors.blueAccent.withValues(alpha: 0.3),
+                            width: 2,
+                          ),
                         ),
                         child: CircleAvatar(
                           radius: isProcessed ? 20 : 25,
-                          backgroundColor: Colors.blueAccent.withValues(alpha: 0.1),
+                          backgroundColor: Colors.blueAccent.withValues(
+                            alpha: 0.1,
+                          ),
                           child: Text(
                             name.isNotEmpty ? name[0].toUpperCase() : "?",
                             style: TextStyle(
-                              color: Colors.blueAccent, 
+                              color: Colors.blueAccent,
                               fontWeight: FontWeight.bold,
                               fontSize: isProcessed ? 14 : 16,
                             ),
@@ -248,40 +245,52 @@ class _CandidateCard extends StatelessWidget {
                             Text(
                               name,
                               style: TextStyle(
-                                color: Colors.white, 
-                                fontSize: isProcessed ? 16 : 17, 
-                                fontWeight: FontWeight.bold
+                                color: AppTheme.textPrimary,
+                                fontSize: isProcessed ? 16 : 17,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                             if (!isProcessed) ...[
                               const SizedBox(height: 2),
                               Text(
                                 email,
-                                style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 12),
+                                style: const TextStyle(
+                                  color: AppTheme.textSecondary,
+                                  fontSize: 12,
+                                ),
                               ),
                             ],
                           ],
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
                         decoration: BoxDecoration(
                           color: statusColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+                          border: Border.all(
+                            color: statusColor.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: Text(
                           status,
-                          style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: statusColor,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ],
                   );
                 },
               ),
-              
+
               const SizedBox(height: 15),
-              
+
               if (!isProcessed)
                 Row(
                   children: [
@@ -289,11 +298,22 @@ class _CandidateCard extends StatelessWidget {
                       child: OutlinedButton(
                         onPressed: () => onUpdate(appId, 'Rechazado'),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.redAccent, width: 1.2),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                          side: const BorderSide(
+                            color: Colors.redAccent,
+                            width: 1.2,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        child: const Text("Rechazar", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          "Rechazar",
+                          style: TextStyle(
+                            color: Colors.redAccent,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 15),
@@ -301,14 +321,24 @@ class _CandidateCard extends StatelessWidget {
                       child: ElevatedButton(
                         onPressed: () => onUpdate(appId, 'Aceptado'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.greenAccent.withValues(alpha: 0.15),
+                          backgroundColor: Colors.greenAccent.withValues(
+                            alpha: 0.15,
+                          ),
                           foregroundColor: Colors.greenAccent,
                           elevation: 0,
-                          side: const BorderSide(color: Colors.greenAccent, width: 1.2),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                          side: const BorderSide(
+                            color: Colors.greenAccent,
+                            width: 1.2,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 12),
                         ),
-                        child: const Text("Aceptar", style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: const Text(
+                          "Aceptar",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
                   ],
@@ -319,9 +349,12 @@ class _CandidateCard extends StatelessWidget {
                   child: TextButton.icon(
                     onPressed: () => onUpdate(appId, 'En revisión'),
                     icon: const Icon(Icons.refresh_rounded, size: 16),
-                    label: const Text("Cambiar estado", style: TextStyle(fontSize: 12)),
+                    label: const Text(
+                      "Cambiar estado",
+                      style: TextStyle(fontSize: 12),
+                    ),
                     style: TextButton.styleFrom(
-                      foregroundColor: _white50,
+                      foregroundColor: AppTheme.textSecondary,
                     ),
                   ),
                 ),
@@ -332,5 +365,3 @@ class _CandidateCard extends StatelessWidget {
     );
   }
 }
-
-

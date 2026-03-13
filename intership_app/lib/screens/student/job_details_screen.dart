@@ -51,12 +51,27 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       final confirm = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          backgroundColor: AppTheme.surfaceDark,
-          title: const Text("Retirar Postulación", style: TextStyle(color: Colors.white)),
-          content: const Text("¿Estás seguro de que deseas cancelar tu postulación? Perderás tu lugar.", style: TextStyle(color: Colors.white70)),
+          backgroundColor: AppTheme.surfaceLight,
+          title: const Text(
+            "Retirar Postulación",
+            style: TextStyle(color: AppTheme.textPrimary),
+          ),
+          content: const Text(
+            "¿Estás seguro de que deseas cancelar tu postulación? Perderás tu lugar.",
+            style: TextStyle(color: AppTheme.textSecondary),
+          ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancelar")),
-            TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Retirar", style: TextStyle(color: Colors.redAccent))),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text("Cancelar"),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text(
+                "Retirar",
+                style: TextStyle(color: Colors.redAccent),
+              ),
+            ),
           ],
         ),
       );
@@ -65,7 +80,13 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         setState(() => _isLoading = true);
         try {
           await docRef.delete();
-          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Has retirado tu postulación."), backgroundColor: Colors.orange));
+          if (mounted)
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Has retirado tu postulación."),
+                backgroundColor: Colors.orange,
+              ),
+            );
         } catch (e) {
           _showError("Error al retirar: $e");
         } finally {
@@ -81,18 +102,25 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
             .collection('applications')
             .where('offerId', isEqualTo: widget.offer.id)
             .get();
-        
+
         final int currentApplicants = snap.docs.length;
         final int vacancies = widget.offer.vacancies;
 
         if (vacancies > 0 && currentApplicants >= vacancies) {
-          _showError("⚠️ Lo sentimos, esta oferta ya ha alcanzado su límite de cupos.");
+          _showError(
+            "⚠️ Lo sentimos, esta oferta ya ha alcanzado su límite de cupos.",
+          );
           return;
         }
 
-        final userDoc = await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user!.uid)
+            .get();
         final userData = userDoc.data() ?? {};
-        final studentName = "${userData['firstName'] ?? 'Estudiante'} ${userData['lastName'] ?? ''}".trim();
+        final studentName =
+            "${userData['firstName'] ?? 'Estudiante'} ${userData['lastName'] ?? ''}"
+                .trim();
 
         await docRef.set({
           'offerId': widget.offer.id,
@@ -106,10 +134,15 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         });
 
         // Notificaciones...
-        final coordinatorsSnapshot = await FirebaseFirestore.instance.collection('users').where('role', whereIn: ['coordinator', 'coordinador', 'admin']).get();
+        final coordinatorsSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where('role', whereIn: ['coordinator', 'coordinador', 'admin'])
+            .get();
         final batch = FirebaseFirestore.instance.batch();
         for (var coordDoc in coordinatorsSnapshot.docs) {
-          final notifRef = FirebaseFirestore.instance.collection('notifications').doc();
+          final notifRef = FirebaseFirestore.instance
+              .collection('notifications')
+              .doc();
           batch.set(notifRef, {
             'userId': coordDoc.id,
             'type': 'application',
@@ -122,7 +155,14 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         }
         await batch.commit();
 
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("✅ ¡Solicitud enviada con éxito!"), backgroundColor: Colors.green, behavior: SnackBarBehavior.floating));
+        if (mounted)
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("✅ ¡Solicitud enviada con éxito!"),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
       } catch (e) {
         _showError("Error al postularse: $e");
       } finally {
@@ -148,7 +188,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundDark,
+      backgroundColor: AppTheme.backgroundLight,
       body: Stack(
         children: [
           Scrollbar(
@@ -160,153 +200,155 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
             child: CustomScrollView(
               controller: _scrollController,
               slivers: [
-              // 1. HEADER (Igual a tu código)
-              SliverAppBar(
-                expandedHeight: 250,
-                pinned: true,
-                backgroundColor: AppTheme.backgroundDark,
-                leading: IconButton(
-                  icon: const Icon(
-                    Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white,
+                // 1. HEADER (Igual a tu código)
+                SliverAppBar(
+                  expandedHeight: 250,
+                  pinned: true,
+                  backgroundColor: AppTheme.backgroundLight,
+                  leading: IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: AppTheme.iconColor,
+                    ),
+                    onPressed: () => Navigator.pop(context),
                   ),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Stack(
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              widget.offer.brandColor.withValues(alpha: 0.8),
-                              AppTheme.backgroundDark,
-                            ],
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: Stack(
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                widget.offer.brandColor.withValues(alpha: 0.8),
+                                AppTheme.backgroundLight,
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-                      Center(
-                        child: Hero(
-                          tag: "list_${widget.offer.id}",
-                          child: Icon(
-                            Icons.business_rounded,
-                            size: 80,
-                            color: Colors.white.withValues(alpha: 0.9),
+                        Center(
+                          child: Hero(
+                            tag: "list_${widget.offer.id}",
+                            child: Icon(
+                              Icons.business_rounded,
+                              size: 80,
+                              color: Colors.white.withValues(alpha: 0.9),
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
 
-              // 2. CONTENIDO
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.offer.title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        widget.offer.company,
-                        style: const TextStyle(
-                          color: AppTheme.primaryOrange,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 25),
-
-                      StreamBuilder<QuerySnapshot>(
-                        stream: FirebaseFirestore.instance
-                            .collection('applications')
-                            .where('offerId', isEqualTo: widget.offer.id)
-                            .snapshots(),
-                        builder: (context, snapshot) {
-                          int currentApps = snapshot.hasData ? snapshot.data!.docs.length : 0;
-                          String vacanciesText = widget.offer.vacancies > 0 
-                              ? "$currentApps / ${widget.offer.vacancies} Cupos" 
-                              : "Cupos Ilimitados";
-                          
-                          return Wrap(
-                            spacing: 10,
-                            runSpacing: 10,
-                            children: [
-                              _buildInfoChip(
-                                Icons.location_on_outlined,
-                                widget.offer.location,
-                              ),
-                              _buildInfoChip(Icons.work_outline, widget.offer.type),
-                              _buildInfoChip(
-                                Icons.monetization_on_outlined,
-                                widget.offer.wage,
-                              ),
-                              _buildInfoChip(
-                                Icons.people_outline,
-                                vacanciesText,
-                              ),
-                              if (widget.offer.isRemote)
-                                _buildInfoChip(Icons.wifi, "Remoto"),
-                            ],
-                          );
-                        }
-                      ),
-                      const SizedBox(height: 35),
-
-                      const Text(
-                        "Descripción del Puesto",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-                      Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.1),
-                          ),
-                        ),
-                        child: Text(
-                          widget.offer.description,
+                // 2. CONTENIDO
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.offer.title,
                           style: const TextStyle(
-                            color: Colors.white70,
-                            height: 1.6,
-                            fontSize: 15,
+                            color: AppTheme.textPrimary,
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 35),
+                        const SizedBox(height: 8),
+                        Text(
+                          widget.offer.company,
+                          style: const TextStyle(
+                            color: AppTheme.primaryOrange,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 25),
 
-                      // MAPA
-                      _buildMapSection(),
+                        StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('applications')
+                              .where('offerId', isEqualTo: widget.offer.id)
+                              .snapshots(),
+                          builder: (context, snapshot) {
+                            int currentApps = snapshot.hasData
+                                ? snapshot.data!.docs.length
+                                : 0;
+                            String vacanciesText = widget.offer.vacancies > 0
+                                ? "$currentApps / ${widget.offer.vacancies} Cupos"
+                                : "Cupos Ilimitados";
 
-                      const SizedBox(
-                        height: 100,
-                      ), // Espacio para el botón flotante
-                    ],
+                            return Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: [
+                                _buildInfoChip(
+                                  Icons.location_on_outlined,
+                                  widget.offer.location,
+                                ),
+                                _buildInfoChip(
+                                  Icons.work_outline,
+                                  widget.offer.type,
+                                ),
+                                _buildInfoChip(
+                                  Icons.monetization_on_outlined,
+                                  widget.offer.wage,
+                                ),
+                                _buildInfoChip(
+                                  Icons.people_outline,
+                                  vacanciesText,
+                                ),
+                                if (widget.offer.isRemote)
+                                  _buildInfoChip(Icons.wifi, "Remoto"),
+                              ],
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 35),
+
+                        const Text(
+                          "Descripción del Puesto",
+                          style: TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 15),
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: AppTheme.surfaceLight,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                          ),
+                          child: Text(
+                            widget.offer.description,
+                            style: const TextStyle(
+                              color: AppTheme.textSecondary,
+                              height: 1.6,
+                              fontSize: 15,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 35),
+
+                        // MAPA
+                        _buildMapSection(),
+
+                        const SizedBox(
+                          height: 100,
+                        ), // Espacio para el botón flotante
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
             ),
-          ),  // cierre Scrollbar
-
+          ), // cierre Scrollbar
           // 3. BOTÓN FLOTANTE (CON STREAMBUILDER)
           Positioned(
             bottom: 30,
@@ -327,10 +369,15 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
                             return _buildLoadingButton();
                           }
 
-                          bool isApplied = userAppSnapshot.hasData && userAppSnapshot.data!.exists;
-                          int currentApps = appsSnapshot.hasData ? appsSnapshot.data!.docs.length : 0;
+                          bool isApplied =
+                              userAppSnapshot.hasData &&
+                              userAppSnapshot.data!.exists;
+                          int currentApps = appsSnapshot.hasData
+                              ? appsSnapshot.data!.docs.length
+                              : 0;
                           int vacancies = widget.offer.vacancies;
-                          bool isFull = vacancies > 0 && currentApps >= vacancies;
+                          bool isFull =
+                              vacancies > 0 && currentApps >= vacancies;
 
                           // Caso 1: Ya postulado -> Botón Rojo "Retirar"
                           if (isApplied) {
@@ -376,8 +423,10 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       child: ElevatedButton(
         onPressed: null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppTheme.surfaceDark,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          backgroundColor: AppTheme.surfaceLight,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
         ),
         child: const CircularProgressIndicator(color: AppTheme.primaryOrange),
       ),
@@ -397,7 +446,9 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           disabledBackgroundColor: color.withValues(alpha: 0.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
           elevation: onPressed == null ? 0 : 10,
           shadowColor: color.withValues(alpha: 0.5),
         ),
@@ -431,7 +482,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
         const Text(
           "Ubicación Exacta",
           style: TextStyle(
-            color: Colors.white,
+            color: AppTheme.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
@@ -441,7 +492,7 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
           height: 200,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.3),
@@ -498,18 +549,19 @@ class _JobDetailsScreenState extends State<JobDetailsScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       constraints: const BoxConstraints(maxWidth: 220),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
+        color: AppTheme.surfaceLight,
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white70, size: 16),
+          Icon(icon, color: AppTheme.textSecondary, size: 16),
           const SizedBox(width: 6),
           Flexible(
             child: Text(
               label,
-              style: const TextStyle(color: Colors.white, fontSize: 13),
+              style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
             ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../config/theme.dart';
 import 'edit_offer_screen.dart';
 import 'candidates_screen.dart';
 
@@ -12,10 +13,10 @@ class ManageOffersScreen extends StatefulWidget {
 
 class _ManageOffersScreenState extends State<ManageOffersScreen> {
   // --- COLORES PRE-COMPUTADOS ---
-  static const Color _surfaceDark = Color(0xFF1E293B);
-  static const Color _bgDark = Color(0xFF0F172A);
-  static const Color _white10 = Color(0x1AFFFFFF);
-  static const Color _white50 = Color(0x80FFFFFF);
+  static const Color _surfaceDark = AppTheme.surfaceLight;
+  static const Color _bgDark = AppTheme.backgroundLight;
+  static const Color _white10 = Color(0xFFE2E8F0);
+  static const Color _white50 = AppTheme.textSecondary;
 
   // --- CONTROLADORES ---
   late final Stream<QuerySnapshot> _offersStream;
@@ -42,31 +43,13 @@ class _ManageOffersScreenState extends State<ManageOffersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      extendBodyBehindAppBar: true,
+      backgroundColor: AppTheme.backgroundLight,
+      extendBodyBehindAppBar: false,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          "Mis Ofertas Activas",
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 1,
-          ),
-        ),
-        leading: Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(color: _white10, shape: BoxShape.circle),
-          child: IconButton(
-            icon: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
-            onPressed: () => Navigator.pop(context),
-          ),
+        title: const Text("Mis Ofertas Activas"),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Container(
@@ -92,18 +75,27 @@ class _ManageOffersScreenState extends State<ManageOffersScreen> {
                   ),
                   child: TextField(
                     controller: _searchController,
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontSize: 14,
+                    ),
                     onChanged: (value) =>
                         setState(() => _searchQuery = value.toLowerCase()),
                     decoration: InputDecoration(
                       hintText: 'Buscar oferta o empresa...',
                       hintStyle: const TextStyle(color: _white50, fontSize: 14),
-                      prefixIcon: const Icon(Icons.search_rounded,
-                          color: _white50, size: 20),
+                      prefixIcon: const Icon(
+                        Icons.search_rounded,
+                        color: _white50,
+                        size: 20,
+                      ),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(Icons.close_rounded,
-                                  color: _white50, size: 18),
+                              icon: const Icon(
+                                Icons.close_rounded,
+                                color: _white50,
+                                size: 18,
+                              ),
                               onPressed: () {
                                 _searchController.clear();
                                 setState(() => _searchQuery = '');
@@ -111,8 +103,7 @@ class _ManageOffersScreenState extends State<ManageOffersScreen> {
                             )
                           : null,
                       border: InputBorder.none,
-                      contentPadding:
-                          const EdgeInsets.symmetric(vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
                 ),
@@ -126,7 +117,8 @@ class _ManageOffersScreenState extends State<ManageOffersScreen> {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(
                         child: CircularProgressIndicator(
-                            color: Colors.orangeAccent),
+                          color: Colors.orangeAccent,
+                        ),
                       );
                     }
 
@@ -138,10 +130,12 @@ class _ManageOffersScreenState extends State<ManageOffersScreen> {
                     var docs = snapshot.data!.docs.where((doc) {
                       if (_searchQuery.isEmpty) return true;
                       final data = doc.data() as Map<String, dynamic>;
-                      final title =
-                          (data['title'] ?? '').toString().toLowerCase();
-                      final company =
-                          (data['company'] ?? '').toString().toLowerCase();
+                      final title = (data['title'] ?? '')
+                          .toString()
+                          .toLowerCase();
+                      final company = (data['company'] ?? '')
+                          .toString()
+                          .toLowerCase();
                       return title.contains(_searchQuery) ||
                           company.contains(_searchQuery);
                     }).toList();
@@ -151,13 +145,18 @@ class _ManageOffersScreenState extends State<ManageOffersScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.search_off_rounded,
-                                size: 60, color: _white10),
+                            const Icon(
+                              Icons.search_off_rounded,
+                              size: 60,
+                              color: _white10,
+                            ),
                             const SizedBox(height: 15),
                             Text(
                               'Sin resultados para "$_searchQuery"',
                               style: const TextStyle(
-                                  color: _white50, fontSize: 14),
+                                color: _white50,
+                                fontSize: 14,
+                              ),
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -175,8 +174,7 @@ class _ManageOffersScreenState extends State<ManageOffersScreen> {
                         controller: _scrollController,
                         padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
                         itemCount: docs.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: 20),
+                        separatorBuilder: (_, __) => const SizedBox(height: 20),
                         itemBuilder: (context, index) {
                           final data =
                               docs[index].data() as Map<String, dynamic>;
@@ -205,7 +203,7 @@ class _ManageOffersScreenState extends State<ManageOffersScreen> {
           const Text(
             "No tienes ofertas creadas",
             style: TextStyle(
-              color: Color(0xB3FFFFFF),
+              color: AppTheme.textPrimary,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -226,11 +224,10 @@ class _OfferCard extends StatelessWidget {
   final String docId;
 
   // --- COLORES PRE-COMPUTADOS ---
-  static const Color _surfaceDark = Color(0xFF1E293B);
-  static const Color _white08 = Color(0x14FFFFFF);
-  static const Color _white10 = Color(0x1AFFFFFF);
-  static const Color _white40 = Color(0x66FFFFFF);
-  static const Color _white60 = Color(0x99FFFFFF);
+  static const Color _surfaceDark = AppTheme.surfaceLight;
+  static const Color _white10 = Color(0xFFE2E8F0);
+  static const Color _white40 = AppTheme.textSecondary;
+  static const Color _white60 = AppTheme.textSecondary;
 
   const _OfferCard({required this.data, required this.docId});
 
@@ -278,11 +275,11 @@ class _OfferCard extends StatelessWidget {
             ),
             title: const Text(
               "¿Eliminar oferta?",
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(color: AppTheme.textPrimary),
             ),
             content: const Text(
               "Esta acción borrará la oferta permanentemente y no se puede deshacer.",
-              style: TextStyle(color: Color(0xB3FFFFFF)),
+              style: TextStyle(color: AppTheme.textSecondary),
             ),
             actions: [
               TextButton(
@@ -317,16 +314,13 @@ class _OfferCard extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              const Color(0xFF2C3E50).withValues(alpha: 0.9),
-              _surfaceDark.withValues(alpha: 0.95),
-            ],
+            colors: [_surfaceDark, _surfaceDark],
             stops: const [0.1, 0.9],
           ),
-          border: Border.all(color: _white08, width: 1.5),
+          border: Border.all(color: _white10, width: 1.5),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x4D000000),
+              color: Color(0x1A000000),
               blurRadius: 20,
               offset: Offset(0, 8),
             ),
@@ -358,7 +352,7 @@ class _OfferCard extends StatelessWidget {
                       Text(
                         title,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppTheme.textPrimary,
                           fontSize: 19,
                           fontWeight: FontWeight.bold,
                         ),
@@ -402,7 +396,9 @@ class _OfferCard extends StatelessWidget {
                   .where('offerId', isEqualTo: docId)
                   .snapshots(),
               builder: (context, snapshot) {
-                int applicantsCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
+                int applicantsCount = snapshot.hasData
+                    ? snapshot.data!.docs.length
+                    : 0;
                 int vacancies = data['vacancies'] ?? 0;
                 bool isFull = vacancies > 0 && applicantsCount >= vacancies;
 
@@ -420,10 +416,11 @@ class _OfferCard extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => AdminOfferCandidatesScreen(
-                                    offerId: docId,
-                                    offerTitle: title,
-                                  ),
+                                  builder: (context) =>
+                                      AdminOfferCandidatesScreen(
+                                        offerId: docId,
+                                        offerTitle: title,
+                                      ),
                                 ),
                               );
                             }
@@ -433,16 +430,16 @@ class _OfferCard extends StatelessWidget {
                         text: vacancies > 0
                             ? "$applicantsCount / $vacancies Postulados"
                             : applicantsCount > 0
-                                ? "$applicantsCount Postulados"
-                                : "Sin postulantes",
+                            ? "$applicantsCount Postulados"
+                            : "Sin postulantes",
                         icon: applicantsCount > 0
                             ? Icons.people_alt_rounded
                             : Icons.person_off_outlined,
                         color: isFull
                             ? Colors.redAccent
                             : (applicantsCount > 0
-                                ? Colors.orangeAccent
-                                : const Color(0x61FFFFFF)),
+                                  ? Colors.orangeAccent
+                                  : const Color(0x61FFFFFF)),
                         isFilled: isFull,
                       ),
                     ),
@@ -452,7 +449,7 @@ class _OfferCard extends StatelessWidget {
             ),
 
             const SizedBox(height: 20),
-            const Divider(color: Color(0x1AFFFFFF), thickness: 1),
+            const Divider(color: _white10, thickness: 1),
             const SizedBox(height: 10),
 
             Row(
@@ -549,12 +546,12 @@ class _OfferCard extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: isFilled ? Colors.white : finalColor, size: 16),
+          Icon(icon, color: finalColor, size: 16),
           const SizedBox(width: 8),
           Text(
             text,
             style: TextStyle(
-              color: isFilled ? Colors.white : finalColor,
+              color: finalColor,
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),

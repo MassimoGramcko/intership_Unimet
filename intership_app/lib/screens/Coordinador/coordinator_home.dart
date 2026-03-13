@@ -26,17 +26,17 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
   // Color principal naranja
   static const Color primaryOrange = Color(0xFFFF6B00);
 
-  // --- COLORES PRE-COMPUTADOS (evita .withOpacity en cada build) ---
-  static const Color _bgDark = Color(0xFF0F172A);
-  static const Color _surfaceDark = Color(0xFF1E293B);
-  static const Color _white05 = Color(0x0DFFFFFF); // 0.05
-  static const Color _white08 = Color(0x14FFFFFF); // 0.08
-  static const Color _white10 = Color(0x1AFFFFFF); // 0.10
-  static const Color _white50 = Color(0x80FFFFFF); // 0.50
-  static const Color _white60 = Color(0x99FFFFFF); // 0.60
-  static const Color _white70 = Color(0xB3FFFFFF); // 0.70
-  static const Color _black20 = Color(0x33000000);
-  static const Color _black40 = Color(0x66000000);
+  // --- COLORES PRE-COMPUTADOS (Adaptados al Light Theme) ---
+  static const Color _bgDark = AppTheme.backgroundLight;
+  static const Color _surfaceDark = AppTheme.surfaceLight;
+  static const Color _white05 = Color(0xFFF1F5F9);
+  static const Color _white08 = Color(0xFFF8FAFC);
+  static const Color _white10 = Color(0xFFE2E8F0);
+  static const Color _white50 = AppTheme.textSecondary;
+  static const Color _white60 = AppTheme.textSecondary;
+  static const Color _white70 = AppTheme.textSecondary;
+  static const Color _black20 = Color(0x0D000000);
+  static const Color _black40 = Color(0x33000000);
 
   // Variable de estado para el filtro
   String _filtroStatus = 'Todos';
@@ -142,7 +142,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           "¿Limpiar historial?",
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppTheme.textPrimary),
         ),
         content: const Text(
           "Se ocultarán de esta vista las solicitudes 'Aceptadas' o 'Rechazadas'.\n\nNo te preocupes, los datos y contadores de la oferta seguirán intactos.",
@@ -278,7 +278,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
                                   return const Text(
                                     "Hola, Coordinador 👋",
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: AppTheme.textPrimary,
                                       fontSize: 26,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -309,7 +309,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
                               ),
                               child: const Icon(
                                 Icons.settings_outlined,
-                                color: Colors.white,
+                                color: AppTheme.iconColor,
                                 size: 22,
                               ),
                             ),
@@ -423,7 +423,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
                           const Text(
                             "Actividad Reciente",
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppTheme.textPrimary,
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                             ),
@@ -581,7 +581,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
                             });
                           },
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppTheme.textPrimary,
                             fontSize: 14,
                           ),
                           decoration: InputDecoration(
@@ -907,7 +907,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
                 const Text(
                   "Opciones de Solicitud",
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppTheme.textPrimary,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -927,7 +927,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
                   ),
                   title: const Text(
                     "Ver información del estudiante",
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: AppTheme.textPrimary),
                   ),
                   onTap: () {
                     Navigator.pop(ctx);
@@ -963,7 +963,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
                   ),
                   title: const Text(
                     "Gestionar solicitud",
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: AppTheme.textPrimary),
                   ),
                   subtitle: const Text(
                     "Ir al apartado de aceptar/rechazar",
@@ -1134,7 +1134,7 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
                       Text(
                         studentName,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppTheme.textPrimary,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
@@ -1211,16 +1211,12 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
       ),
       child: Column(
         children: [
-          const Icon(
-            Icons.filter_list_off_rounded,
-            size: 60,
-            color: Color(0x33FFFFFF),
-          ),
+          const Icon(Icons.filter_list_off_rounded, size: 60, color: _white50),
           const SizedBox(height: 20),
           const Text(
             "Sin resultados",
             style: TextStyle(
-              color: Colors.white,
+              color: AppTheme.textPrimary,
               fontWeight: FontWeight.bold,
               fontSize: 18,
             ),
@@ -1315,20 +1311,10 @@ class _InteractiveKpiCardState extends State<_InteractiveKpiCard>
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 height: 160,
+                clipBehavior: Clip.hardEdge,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(25),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      widget.gradientColors[0].withValues(
-                        alpha: _isHovering ? 0.4 : 0.2,
-                      ),
-                      widget.gradientColors[1].withValues(
-                        alpha: _isHovering ? 0.3 : 0.1,
-                      ),
-                    ],
-                  ),
+                  color: AppTheme.surfaceLight,
                   border: Border.all(
                     color: _isHovering
                         ? widget.accentColor.withValues(alpha: 0.5)
@@ -1337,11 +1323,11 @@ class _InteractiveKpiCardState extends State<_InteractiveKpiCard>
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(
-                        alpha: _isHovering ? 0.4 : 0.2,
-                      ),
-                      blurRadius: _isHovering ? 20 : 15,
-                      offset: Offset(0, _isHovering ? 12 : 10),
+                      color: _isHovering
+                          ? widget.accentColor.withValues(alpha: 0.2)
+                          : Colors.black.withValues(alpha: 0.05),
+                      blurRadius: _isHovering ? 20 : 10,
+                      offset: Offset(0, _isHovering ? 8 : 4),
                     ),
                   ],
                 ),
@@ -1353,9 +1339,7 @@ class _InteractiveKpiCardState extends State<_InteractiveKpiCard>
                       child: Icon(
                         widget.icon,
                         size: 100,
-                        color: widget.accentColor.withValues(
-                          alpha: _isHovering ? 0.1 : 0.05,
-                        ),
+                        color: widget.accentColor.withValues(alpha: 0.05),
                       ),
                     ),
                     Padding(
@@ -1364,30 +1348,16 @@ class _InteractiveKpiCardState extends State<_InteractiveKpiCard>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.all(8),
+                          Container(
+                            padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: widget.accentColor.withValues(
-                                alpha: _isHovering ? 0.4 : 0.2,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: _isHovering
-                                  ? [
-                                      BoxShadow(
-                                        color: widget.accentColor.withValues(
-                                          alpha: 0.3,
-                                        ),
-                                        blurRadius: 8,
-                                        spreadRadius: 1,
-                                      ),
-                                    ]
-                                  : [],
+                              color: widget.accentColor.withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
                             ),
                             child: Icon(
                               widget.icon,
                               color: widget.accentColor,
-                              size: 24,
+                              size: 26,
                             ),
                           ),
                           Column(
@@ -1395,10 +1365,10 @@ class _InteractiveKpiCardState extends State<_InteractiveKpiCard>
                             children: [
                               Text(
                                 "$count",
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.w900,
+                                style: TextStyle(
+                                  color: widget.accentColor,
+                                  fontSize: 34,
+                                  fontWeight: FontWeight.bold,
                                   height: 1,
                                 ),
                               ),
@@ -1406,8 +1376,9 @@ class _InteractiveKpiCardState extends State<_InteractiveKpiCard>
                               Text(
                                 widget.title,
                                 style: const TextStyle(
-                                  color: Color(0xB3FFFFFF),
+                                  color: AppTheme.textSecondary,
                                   fontSize: 14,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                             ],

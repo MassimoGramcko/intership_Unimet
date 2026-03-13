@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import '../../config/theme.dart';
 
 class ApplicationsTab extends StatefulWidget {
   const ApplicationsTab({super.key});
@@ -15,15 +16,10 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";
   final ScrollController _scrollController = ScrollController();
-  final ScrollController _filtersScrollController = ScrollController(); // para los chips horizontales
+  final ScrollController _filtersScrollController =
+      ScrollController(); // para los chips horizontales
 
   // --- COLORES PRE-COMPUTADOS ---
-  static const Color _white05 = Color(0x0DFFFFFF);
-  static const Color _white10 = Color(0x1AFFFFFF);
-  static const Color _white20 = Color(0x33FFFFFF);
-  static const Color _white40 = Color(0x66FFFFFF);
-  static const Color _white50 = Color(0x80FFFFFF);
-  static const Color _white60 = Color(0x99FFFFFF);
   static const Color _black20 = Color(0x33000000);
 
   final Map<String, dynamic> statusConfig = {
@@ -88,156 +84,180 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
     const Color primaryColor = Color(0xFFFF6B00);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: AppTheme.backgroundLight,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: Colors.white,
-          ),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          "Mis Postulaciones",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
+        title: const Text("Mis Postulaciones"),
       ),
       body: SafeArea(
         child: Column(
           children: [
-          // 1. BARRA DE BÚSQUEDA
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: Container(
-              decoration: BoxDecoration(
-                color: _white05,
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: _white10),
-              ),
-              child: TextField(
-                controller: _searchController,
-                style: const TextStyle(color: Colors.white),
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value.toLowerCase();
-                  });
-                },
-                decoration: InputDecoration(
-                  hintText: "Buscar por cargo o empresa...",
-                  hintStyle: const TextStyle(color: _white40, fontSize: 14),
-                  prefixIcon: const Icon(Icons.search_rounded, color: _white40),
-                  suffixIcon: _searchQuery.isNotEmpty 
-                    ? IconButton(
-                        icon: const Icon(Icons.close_rounded, color: _white40),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _searchQuery = "");
-                        },
-                      )
-                    : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 15),
+            // 1. BARRA DE BÚSQUEDA
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceLight,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  style: const TextStyle(color: AppTheme.textPrimary),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value.toLowerCase();
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: "Buscar por cargo o empresa...",
+                    hintStyle: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 14,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      color: AppTheme.textSecondary,
+                    ),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(
+                              Icons.close_rounded,
+                              color: AppTheme.textSecondary,
+                            ),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = "");
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // 2. FILTROS (CHIPS) con scrollbar horizontal
-          Container(
-            height: 72,
-            padding: const EdgeInsets.only(bottom: 4),
-            child: Scrollbar(
-              controller: _filtersScrollController,
-              thumbVisibility: true,
-              scrollbarOrientation: ScrollbarOrientation.bottom,
-              thickness: 3,
-              radius: const Radius.circular(10),
-              child: ListView(
+            // 2. FILTROS (CHIPS) con scrollbar horizontal
+            Container(
+              height: 72,
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Scrollbar(
                 controller: _filtersScrollController,
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-                children: [
-                  _buildInteractiveFilterChip("Todos", primaryColor),
-                  const SizedBox(width: 10),
-                  _buildInteractiveFilterChip("Pendiente", primaryColor, dbKey: "pending"),
-                  const SizedBox(width: 10),
-                  _buildInteractiveFilterChip("Aceptado", primaryColor, dbKey: "accepted"),
-                  const SizedBox(width: 10),
-                  _buildInteractiveFilterChip("Rechazado", primaryColor, dbKey: "rejected"),
-                ],
+                thumbVisibility: true,
+                scrollbarOrientation: ScrollbarOrientation.bottom,
+                thickness: 3,
+                radius: const Radius.circular(10),
+                child: ListView(
+                  controller: _filtersScrollController,
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 6,
+                  ),
+                  children: [
+                    _buildInteractiveFilterChip("Todos", primaryColor),
+                    const SizedBox(width: 10),
+                    _buildInteractiveFilterChip(
+                      "Pendiente",
+                      primaryColor,
+                      dbKey: "pending",
+                    ),
+                    const SizedBox(width: 10),
+                    _buildInteractiveFilterChip(
+                      "Aceptado",
+                      primaryColor,
+                      dbKey: "accepted",
+                    ),
+                    const SizedBox(width: 10),
+                    _buildInteractiveFilterChip(
+                      "Rechazado",
+                      primaryColor,
+                      dbKey: "rejected",
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
 
-          // 3. LISTA CON SCROLLBAR
-          Expanded(
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _applicationsStream,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(color: primaryColor),
-                  );
-                }
+            // 3. LISTA CON SCROLLBAR
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: _applicationsStream,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: primaryColor),
+                    );
+                  }
 
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return _buildEmptyState();
-                }
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return _buildEmptyState();
+                  }
 
-                var docs = snapshot.data!.docs;
+                  var docs = snapshot.data!.docs;
 
-                // Aplicar Filtro de Estado
-                if (_selectedFilter != 'Todos') {
-                  docs = docs.where((doc) {
-                    final data = doc.data() as Map<String, dynamic>;
-                    return _getStatusKey(data['status']) == _selectedFilter;
-                  }).toList();
-                }
+                  // Aplicar Filtro de Estado
+                  if (_selectedFilter != 'Todos') {
+                    docs = docs.where((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      return _getStatusKey(data['status']) == _selectedFilter;
+                    }).toList();
+                  }
 
-                // Aplicar Filtro de Búsqueda
-                if (_searchQuery.isNotEmpty) {
-                  docs = docs.where((doc) {
-                    final data = doc.data() as Map<String, dynamic>;
-                    final String jobTitle = (data['jobTitle'] ?? '').toString().toLowerCase();
-                    final String company = (data['company'] ?? '').toString().toLowerCase();
-                    return jobTitle.contains(_searchQuery) || company.contains(_searchQuery);
-                  }).toList();
-                }
+                  // Aplicar Filtro de Búsqueda
+                  if (_searchQuery.isNotEmpty) {
+                    docs = docs.where((doc) {
+                      final data = doc.data() as Map<String, dynamic>;
+                      final String jobTitle = (data['jobTitle'] ?? '')
+                          .toString()
+                          .toLowerCase();
+                      final String company = (data['company'] ?? '')
+                          .toString()
+                          .toLowerCase();
+                      return jobTitle.contains(_searchQuery) ||
+                          company.contains(_searchQuery);
+                    }).toList();
+                  }
 
-                if (docs.isEmpty) return _buildEmptyState();
+                  if (docs.isEmpty) return _buildEmptyState();
 
-                return Scrollbar(
-                  controller: _scrollController,
-                  thumbVisibility: true,
-                  thickness: 6,
-                  radius: const Radius.circular(10),
-                  child: ListView.builder(
+                  return Scrollbar(
                     controller: _scrollController,
-                    padding: const EdgeInsets.all(20),
-                    itemCount: docs.length,
-                    itemBuilder: (context, index) {
-                      final data = docs[index].data() as Map<String, dynamic>;
-                      return _InteractiveApplicationCard(
-                        data: data,
-                        statusConfig: statusConfig,
-                        getStatusKey: _getStatusKey,
-                      );
-                    },
-                  ),
-                );
-              },
+                    thumbVisibility: true,
+                    thickness: 6,
+                    radius: const Radius.circular(10),
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(20),
+                      itemCount: docs.length,
+                      itemBuilder: (context, index) {
+                        final data = docs[index].data() as Map<String, dynamic>;
+                        return _InteractiveApplicationCard(
+                          data: data,
+                          statusConfig: statusConfig,
+                          getStatusKey: _getStatusKey,
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-  Widget _buildInteractiveFilterChip(String label, Color activeColor, {String? dbKey}) {
+  Widget _buildInteractiveFilterChip(
+    String label,
+    Color activeColor, {
+    String? dbKey,
+  }) {
     final valueToSet = dbKey ?? 'Todos';
     final isSelected = _selectedFilter == valueToSet;
 
@@ -259,7 +279,7 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 500),
         decoration: BoxDecoration(
-          color: isActive ? color : _white10,
+          color: isActive ? color : const Color(0xFFE2E8F0),
           borderRadius: BorderRadius.horizontal(
             left: isFirst ? const Radius.circular(5) : Radius.zero,
             right: isLast ? const Radius.circular(5) : Radius.zero,
@@ -274,13 +294,17 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.folder_off_outlined, size: 80, color: _white20),
+          Icon(
+            Icons.folder_off_outlined,
+            size: 80,
+            color: AppTheme.textSecondary,
+          ),
           const SizedBox(height: 15),
           Text(
-            _searchQuery.isEmpty 
-              ? "No hay solicitudes aquí" 
-              : "No se encontraron coincidencias para '$_searchQuery'", 
-            style: const TextStyle(color: _white50),
+            _searchQuery.isEmpty
+                ? "No hay solicitudes aquí"
+                : "No se encontraron coincidencias para '$_searchQuery'",
+            style: const TextStyle(color: AppTheme.textSecondary),
             textAlign: TextAlign.center,
           ),
         ],
@@ -320,9 +344,10 @@ class _AnimatedFilterChipState extends State<_AnimatedFilterChip>
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.9).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.9,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -346,10 +371,14 @@ class _AnimatedFilterChipState extends State<_AnimatedFilterChip>
           duration: const Duration(milliseconds: 300),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
           decoration: BoxDecoration(
-            color: widget.isSelected ? widget.activeColor : const Color(0x0DFFFFFF),
+            color: widget.isSelected
+                ? widget.activeColor
+                : AppTheme.surfaceLight,
             borderRadius: BorderRadius.circular(30),
             border: Border.all(
-              color: widget.isSelected ? widget.activeColor : const Color(0x1AFFFFFF),
+              color: widget.isSelected
+                  ? widget.activeColor
+                  : const Color(0xFFE2E8F0),
             ),
             boxShadow: [
               if (widget.isSelected)
@@ -364,8 +393,12 @@ class _AnimatedFilterChipState extends State<_AnimatedFilterChip>
             child: Text(
               widget.label,
               style: TextStyle(
-                color: widget.isSelected ? Colors.white : const Color(0x99FFFFFF),
-                fontWeight: widget.isSelected ? FontWeight.bold : FontWeight.normal,
+                color: widget.isSelected
+                    ? Colors.white
+                    : AppTheme.textSecondary,
+                fontWeight: widget.isSelected
+                    ? FontWeight.bold
+                    : FontWeight.normal,
               ),
             ),
           ),
@@ -391,7 +424,8 @@ class _InteractiveApplicationCard extends StatefulWidget {
       _InteractiveApplicationCardState();
 }
 
-class _InteractiveApplicationCardState extends State<_InteractiveApplicationCard>
+class _InteractiveApplicationCardState
+    extends State<_InteractiveApplicationCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
@@ -404,9 +438,10 @@ class _InteractiveApplicationCardState extends State<_InteractiveApplicationCard
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -456,7 +491,7 @@ class _InteractiveApplicationCardState extends State<_InteractiveApplicationCard
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                _isPressed ? const Color(0xFF2D3748) : const Color(0xFF1E293B),
+                _isPressed ? const Color(0xFFF1F5F9) : AppTheme.surfaceLight,
                 statusColor.withValues(alpha: _isPressed ? 0.15 : 0.05),
               ],
             ),
@@ -464,11 +499,11 @@ class _InteractiveApplicationCardState extends State<_InteractiveApplicationCard
             border: Border.all(
               color: _isPressed
                   ? statusColor.withValues(alpha: 0.3)
-                  : Colors.white.withValues(alpha: 0.05),
+                  : const Color(0xFFE2E8F0),
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: _isPressed ? 0.3 : 0.2),
+                color: Colors.black.withValues(alpha: _isPressed ? 0.1 : 0.05),
                 blurRadius: _isPressed ? 15 : 10,
                 offset: Offset(0, _isPressed ? 8 : 5),
               ),
@@ -497,7 +532,7 @@ class _InteractiveApplicationCardState extends State<_InteractiveApplicationCard
                           Text(
                             widget.data['jobTitle'] ?? 'Puesto',
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: AppTheme.textPrimary,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -506,7 +541,9 @@ class _InteractiveApplicationCardState extends State<_InteractiveApplicationCard
                           Text(
                             widget.data['company'] ?? 'Empresa',
                             style: const TextStyle(
-                                color: Color(0x99FFFFFF), fontSize: 13),
+                              color: AppTheme.textSecondary,
+                              fontSize: 13,
+                            ),
                           ),
                         ],
                       ),
@@ -535,7 +572,7 @@ class _InteractiveApplicationCardState extends State<_InteractiveApplicationCard
                   ],
                 ),
               ),
-              const Divider(color: Color(0x0DFFFFFF), height: 1),
+              const Divider(color: Color(0xFFE2E8F0), height: 1),
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -546,11 +583,17 @@ class _InteractiveApplicationCardState extends State<_InteractiveApplicationCard
                       children: [
                         const Text(
                           "Progreso:",
-                          style: TextStyle(color: Color(0x66FFFFFF), fontSize: 11),
+                          style: TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 11,
+                          ),
                         ),
                         Text(
                           dateStr,
-                          style: const TextStyle(color: Color(0x66FFFFFF), fontSize: 11),
+                          style: const TextStyle(
+                            color: AppTheme.textSecondary,
+                            fontSize: 11,
+                          ),
                         ),
                       ],
                     ),
@@ -598,7 +641,7 @@ class _InteractiveApplicationCardState extends State<_InteractiveApplicationCard
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 500),
         decoration: BoxDecoration(
-          color: isActive ? color : const Color(0x1AFFFFFF),
+          color: isActive ? color : const Color(0xFFE2E8F0),
           borderRadius: BorderRadius.horizontal(
             left: isFirst ? const Radius.circular(5) : Radius.zero,
             right: isLast ? const Radius.circular(5) : Radius.zero,

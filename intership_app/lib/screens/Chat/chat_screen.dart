@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import '../../config/theme.dart';
 
 class ChatScreen extends StatefulWidget {
   final String chatId;
@@ -22,14 +23,15 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final String currentUserId = FirebaseAuth.instance.currentUser!.uid;
-  String? _editingMessageId; // <-- NUEVO: Para saber qué mensaje estamos editando
+  String?
+  _editingMessageId; // <-- NUEVO: Para saber qué mensaje estamos editando
 
   // --- COLORES PRE-COMPUTADOS ---
-  static const Color _bgDark = Color(0xFF0F172A);
-  static const Color _surfaceDark = Color(0xFF1E293B);
-  static const Color _white10 = Color(0x1AFFFFFF);
-  static const Color _white30 = Color(0x4DFFFFFF);
-  static const Color _white40 = Color(0x66FFFFFF);
+  static const Color _bgDark = AppTheme.backgroundLight;
+  static const Color _surfaceDark = AppTheme.surfaceLight;
+  static const Color _white10 = Color(0xFFE2E8F0);
+  static const Color _white30 = AppTheme.textSecondary;
+  static const Color _white40 = AppTheme.textSecondary;
   static const Color _black10 = Color(0x1A000000);
 
   // --- STREAM CACHEADO ---
@@ -37,7 +39,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   // --- DATOS DEL USUARIO ACTUAL ---
   String _cachedMyName = "Usuario";
-  String _myRole = "student"; // <-- NUEVO: Para saber si soy estudiante o coordinador
+  String _myRole =
+      "student"; // <-- NUEVO: Para saber si soy estudiante o coordinador
 
   @override
   void initState() {
@@ -122,10 +125,10 @@ class _ChatScreenState extends State<ChatScreen> {
           .collection('messages')
           .doc(_editingMessageId)
           .update({
-        'text': text,
-        'isEdited': true,
-        'lastEditAt': FieldValue.serverTimestamp(),
-      });
+            'text': text,
+            'isEdited': true,
+            'lastEditAt': FieldValue.serverTimestamp(),
+          });
       setState(() => _editingMessageId = null);
     } else {
       // MODO ENVÍO NORMAL
@@ -136,14 +139,14 @@ class _ChatScreenState extends State<ChatScreen> {
           .add(messageData);
 
       // 2. Actualizar el último mensaje
-      await FirebaseFirestore.instance.collection('chats').doc(widget.chatId).set(
-        {
-          'users': [currentUserId, widget.otherUserId],
-          'lastMessage': text,
-          'lastUpdate': FieldValue.serverTimestamp(),
-        },
-        SetOptions(merge: true),
-      );
+      await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(widget.chatId)
+          .set({
+            'users': [currentUserId, widget.otherUserId],
+            'lastMessage': text,
+            'lastUpdate': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
 
       // 3. Crear notificación con nombre CACHEADO (sin query extra)
       await FirebaseFirestore.instance.collection('notifications').add({
@@ -171,14 +174,8 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       backgroundColor: _bgDark,
       appBar: AppBar(
-        backgroundColor: _surfaceDark,
-        elevation: 2,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: Colors.white,
-            size: 20,
-          ),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         titleSpacing: 0,
@@ -190,25 +187,29 @@ class _ChatScreenState extends State<ChatScreen> {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: _myRole == 'student' 
-                    ? [Colors.orange.shade700, Colors.orange.shade400]
-                    : [Colors.blueAccent.shade400, Colors.purpleAccent.shade400],
-                ),
+                color: Colors.white.withValues(alpha: 0.2),
               ),
               child: _myRole == 'student'
-                ? const Icon(Icons.school_rounded, color: Colors.white, size: 20)
-                : Text(
-                    _getTwoInitials(widget.otherUserName),
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
+                  ? const Icon(
+                      Icons.school_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    )
+                  : Text(
+                      _getTwoInitials(widget.otherUserName),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                _myRole == 'student' ? "Coordinación de Pasantías" : widget.otherUserName,
+                _myRole == 'student'
+                    ? "Coordinación de Pasantías"
+                    : widget.otherUserName,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16,
@@ -239,11 +240,19 @@ class _ChatScreenState extends State<ChatScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.support_agent_rounded, size: 80, color: Colors.blueAccent.withValues(alpha: 0.3)),
+                          Icon(
+                            Icons.support_agent_rounded,
+                            size: 80,
+                            color: Colors.blueAccent.withValues(alpha: 0.3),
+                          ),
                           const SizedBox(height: 20),
                           const Text(
                             "Centro de Soporte",
-                            style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           const SizedBox(height: 10),
                           const Text(
@@ -290,7 +299,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     }
 
                     return GestureDetector(
-                      onLongPress: isMe ? () => _showEditDialog(messageId, msgData['text']) : null,
+                      onLongPress: isMe
+                          ? () => _showEditDialog(messageId, msgData['text'])
+                          : null,
                       child: _buildMessageBubble(
                         msgData['text'],
                         isMe,
@@ -314,13 +325,18 @@ class _ChatScreenState extends State<ChatScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: _surfaceDark,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           ListTile(
             leading: const Icon(Icons.edit_outlined, color: Colors.blueAccent),
-            title: const Text("Editar mensaje", style: TextStyle(color: Colors.white)),
+            title: const Text(
+              "Editar mensaje",
+              style: TextStyle(color: AppTheme.textPrimary),
+            ),
             onTap: () {
               Navigator.pop(context);
               setState(() {
@@ -335,7 +351,13 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildMessageBubble(String text, bool isMe, String time, bool isRead, bool isEdited) {
+  Widget _buildMessageBubble(
+    String text,
+    bool isMe,
+    String time,
+    bool isRead,
+    bool isEdited,
+  ) {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Column(
@@ -356,7 +378,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       colors: [Colors.blue.shade700, Colors.blue.shade500],
                     )
                   : const LinearGradient(
-                      colors: [Color(0xFF334155), _surfaceDark],
+                      colors: [Color(0xFFF1F5F9), _surfaceDark],
                     ),
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(18),
@@ -370,7 +392,10 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             child: Text(
               text,
-              style: const TextStyle(color: Colors.white, fontSize: 15),
+              style: TextStyle(
+                color: isMe ? Colors.white : AppTheme.textPrimary,
+                fontSize: 15,
+              ),
             ),
           ),
           Padding(
@@ -378,8 +403,15 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (isEdited) 
-                  const Text("(editado) ", style: TextStyle(color: _white30, fontSize: 10, fontStyle: FontStyle.italic)),
+                if (isEdited)
+                  const Text(
+                    "(editado) ",
+                    style: TextStyle(
+                      color: _white30,
+                      fontSize: 10,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
                 Text(
                   time,
                   style: const TextStyle(color: _white30, fontSize: 10),
@@ -387,11 +419,16 @@ class _ChatScreenState extends State<ChatScreen> {
                 if (isMe) ...[
                   const SizedBox(width: 4),
                   Icon(
-                    isRead ? Icons.done_all_rounded : Icons.done_rounded, // Usamos done_rounded para check simple
+                    isRead
+                        ? Icons.done_all_rounded
+                        : Icons
+                              .done_rounded, // Usamos done_rounded para check simple
                     size: 15,
-                    color: isRead ? const Color(0xFF4FC3F7) : _white30, // Un azul un poco más vibrante para el visto
+                    color: isRead
+                        ? const Color(0xFF4FC3F7)
+                        : _white30, // Un azul un poco más vibrante para el visto
                   ),
-                ]
+                ],
               ],
             ),
           ),
@@ -410,7 +447,8 @@ class _ChatScreenState extends State<ChatScreen> {
           topRight: Radius.circular(20),
         ),
       ),
-      child: Column( // Cambiado a Column para apilar la edición sobre el input
+      child: Column(
+        // Cambiado a Column para apilar la edición sobre el input
         mainAxisSize: MainAxisSize.min,
         children: [
           if (_editingMessageId != null)
@@ -420,15 +458,22 @@ class _ChatScreenState extends State<ChatScreen> {
                 children: [
                   const Icon(Icons.edit, color: Colors.blueAccent, size: 16),
                   const SizedBox(width: 8),
-                  const Text("Editando mensaje...", style: TextStyle(color: Colors.blueAccent, fontSize: 12)),
+                  const Text(
+                    "Editando mensaje...",
+                    style: TextStyle(color: Colors.blueAccent, fontSize: 12),
+                  ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.redAccent, size: 16),
+                    icon: const Icon(
+                      Icons.close,
+                      color: Colors.redAccent,
+                      size: 16,
+                    ),
                     onPressed: () => setState(() {
                       _editingMessageId = null;
                       _messageController.clear();
                     }),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -439,11 +484,15 @@ class _ChatScreenState extends State<ChatScreen> {
                   decoration: BoxDecoration(
                     color: _bgDark,
                     borderRadius: BorderRadius.circular(25),
-                    border: Border.all(color: _editingMessageId != null ? Colors.blueAccent : _white10),
+                    border: Border.all(
+                      color: _editingMessageId != null
+                          ? Colors.blueAccent
+                          : _white10,
+                    ),
                   ),
                   child: TextField(
                     controller: _messageController,
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: AppTheme.textPrimary),
                     textCapitalization: TextCapitalization.sentences,
                     decoration: const InputDecoration(
                       hintText: "Escribe un mensaje...",
@@ -467,7 +516,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    _editingMessageId != null ? Icons.check_rounded : Icons.send_rounded,
+                    _editingMessageId != null
+                        ? Icons.check_rounded
+                        : Icons.send_rounded,
                     color: Colors.white,
                     size: 22,
                   ),

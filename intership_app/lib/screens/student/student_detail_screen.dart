@@ -7,13 +7,8 @@ class StudentDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        title: const Text("Perfil del Estudiante", style: TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
-      ),
+      backgroundColor: AppTheme.backgroundLight,
+      appBar: AppBar(title: const Text("Perfil del Estudiante")),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -22,14 +17,20 @@ class StudentDetailScreen extends StatelessWidget {
             const Center(
               child: CircleAvatar(
                 radius: 50,
-                backgroundImage: NetworkImage("https://i.pravatar.cc/300?img=33"), // Foto de ejemplo
+                backgroundImage: NetworkImage(
+                  "https://i.pravatar.cc/300?img=33",
+                ), // Foto de ejemplo
                 backgroundColor: Colors.grey,
               ),
             ),
             const SizedBox(height: 16),
             const Text(
               "Alejandro Rodríguez",
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.secondaryBlue),
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
+              ),
             ),
             const Text(
               "Estudiante de Ingeniería de Sistemas",
@@ -42,9 +43,19 @@ class StudentDetailScreen extends StatelessWidget {
               children: [
                 _buildStatCard("Índice", "16.5", Icons.school, Colors.blue),
                 const SizedBox(width: 12),
-                _buildStatCard("Semestre", "8vo", Icons.calendar_today, Colors.orange),
+                _buildStatCard(
+                  "Semestre",
+                  "8vo",
+                  Icons.calendar_today,
+                  Colors.orange,
+                ),
                 const SizedBox(width: 12),
-                _buildStatCard("Créditos", "145", Icons.check_circle, Colors.green),
+                _buildStatCard(
+                  "Créditos",
+                  "145",
+                  Icons.check_circle,
+                  Colors.green,
+                ),
               ],
             ),
             const SizedBox(height: 30),
@@ -52,7 +63,14 @@ class StudentDetailScreen extends StatelessWidget {
             // 3. SECCIÓN DE HABILIDADES
             Align(
               alignment: Alignment.centerLeft,
-              child: Text("Habilidades", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+              child: Text(
+                "Habilidades",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
             ),
             const SizedBox(height: 12),
             Wrap(
@@ -71,14 +89,21 @@ class StudentDetailScreen extends StatelessWidget {
             // 4. SOBRE MÍ
             Align(
               alignment: Alignment.centerLeft,
-              child: Text("Sobre mí", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.primaryColor)),
+              child: Text(
+                "Sobre mí",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               "Soy un estudiante apasionado por el desarrollo móvil y la inteligencia artificial. Busco una pasantía donde pueda aplicar mis conocimientos en Flutter y aprender sobre arquitecturas escalables.",
               style: TextStyle(color: Colors.grey[700], height: 1.5),
             ),
-            
+
             const SizedBox(height: 40),
 
             // 5. BOTONES DE ACCIÓN (Descargar CV y Contactar)
@@ -87,8 +112,8 @@ class StudentDetailScreen extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () {
-                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Descargando CV..."))
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Descargando CV...")),
                       );
                     },
                     icon: const Icon(Icons.download),
@@ -104,21 +129,26 @@ class StudentDetailScreen extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () {
-                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Abriendo correo..."))
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Abriendo correo...")),
                       );
                     },
                     icon: const Icon(Icons.email, color: Colors.white),
-                    label: const Text("Contactar", style: TextStyle(color: Colors.white)),
+                    label: const Text(
+                      "Contactar",
+                      style: TextStyle(color: Colors.white),
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primaryColor,
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),
@@ -126,24 +156,39 @@ class StudentDetailScreen extends StatelessWidget {
   }
 
   // WIDGET AUXILIAR PARA LAS TARJETAS DE MÉTRICAS
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppTheme.surfaceLight,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
           boxShadow: [
-            BoxShadow(color: Colors.grey.shade100, blurRadius: 4, offset: const Offset(0, 2))
+            BoxShadow(
+              color: Colors.grey.shade100,
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
         child: Column(
           children: [
             Icon(icon, color: color, size: 28),
             const SizedBox(height: 8),
-            Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            Text(label, style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+            Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            Text(
+              label,
+              style: TextStyle(color: Colors.grey[500], fontSize: 12),
+            ),
           ],
         ),
       ),

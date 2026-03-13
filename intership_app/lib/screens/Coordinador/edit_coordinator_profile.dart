@@ -25,11 +25,10 @@ class _EditCoordinatorProfileScreenState
   bool _isSaving = false;
 
   // --- COLORES ---
-  static const Color _bgDark = Color(0xFF0F172A);
-  static const Color _surfaceDark = Color(0xFF1E293B);
-  static const Color _white05 = Color(0x0DFFFFFF);
-  static const Color _white10 = Color(0x1AFFFFFF);
-  static const Color _white40 = Color(0x66FFFFFF);
+  static const Color _bgDark = AppTheme.backgroundLight;
+  static const Color _surfaceDark = AppTheme.surfaceLight;
+  static const Color _white10 = Color(0xFFE2E8F0);
+  static const Color _white40 = AppTheme.textSecondary;
 
   @override
   void initState() {
@@ -85,13 +84,13 @@ class _EditCoordinatorProfileScreenState
           .collection('users')
           .doc(user!.uid)
           .update({
-        'firstName': _nameController.text.trim(),
-        'lastName': _lastNameController.text.trim(),
-        'phone': _phoneController.text.trim(),
-        'department': _departmentController.text.trim(),
-        'about': _aboutController.text.trim(),
-        'lastUpdated': FieldValue.serverTimestamp(),
-      });
+            'firstName': _nameController.text.trim(),
+            'lastName': _lastNameController.text.trim(),
+            'phone': _phoneController.text.trim(),
+            'department': _departmentController.text.trim(),
+            'about': _aboutController.text.trim(),
+            'lastUpdated': FieldValue.serverTimestamp(),
+          });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -131,21 +130,16 @@ class _EditCoordinatorProfileScreenState
     return Scaffold(
       backgroundColor: _bgDark,
       appBar: AppBar(
-        title: const Text(
-          "Editar Perfil",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
+        title: const Text("Editar Perfil"),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          icon: const Icon(Icons.arrow_back_ios_new),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: AppTheme.primaryOrange))
+              child: CircularProgressIndicator(color: AppTheme.primaryOrange),
+            )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(25),
               child: Form(
@@ -171,12 +165,16 @@ class _EditCoordinatorProfileScreenState
                                 end: Alignment.bottomRight,
                               ),
                               border: Border.all(
-                                color: AppTheme.primaryOrange.withValues(alpha: 0.5),
+                                color: AppTheme.primaryOrange.withValues(
+                                  alpha: 0.5,
+                                ),
                                 width: 2.5,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppTheme.primaryOrange.withValues(alpha: 0.3),
+                                  color: AppTheme.primaryOrange.withValues(
+                                    alpha: 0.3,
+                                  ),
                                   blurRadius: 20,
                                   spreadRadius: 2,
                                 ),
@@ -203,8 +201,11 @@ class _EditCoordinatorProfileScreenState
                                 shape: BoxShape.circle,
                                 border: Border.all(color: _bgDark, width: 2),
                               ),
-                              child: const Icon(Icons.edit,
-                                  color: Colors.white, size: 14),
+                              child: const Icon(
+                                Icons.edit,
+                                color: Colors.white,
+                                size: 14,
+                              ),
                             ),
                           ),
                         ],
@@ -216,10 +217,7 @@ class _EditCoordinatorProfileScreenState
                     Center(
                       child: Text(
                         _email,
-                        style: const TextStyle(
-                          color: _white40,
-                          fontSize: 13,
-                        ),
+                        style: const TextStyle(color: _white40, fontSize: 13),
                       ),
                     ),
 
@@ -227,7 +225,9 @@ class _EditCoordinatorProfileScreenState
 
                     // ── SECCIÓN: DATOS PERSONALES ─────────────────────────
                     _buildSectionTitle(
-                        Icons.person_outline, "Datos Personales"),
+                      Icons.person_outline,
+                      "Datos Personales",
+                    ),
                     const SizedBox(height: 16),
 
                     _buildTextField(
@@ -258,7 +258,9 @@ class _EditCoordinatorProfileScreenState
 
                     // ── SECCIÓN: DATOS INSTITUCIONALES ───────────────────
                     _buildSectionTitle(
-                        Icons.school_outlined, "Datos Institucionales"),
+                      Icons.school_outlined,
+                      "Datos Institucionales",
+                    ),
                     const SizedBox(height: 16),
 
                     _buildTextField(
@@ -294,14 +296,15 @@ class _EditCoordinatorProfileScreenState
                         onPressed: _isSaving ? null : _saveProfile,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.primaryOrange,
-                          disabledBackgroundColor:
-                              AppTheme.primaryOrange.withValues(alpha: 0.5),
+                          disabledBackgroundColor: AppTheme.primaryOrange
+                              .withValues(alpha: 0.5),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),
                           elevation: 10,
-                          shadowColor:
-                              AppTheme.primaryOrange.withValues(alpha: 0.4),
+                          shadowColor: AppTheme.primaryOrange.withValues(
+                            alpha: 0.4,
+                          ),
                         ),
                         child: _isSaving
                             ? const SizedBox(
@@ -315,8 +318,11 @@ class _EditCoordinatorProfileScreenState
                             : const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.save_rounded,
-                                      color: Colors.white, size: 20),
+                                  Icon(
+                                    Icons.save_rounded,
+                                    color: Colors.white,
+                                    size: 20,
+                                  ),
                                   SizedBox(width: 10),
                                   Text(
                                     "Guardar Cambios",
@@ -347,8 +353,7 @@ class _EditCoordinatorProfileScreenState
             color: AppTheme.primaryOrange.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(10),
           ),
-          child:
-              Icon(icon, color: AppTheme.primaryOrange, size: 18),
+          child: Icon(icon, color: AppTheme.primaryOrange, size: 18),
         ),
         const SizedBox(width: 10),
         Text(
@@ -398,7 +403,7 @@ class _EditCoordinatorProfileScreenState
         controller: controller,
         maxLines: maxLines,
         keyboardType: keyboardType,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: AppTheme.textPrimary),
         onChanged: onChanged,
         decoration: InputDecoration(
           labelText: label,
@@ -418,8 +423,10 @@ class _EditCoordinatorProfileScreenState
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(15),
-            borderSide:
-                const BorderSide(color: AppTheme.primaryOrange, width: 1.5),
+            borderSide: const BorderSide(
+              color: AppTheme.primaryOrange,
+              width: 1.5,
+            ),
           ),
           filled: true,
           fillColor: Colors.transparent,
