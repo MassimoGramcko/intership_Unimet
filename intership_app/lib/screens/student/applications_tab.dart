@@ -143,43 +143,35 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
 
             // 2. FILTROS (CHIPS) con scrollbar horizontal
             Container(
-              height: 72,
-              padding: const EdgeInsets.only(bottom: 4),
-              child: Scrollbar(
+              height: 52,
+              child: ListView(
                 controller: _filtersScrollController,
-                thumbVisibility: true,
-                scrollbarOrientation: ScrollbarOrientation.bottom,
-                thickness: 3,
-                radius: const Radius.circular(10),
-                child: ListView(
-                  controller: _filtersScrollController,
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 6,
-                  ),
-                  children: [
-                    _buildInteractiveFilterChip("Todos", primaryColor),
-                    const SizedBox(width: 10),
-                    _buildInteractiveFilterChip(
-                      "Pendiente",
-                      primaryColor,
-                      dbKey: "pending",
-                    ),
-                    const SizedBox(width: 10),
-                    _buildInteractiveFilterChip(
-                      "Aceptado",
-                      primaryColor,
-                      dbKey: "accepted",
-                    ),
-                    const SizedBox(width: 10),
-                    _buildInteractiveFilterChip(
-                      "Rechazado",
-                      primaryColor,
-                      dbKey: "rejected",
-                    ),
-                  ],
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 6,
                 ),
+                children: [
+                  _buildInteractiveFilterChip("Todos", primaryColor),
+                  const SizedBox(width: 8),
+                  _buildInteractiveFilterChip(
+                    "Pendiente",
+                    primaryColor,
+                    dbKey: "pending",
+                  ),
+                  const SizedBox(width: 8),
+                  _buildInteractiveFilterChip(
+                    "Aceptado",
+                    primaryColor,
+                    dbKey: "accepted",
+                  ),
+                  const SizedBox(width: 8),
+                  _buildInteractiveFilterChip(
+                    "Rechazado",
+                    primaryColor,
+                    dbKey: "rejected",
+                  ),
+                ],
               ),
             ),
 
@@ -369,7 +361,7 @@ class _AnimatedFilterChipState extends State<_AnimatedFilterChip>
         scale: _scaleAnimation,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
             color: widget.isSelected
                 ? widget.activeColor
@@ -396,6 +388,7 @@ class _AnimatedFilterChipState extends State<_AnimatedFilterChip>
                 color: widget.isSelected
                     ? Colors.white
                     : AppTheme.textSecondary,
+                fontSize: 13,
                 fontWeight: widget.isSelected
                     ? FontWeight.bold
                     : FontWeight.normal,
