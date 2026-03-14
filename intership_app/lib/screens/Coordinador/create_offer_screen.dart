@@ -191,24 +191,93 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundLight,
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text("Nueva Oferta"),
-      ),
-      body: Scrollbar(
-        controller: _scrollController,
-        thumbVisibility: true,
-        child: SingleChildScrollView(
-          controller: _scrollController,
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      body: Column(
+        children: [
+          // --- HEADER INTEGRADO (Clean & Premium) ---
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceLight,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Stack(
               children: [
+                // Glow Blob (Aesthetic touch - Updated for better visibility)
+                Positioned(
+                  top: -60,
+                  right: -40,
+                  child: Container(
+                    width: 180,
+                    height: 180,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppTheme.primaryOrange.withValues(alpha: 0.15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryOrange.withValues(alpha: 0.35),
+                          blurRadius: 60,
+                          spreadRadius: 25,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.close_rounded,
+                            color: AppTheme.textPrimary,
+                            size: 24,
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        const Expanded(
+                          child: Text(
+                            "Nueva Oferta",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        // Espacio para equilibrar el leading
+                        const SizedBox(width: 48),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Expanded(
+            child: Scrollbar(
+              controller: _scrollController,
+              thumbVisibility: true,
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                 _buildSectionTitle("Información del Puesto"),
                 const SizedBox(height: 15),
 
@@ -466,11 +535,13 @@ class _CreateOfferScreenState extends State<CreateOfferScreen> {
                           ),
                   ),
                 ),
-                const SizedBox(height: 20),
-              ],
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

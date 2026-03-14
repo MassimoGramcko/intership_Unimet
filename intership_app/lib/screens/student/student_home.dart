@@ -235,49 +235,55 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         child: Column(
           children: [
             // --- HEADER CON EFECTO DE LUZ ---
-            Stack(
-              children: [
-                Positioned(
-                  top: -100,
-                  right: -100,
-                  child: Container(
-                    width: 300,
-                    height: 300,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppTheme.primaryOrange.withValues(alpha: 0.15),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.primaryOrange.withValues(alpha: 0.3),
-                          blurRadius: 100,
-                          spreadRadius: 50,
-                        ),
-                      ],
-                    ),
+            Container(
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceLight,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
                   ),
+                ],
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(40),
+                  bottomRight: Radius.circular(40),
                 ),
-                Container(
-                  padding: const EdgeInsets.only(
-                    top: 60, // Antes 70
-                    left: 25,
-                    right: 25,
-                    bottom: 30, // Antes 40
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surfaceLight,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
+              ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(40),
+                  bottomRight: Radius.circular(40),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      top: -100,
+                      right: -100,
+                      child: Container(
+                        width: 300,
+                        height: 300,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppTheme.primaryOrange.withValues(alpha: 0.15),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primaryOrange.withValues(alpha: 0.3),
+                              blurRadius: 100,
+                              spreadRadius: 50,
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(40),
-                      bottomRight: Radius.circular(40),
                     ),
-                  ),
-                  child: Column(
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        top: 60, // Antes 70
+                        left: 25,
+                        right: 25,
+                        bottom: 30, // Antes 40
+                      ),
+                      child: Column(
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -423,8 +429,10 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 ),
               ],
             ),
+          ),
+        ),
 
-            Padding(
+        Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: 25,
                 vertical: 15,

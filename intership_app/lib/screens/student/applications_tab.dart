@@ -85,15 +85,79 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundLight,
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text("Mis Postulaciones"),
-      ),
-      body: SafeArea(
-        child: Column(
+      body: Column(
+        children: [          // --- HEADER INTEGRADO (Clean & Premium) ---
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceLight,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Glow Blob (Aesthetic touch)
+                Positioned(
+                  top: -60,
+                  right: -40,
+                  child: Container(
+                    width: 180,
+                    height: 180,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppTheme.primaryOrange.withValues(alpha: 0.12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryOrange.withValues(alpha: 0.2),
+                          blurRadius: 60,
+                          spreadRadius: 20,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).padding.top + 15,
+                    bottom: 20,
+                    left: 10,
+                    right: 10,
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: AppTheme.iconColor,
+                          size: 20,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const Expanded(
+                        child: Text(
+                          "Mis Postulaciones",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 48), // Balance para el botón de atrás
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Expanded(
+            child: Column(
           children: [
             // 1. BARRA DE BÚSQUEDA
             Padding(
@@ -242,7 +306,9 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
           ],
         ),
       ),
-    );
+    ],
+  ),
+);
   }
 
   Widget _buildInteractiveFilterChip(

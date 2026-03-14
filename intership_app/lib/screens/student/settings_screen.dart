@@ -288,95 +288,175 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundLight,
-      appBar: AppBar(title: const Text("Configuración")),
-      body: Stack(
+      body: Column(
         children: [
-          Scrollbar(
-            controller: _scrollController,
-            thumbVisibility: true,
-            thickness: 6,
-            radius: const Radius.circular(10),
-            child: ListView(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(24.0),
+          // --- HEADER INTEGRADO (Clean & Premium) ---
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceLight,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Stack(
               children: [
-                // SECCIÓN: PERSONALIZACIÓN
-                _buildSectionTitle("Personalización"),
-                _buildSwitchTile(
-                  icon: Icons.notifications_active_outlined,
-                  iconColor: Colors.purpleAccent,
-                  title: "Notificaciones Push",
-                  subtitle: "Alertas sobre nuevas ofertas de pasantías",
-                  value: _pushNotifications,
-                  onChanged: (val) => _updateSetting('settings_push', val),
-                ),
-
-                const SizedBox(height: 30),
-                // SECCIÓN: SEGURIDAD
-                _buildSectionTitle("Seguridad"),
-                _buildSettingsTile(
-                  icon: Icons.lock_outline_rounded,
-                  iconColor: Colors.orangeAccent,
-                  title: "Cambiar Contraseña",
-                  subtitle: "Te enviaremos un correo de recuperación",
-                  onTap: _resetPassword,
-                ),
-
-                const SizedBox(height: 30),
-                // SECCIÓN: LEGAL Y SOPORTE
-                _buildSectionTitle("Legal y Soporte"),
-                _buildSettingsTile(
-                  icon: Icons.support_agent_rounded,
-                  iconColor: Colors.blueAccent,
-                  title: "Centro de Ayuda",
-                  subtitle: "Chatea con un coordinador",
-                  onTap: _openSupportChat,
-                ),
-                _buildSettingsTile(
-                  icon: Icons.description_outlined,
-                  iconColor: Colors.amberAccent,
-                  title: "Términos y Condiciones",
-                  subtitle: "Uso legal de la plataforma",
-                  onTap: () => _showLegalSheet(
-                    "Términos y Condiciones",
-                    "Al usar esta plataforma de pasantías de la UNIMET, el estudiante se compromete a proporcionar información veraz en su perfil y postulaciones. La institución actúa como mediador entre las empresas y los estudiantes para facilitar el proceso académico-profesional.",
+                // Glow Blob (Aesthetic touch)
+                Positioned(
+                  top: -60,
+                  right: -40,
+                  child: Container(
+                    width: 180,
+                    height: 180,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppTheme.primaryOrange.withValues(alpha: 0.12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryOrange.withValues(alpha: 0.2),
+                          blurRadius: 60,
+                          spreadRadius: 20,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                _buildSettingsTile(
-                  icon: Icons.privacy_tip_outlined,
-                  iconColor: Colors.greenAccent,
-                  title: "Política de Privacidad",
-                  subtitle: "Cómo protegemos tus datos",
-                  onTap: () => _showLegalSheet(
-                    "Privacidad de Datos",
-                    "Toda la información académica y profesional cargada en esta aplicación está protegida bajo los protocolos de la UNIMET. Solo las empresas a las que postules tendrán acceso a tu CV y datos de contacto para fines de selección.",
+                Container(
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).padding.top + 15,
+                    bottom: 20,
+                    left: 10,
+                    right: 10,
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: AppTheme.iconColor,
+                          size: 20,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const Expanded(
+                        child: Text(
+                          "Configuración",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 48), // Balance para el botón de atrás
+                    ],
                   ),
                 ),
-
-                const SizedBox(height: 30),
-                // SECCIÓN: SESIÓN
-                _buildSectionTitle("Sesión"),
-                _buildSettingsTile(
-                  icon: Icons.logout_rounded,
-                  iconColor: Colors.redAccent,
-                  title: "Cerrar Sesión",
-                  subtitle: "Salir de tu cuenta en este dispositivo",
-                  isDestructive: true,
-                  onTap: _logout,
-                ),
-
-                const SizedBox(height: 20),
               ],
             ),
           ),
 
-          if (_isLoading)
-            Container(
-              color: Colors.black.withValues(alpha: 0.5),
-              child: const Center(
-                child: CircularProgressIndicator(color: Colors.orangeAccent),
-              ),
+          Expanded(
+            child: Stack(
+              children: [
+                Scrollbar(
+                  controller: _scrollController,
+                  thumbVisibility: true,
+                  thickness: 6,
+                  radius: const Radius.circular(10),
+                  child: ListView(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(24.0),
+                    children: [
+                      // SECCIÓN: PERSONALIZACIÓN
+                      _buildSectionTitle("Personalización"),
+                      _buildSwitchTile(
+                        icon: Icons.notifications_active_outlined,
+                        iconColor: Colors.purpleAccent,
+                        title: "Notificaciones Push",
+                        subtitle: "Alertas sobre nuevas ofertas de pasantías",
+                        value: _pushNotifications,
+                        onChanged:
+                            (val) => _updateSetting('settings_push', val),
+                      ),
+
+                      const SizedBox(height: 30),
+                      // SECCIÓN: SEGURIDAD
+                      _buildSectionTitle("Seguridad"),
+                      _buildSettingsTile(
+                        icon: Icons.lock_outline_rounded,
+                        iconColor: Colors.orangeAccent,
+                        title: "Cambiar Contraseña",
+                        subtitle: "Te enviaremos un correo de recuperación",
+                        onTap: _resetPassword,
+                      ),
+
+                      const SizedBox(height: 30),
+                      // SECCIÓN: LEGAL Y SOPORTE
+                      _buildSectionTitle("Legal y Soporte"),
+                      _buildSettingsTile(
+                        icon: Icons.support_agent_rounded,
+                        iconColor: Colors.blueAccent,
+                        title: "Centro de Ayuda",
+                        subtitle: "Chatea con un coordinador",
+                        onTap: _openSupportChat,
+                      ),
+                      _buildSettingsTile(
+                        icon: Icons.description_outlined,
+                        iconColor: Colors.amberAccent,
+                        title: "Términos y Condiciones",
+                        subtitle: "Uso legal de la plataforma",
+                        onTap:
+                            () => _showLegalSheet(
+                              "Términos y Condiciones",
+                              "Al usar esta plataforma de pasantías de la UNIMET, el estudiante se compromete a proporcionar información veraz en su perfil y postulaciones. La institución actúa como mediador entre las empresas y los estudiantes para facilitar el proceso académico-profesional.",
+                            ),
+                      ),
+                      _buildSettingsTile(
+                        icon: Icons.privacy_tip_outlined,
+                        iconColor: Colors.greenAccent,
+                        title: "Política de Privacidad",
+                        subtitle: "Cómo protegemos tus datos",
+                        onTap:
+                            () => _showLegalSheet(
+                              "Privacidad de Datos",
+                              "Toda la información académica y profesional cargada en esta aplicación está protegida bajo los protocolos de la UNIMET. Solo las empresas a las que postules tendrán acceso a tu CV y datos de contacto para fines de selección.",
+                            ),
+                      ),
+
+                      const SizedBox(height: 30),
+                      // SECCIÓN: SESIÓN
+                      _buildSectionTitle("Sesión"),
+                      _buildSettingsTile(
+                        icon: Icons.logout_rounded,
+                        iconColor: Colors.redAccent,
+                        title: "Cerrar Sesión",
+                        subtitle: "Salir de tu cuenta en este dispositivo",
+                        isDestructive: true,
+                        onTap: _logout,
+                      ),
+
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+
+                if (_isLoading)
+                  Container(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.orangeAccent,
+                      ),
+                    ),
+                  ),
+              ],
             ),
+          ),
         ],
       ),
     );

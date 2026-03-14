@@ -129,36 +129,90 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _bgDark,
-      appBar: AppBar(
-        title: const Text('Notificaciones'),
-        actions: [
-          if (_currentUserId != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: GestureDetector(
-                onTapDown: (_) => _deleteController.forward(),
-                onTapUp: (_) {
-                  _deleteController.reverse();
-                  _clearAllNotifications(context);
-                },
-                onTapCancel: () => _deleteController.reverse(),
-                child: ScaleTransition(
-                  scale: _deleteScale,
+      body: Column(
+        children: [
+          // --- HEADER INTEGRADO (Clean & Premium) ---
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceLight,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Glow Blob (Aesthetic touch)
+                Positioned(
+                  top: -60,
+                  right: -40,
                   child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: const BoxDecoration(color: Colors.transparent),
-                    child: const Icon(
-                      Icons.delete_sweep_rounded,
-                      color: Colors.white,
-                      size: 26,
+                    width: 180,
+                    height: 180,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppTheme.primaryOrange.withValues(alpha: 0.12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryOrange.withValues(alpha: 0.2),
+                          blurRadius: 60,
+                          spreadRadius: 20,
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ),
+                Container(
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).padding.top + 15,
+                    bottom: 20,
+                    left: 10,
+                    right: 10,
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: AppTheme.iconColor,
+                          size: 20,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const Expanded(
+                        child: Text(
+                          "Notificaciones",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      if (_currentUserId != null)
+                        IconButton(
+                          icon: const Icon(
+                            Icons.delete_sweep_outlined,
+                            color: AppTheme.iconColor,
+                            size: 26,
+                          ),
+                          onPressed: () => _clearAllNotifications(context),
+                        )
+                      else
+                        const SizedBox(width: 48), // Balance
+                    ],
+                  ),
+                ),
+              ],
             ),
-        ],
-      ),
-      body: _currentUserId == null
+          ),
+
+          Expanded(
+            child: _currentUserId == null
           ? const Center(
               child: Text(
                 "Error de sesión",
@@ -204,6 +258,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                   radius: const Radius.circular(10),
                   child: ListView.builder(
                     controller: _scrollController,
+                    padding: EdgeInsets.zero,
                     itemCount: notifications.length,
                     itemBuilder: (context, index) {
                       final notif = notifications[index];
@@ -330,6 +385,9 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                 );
               },
             ),
+          ),
+        ],
+      ),
     );
   }
 }

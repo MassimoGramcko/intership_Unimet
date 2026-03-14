@@ -122,67 +122,90 @@ class _ExploreTabState extends State<ExploreTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
-      body: Stack(
+      body: Column(
         children: [
-          // A. FONDO GLOW
-          Positioned(
-            top: -80,
-            left: -20,
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.primaryOrange.withValues(alpha: 0.15),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primaryOrange.withValues(alpha: 0.3),
-                    blurRadius: 120,
-                    spreadRadius: 20,
-                  ),
-                ],
-              ),
+          // --- HEADER INTEGRADO (Clean & Premium) ---
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceLight,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
             ),
-          ),
-
-          // B. CONTENIDO SCROLLABLE
-          Scrollbar(
-            controller: _scrollController,
-            thumbVisibility: true,
-            trackVisibility: true,
-            thickness: 6,
-            radius: const Radius.circular(10),
-            child: CustomScrollView(
-              controller: _scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                // 1. APP BAR
-                SliverAppBar(
-                  backgroundColor: AppTheme.backgroundLight.withValues(
-                    alpha: 0.9,
-                  ),
-                  floating: true,
-                  pinned: true,
-                  elevation: 0,
-                  centerTitle: true,
-                  expandedHeight: 70,
-                  leading: IconButton(
-                    icon: const Icon(
-                      Icons.arrow_back_ios_new,
-                      color: AppTheme.iconColor,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                  title: const Text(
-                    "Descubrir",
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.textPrimary,
-                      letterSpacing: 1.5,
+            child: Stack(
+              children: [
+                // Glow Blob (Aesthetic touch)
+                Positioned(
+                  top: -60,
+                  right: -40,
+                  child: Container(
+                    width: 180,
+                    height: 180,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppTheme.primaryOrange.withValues(alpha: 0.12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryOrange.withValues(alpha: 0.2),
+                          blurRadius: 60,
+                          spreadRadius: 20,
+                        ),
+                      ],
                     ),
                   ),
                 ),
+                Container(
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).padding.top + 15,
+                    bottom: 20,
+                    left: 10,
+                    right: 10,
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: AppTheme.iconColor,
+                          size: 20,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                      const Expanded(
+                        child: Text(
+                          "Descubrir",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 48), // Balance
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Expanded(
+            child: Scrollbar(
+              controller: _scrollController,
+              thumbVisibility: true,
+              trackVisibility: true,
+              thickness: 6,
+              radius: const Radius.circular(10),
+              child: CustomScrollView(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  // Eliminamos el SliverAppBar antiguo ya que tenemos el Header fijo arriba
 
                 // 2. BUSCADOR
                 SliverToBoxAdapter(
@@ -415,6 +438,7 @@ class _ExploreTabState extends State<ExploreTab> {
                 ),
               ],
             ),
+          ),
           ),
         ],
       ),

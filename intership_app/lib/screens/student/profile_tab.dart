@@ -165,303 +165,336 @@ class _ProfileTabState extends State<ProfileTab> {
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundDark,
-      appBar: AppBar(
-        title: const Text("Mi Perfil y CV"),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: _userStream,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppTheme.primaryOrange),
-            );
-          }
-
-          if (!snapshot.hasData || !snapshot.data!.exists) {
-            return const Center(
-              child: Text("No se encontraron datos del usuario"),
-            );
-          }
-
-          final data = snapshot.data!.data() as Map<String, dynamic>;
-          final name = data['firstName'] ?? 'Estudiante';
-          final lastName = data['lastName'] ?? '';
-          final career = data['career'] ?? 'Ingeniería';
-          final email = data['email'] ?? user!.email;
-          final String? cvName = data['cvName'];
-
-          return Stack(
-            children: [
-              // --- FONDO AMBIENTAL (Glow) ---
-              Positioned(
-                top: -150,
-                left: -50,
-                child: Container(
-                  width: 400,
-                  height: 400,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.purple.withValues(alpha: 0.15),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.purple.withValues(alpha: 0.2),
-                        blurRadius: 100,
-                        spreadRadius: 20,
+      body: Column(
+        children: [
+          // --- HEADER INTEGRADO (Clean & Premium) ---
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceLight,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Glow Blob (Aesthetic touch)
+                Positioned(
+                  top: -60,
+                  right: -40,
+                  child: Container(
+                    width: 180,
+                    height: 180,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppTheme.primaryOrange.withValues(alpha: 0.12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryOrange.withValues(alpha: 0.2),
+                          blurRadius: 60,
+                          spreadRadius: 20,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).padding.top + 15,
+                    bottom: 20,
+                    left: 10,
+                    right: 10,
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(
+                          Icons.arrow_back_ios_new_rounded,
+                          color: AppTheme.iconColor,
+                          size: 20,
+                        ),
+                        onPressed: () => Navigator.pop(context),
                       ),
+                      const Expanded(
+                        child: Text(
+                          "Mi Perfil y CV",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 48), // Balance para el botón de atrás
                     ],
                   ),
                 ),
-              ),
+              ],
+            ),
+          ),
 
-              Scrollbar(
-                controller: _scrollController,
-                thumbVisibility: true,
-                thickness: 6,
-                radius: const Radius.circular(10),
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 25,
-                    vertical: 60,
-                  ),
-                  child: Column(
-                    children: [
-                      // 1. AVATAR GLOW
-                      Center(
-                        child: Container(
-                          width: 110,
-                          height: 110,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppTheme.primaryOrange,
-                              width: 2,
+          Expanded(
+            child: StreamBuilder<DocumentSnapshot>(
+              stream: _userStream,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: AppTheme.primaryOrange,
+                    ),
+                  );
+                }
+
+                if (!snapshot.hasData || !snapshot.data!.exists) {
+                  return const Center(
+                    child: Text("No se encontraron datos del usuario"),
+                  );
+                }
+
+                final data = snapshot.data!.data() as Map<String, dynamic>;
+                final name = data['firstName'] ?? 'Estudiante';
+                final lastName = data['lastName'] ?? '';
+                final career = data['career'] ?? 'Ingeniería';
+                final String? cvName = data['cvName'];
+
+                return Stack(
+                  children: [
+                    // --- FONDO AMBIENTAL (Orange Aesthetic Glow) ---
+                    Positioned(
+                      top: -150,
+                      left: -80,
+                      child: Container(
+                        width: 450,
+                        height: 450,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppTheme.primaryOrange.withValues(alpha: 0.1),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primaryOrange.withValues(alpha: 0.15),
+                              blurRadius: 120,
+                              spreadRadius: 30,
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppTheme.primaryOrange.withValues(
-                                  alpha: 0.3,
-                                ),
-                                blurRadius: 20,
-                                spreadRadius: 5,
-                              ),
-                            ],
-                            image: DecorationImage(
-                              image: NetworkImage(
-                                "https://ui-avatars.com/api/?name=$name+$lastName&background=random&color=fff&size=128",
-                              ),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 15),
-                      Text(
-                        "$name $lastName",
-                        style: const TextStyle(
-                          color: AppTheme.textPrimary,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                    ),
+
+                    Scrollbar(
+                      controller: _scrollController,
+                      thumbVisibility: true,
+                      thickness: 6,
+                      radius: const Radius.circular(10),
+                      child: SingleChildScrollView(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 25,
+                          vertical: 30, // Reducido de 60
                         ),
-                      ),
-                      Text(
-                        career,
-                        style: const TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontSize: 16,
-                        ),
-                      ),
-
-                      const SizedBox(height: 40),
-
-                      // 2. SECCIÓN DEL CV
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          "Curriculum Vitae",
-                          style: TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-
-                      GestureDetector(
-                        onTap: () {
-                          if (_isUploading) return;
-
-                          // FEEDBACK VISUAL
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Row(
-                                children: [
-                                  SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  SizedBox(width: 15),
-                                  Text(
-                                    "Abriendo visor de documentos...",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              backgroundColor: AppTheme.primaryOrange,
-                              duration: const Duration(seconds: 2),
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                          );
-
-                          // SIMULACRO: Espera y abre modal
-                          Future.delayed(const Duration(seconds: 2), () {
-                            if (!context.mounted) return;
-                            _showCVMockup(context, "$name $lastName".trim());
-                          });
-                        },
-                        child: Container(
-                          width: double.infinity,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            color: cvName != null
-                                ? AppTheme.surfaceLight
-                                : Colors.transparent,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: cvName != null
-                                  ? AppTheme.primaryOrange
-                                  : const Color(0xFFE2E8F0),
-                              width: 1,
-                            ),
-                          ),
-                          child: _isUploading
-                              ? const Center(
-                                  child: CircularProgressIndicator(
+                        child: Column(
+                          children: [
+                            // 1. AVATAR GLOW
+                            Center(
+                              child: Container(
+                                width: 110,
+                                height: 110,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
                                     color: AppTheme.primaryOrange,
+                                    width: 2.5,
                                   ),
-                                )
-                              : cvName != null
-                              ? _buildCvActiveState(
-                                  cvName,
-                                  "$name $lastName".trim(),
-                                )
-                              : _buildCvEmptyState(),
-                        ),
-                      ),
-
-                      const SizedBox(height: 40),
-
-                      // 3. DATOS ACADÉMICOS
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          "Información Académica",
-                          style: TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-
-                      _buildInfoTile(
-                        Icons.email_outlined,
-                        "Correo Institucional",
-                        email,
-                      ),
-                      const SizedBox(height: 15),
-                      _buildInfoTile(Icons.school_outlined, "Carrera", career),
-                      const SizedBox(height: 15),
-                      _buildInfoTile(
-                        Icons.badge_outlined,
-                        "Carnet",
-                        data['carnet'] ?? 'Sin asignar',
-                      ),
-                      const SizedBox(height: 15),
-                      _buildInfoTile(
-                        Icons.calendar_today_outlined,
-                        "Semestre",
-                        (data['semester'] ?? '').toString().isNotEmpty
-                            ? data['semester'].toString()
-                            : 'Sin registrar',
-                      ),
-                      const SizedBox(height: 15),
-                      _buildInfoTile(
-                        Icons.workspace_premium_outlined,
-                        "Índice Académico",
-                        (data['academicIndex'] ?? '').toString().isNotEmpty
-                            ? data['academicIndex'].toString()
-                            : 'Sin registrar',
-                      ),
-
-                      // --- SOBRE MÍ ---
-                      if ((data['aboutMe'] ?? '').toString().isNotEmpty) ...[
-                        const SizedBox(height: 30),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            "Sobre mí",
-                            style: TextStyle(
-                              color: AppTheme.textPrimary,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppTheme.primaryOrange.withValues(
+                                        alpha: 0.35,
+                                      ),
+                                      blurRadius: 25,
+                                      spreadRadius: 5,
+                                    ),
+                                  ],
+                                  image: DecorationImage(
+                                    image: NetworkImage(
+                                      "https://ui-avatars.com/api/?name=$name+$lastName&background=FF8000&color=fff&size=128",
+                                    ),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            data['aboutMe'],
-                            style: const TextStyle(
-                              color: AppTheme.textSecondary,
-                              height: 1.5,
-                              fontSize: 14,
+                            const SizedBox(height: 15),
+                            Text(
+                              "$name $lastName",
+                              style: const TextStyle(
+                                color: AppTheme.textPrimary,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                        ),
-                      ],
+                            Text(
+                              career,
+                              style: const TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 16,
+                              ),
+                            ),
 
-                      // --- HABILIDADES ---
-                      Builder(
-                        builder: (context) {
-                          final skillsRaw = data['skills'];
-                          List<String> skills = [];
-                          if (skillsRaw is List) {
-                            skills = skillsRaw
-                                .map((e) => e.toString())
-                                .toList();
-                          } else if (skillsRaw is String &&
-                              skillsRaw.isNotEmpty) {
-                            skills = skillsRaw
-                                .split(',')
-                                .map((e) => e.trim())
-                                .toList();
-                          }
-                          if (skills.isEmpty) return const SizedBox.shrink();
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+                            const SizedBox(height: 40),
+
+                            // 2. SECCIÓN DEL CV
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                "Curriculum Vitae",
+                                style: TextStyle(
+                                  color: AppTheme.textPrimary,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 15),
+
+                            GestureDetector(
+                              onTap: () {
+                                if (_isUploading) return;
+
+                                // FEEDBACK VISUAL
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Row(
+                                      children: [
+                                        SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        SizedBox(width: 15),
+                                        Text(
+                                          "Abriendo visor de documentos...",
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    backgroundColor: AppTheme.primaryOrange,
+                                    duration: const Duration(seconds: 2),
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                );
+
+                                // SIMULACRO: Espera y abre modal
+                                Future.delayed(const Duration(seconds: 2), () {
+                                  if (!context.mounted) return;
+                                  _showCVMockup(
+                                    context,
+                                    "$name $lastName".trim(),
+                                  );
+                                });
+                              },
+                              child: Container(
+                                width: double.infinity,
+                                height: 100,
+                                decoration: BoxDecoration(
+                                  color:
+                                      cvName != null
+                                          ? AppTheme.surfaceLight
+                                          : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color:
+                                        cvName != null
+                                            ? AppTheme.primaryOrange
+                                            : const Color(0xFFE2E8F0),
+                                    width: 1,
+                                  ),
+                                ),
+                                child:
+                                    _isUploading
+                                        ? const Center(
+                                          child: CircularProgressIndicator(
+                                            color: AppTheme.primaryOrange,
+                                          ),
+                                        )
+                                        : cvName != null
+                                        ? _buildCvActiveState(
+                                          cvName,
+                                          "$name $lastName".trim(),
+                                        )
+                                        : _buildCvEmptyState(),
+                              ),
+                            ),
+
+                            const SizedBox(height: 40),
+
+                            // 3. DATOS ACADÉMICOS
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                "Información Académica",
+                                style: TextStyle(
+                                  color: AppTheme.textPrimary,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 15),
+
+                            _buildInfoTile(
+                              Icons.email_outlined,
+                              "Correo Institucional",
+                              data['email'] ?? user!.email ?? '',
+                            ),
+                            const SizedBox(height: 15),
+                            _buildInfoTile(
+                              Icons.school_outlined,
+                              "Carrera",
+                              career,
+                            ),
+                            const SizedBox(height: 15),
+                            _buildInfoTile(
+                              Icons.badge_outlined,
+                              "Carnet",
+                              data['carnet'] ?? 'Sin asignar',
+                            ),
+                            const SizedBox(height: 15),
+                            _buildInfoTile(
+                              Icons.calendar_today_outlined,
+                              "Semestre",
+                              (data['semester'] ?? '').toString().isNotEmpty
+                                  ? data['semester'].toString()
+                                  : 'Sin registrar',
+                            ),
+                            const SizedBox(height: 15),
+                            _buildInfoTile(
+                              Icons.workspace_premium_outlined,
+                              "Índice Académico",
+                              (data['academicIndex'] ?? '')
+                                      .toString()
+                                      .isNotEmpty
+                                  ? data['academicIndex'].toString()
+                                  : 'Sin registrar',
+                            ),
+
+                            // --- SOBRE MÍ ---
+                            if ((data['aboutMe'] ?? '').toString().isNotEmpty) ...[
                               const SizedBox(height: 30),
                               Align(
                                 alignment: Alignment.centerLeft,
                                 child: Text(
-                                  "Habilidades / Stack",
+                                  "Sobre mí",
                                   style: TextStyle(
                                     color: AppTheme.textPrimary,
                                     fontSize: 18,
@@ -470,89 +503,150 @@ class _ProfileTabState extends State<ProfileTab> {
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 8,
-                                children: skills
-                                    .map(
-                                      (skill) => Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 14,
-                                          vertical: 7,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.primaryOrange
-                                              .withValues(alpha: 0.12),
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                          border: Border.all(
-                                            color: AppTheme.primaryOrange
-                                                .withValues(alpha: 0.3),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          skill,
-                                          style: const TextStyle(
-                                            color: AppTheme.primaryOrange,
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ),
-                                    )
-                                    .toList(),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  data['aboutMe'],
+                                  style: const TextStyle(
+                                    color: AppTheme.textSecondary,
+                                    height: 1.5,
+                                    fontSize: 14,
+                                  ),
+                                ),
                               ),
                             ],
-                          );
-                        },
-                      ),
 
-                      const SizedBox(height: 40),
+                            // --- HABILIDADES ---
+                            Builder(
+                              builder: (context) {
+                                final skillsRaw = data['skills'];
+                                List<String> skills = [];
+                                if (skillsRaw is List) {
+                                  skills =
+                                      skillsRaw
+                                          .map((e) => e.toString())
+                                          .toList();
+                                } else if (skillsRaw is String &&
+                                    skillsRaw.isNotEmpty) {
+                                  skills =
+                                      skillsRaw
+                                          .split(',')
+                                          .map((e) => e.trim())
+                                          .toList();
+                                }
+                                if (skills.isEmpty) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const SizedBox(height: 30),
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        "Habilidades / Stack",
+                                        style: TextStyle(
+                                          color: AppTheme.textPrimary,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 8,
+                                      children:
+                                          skills
+                                              .map(
+                                                (skill) => Container(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 14,
+                                                        vertical: 7,
+                                                      ),
+                                                  decoration: BoxDecoration(
+                                                    color: AppTheme
+                                                        .primaryOrange
+                                                        .withValues(alpha: 0.12),
+                                                    borderRadius: BorderRadius
+                                                        .circular(20),
+                                                    border: Border.all(
+                                                      color: AppTheme
+                                                          .primaryOrange
+                                                          .withValues(
+                                                            alpha: 0.3,
+                                                          ),
+                                                    ),
+                                                  ),
+                                                  child: Text(
+                                                    skill,
+                                                    style: const TextStyle(
+                                                      color: AppTheme
+                                                          .primaryOrange,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      fontSize: 13,
+                                                    ),
+                                                  ),
+                                                ),
+                                              )
+                                              .toList(),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
 
-                      SizedBox(
-                        width: double.infinity,
-                        height: 55,
-                        child: ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const EditProfileScreen(),
+                            const SizedBox(height: 40),
+
+                            SizedBox(
+                              width: double.infinity,
+                              height: 55,
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder:
+                                          (context) =>
+                                              const EditProfileScreen(),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(
+                                  Icons.edit_outlined,
+                                  color: Colors.white,
+                                ),
+                                label: const Text(
+                                  "Editar Perfil Completo",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.primaryOrange,
+                                  elevation: 10,
+                                  shadowColor: AppTheme.primaryOrange
+                                      .withValues(alpha: 0.4),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15),
+                                  ),
+                                ),
                               ),
-                            );
-                          },
-                          icon: const Icon(
-                            Icons.edit_outlined,
-                            color: Colors.white,
-                          ),
-                          label: const Text(
-                            "Editar Perfil Completo",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
                             ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.primaryOrange,
-                            elevation: 10,
-                            shadowColor: AppTheme.primaryOrange.withValues(
-                              alpha: 0.4,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                          ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

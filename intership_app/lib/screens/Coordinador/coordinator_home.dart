@@ -235,183 +235,221 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
           ),
 
           // CAPA 2: Contenido - AHORA CON SCROLLBAR
-          SafeArea(
-            child: Scrollbar(
-              controller: _scrollController,
-              thumbVisibility: true,
-              thickness: 6,
-              radius: const Radius.circular(10),
-              child: CustomScrollView(
+          Scrollbar(
+            controller: _scrollController,
+            thumbVisibility: true,
+            thickness: 6,
+            radius: const Radius.circular(10),
+            child: CustomScrollView(
                 controller: _scrollController,
                 slivers: [
-                  // HEADER
+                  // --- PANEL DE ACCIÓN UNIFICADO (Header + KPIs) ---
                   SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceLight,
+                        borderRadius: BorderRadius.circular(40),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 15,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: Stack(
                         children: [
+                          // Glow Blob (Ubicado para cubrir el panel)
+                            Positioned(
+                              top: -90,
+                              right: -90,
+                              child: Container(
+                                width: 300,
+                                height: 300,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: AppTheme.primaryOrange.withValues(alpha: 0.15),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppTheme.primaryOrange.withValues(alpha: 0.35),
+                                      blurRadius: 80,
+                                      spreadRadius: 40,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    formattedDate,
-                                    style: const TextStyle(
-                                      color: _white60,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
+                              // 1. GREETING & SETTINGS
+                              Padding(
+                                padding: EdgeInsets.only(
+                                  top: MediaQuery.of(context).padding.top + 10,
+                                  left: 24,
+                                  right: 24,
+                                  bottom: 25,
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          "Hola, Coordinador 👋",
+                                          style: TextStyle(
+                                            color: AppTheme.textPrimary,
+                                            fontSize: 26,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.primaryOrange,
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                          child: const Text(
+                                            "COORDINADOR ACADÉMICO",
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 1,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 5),
-                              const SizedBox(height: 5),
-                              StreamBuilder<DocumentSnapshot>(
-                                stream: FirebaseFirestore.instance
-                                    .collection('users')
-                                    .doc(_currentUserId)
-                                    .snapshots(),
-                                builder: (context, snapshot) {
-                                  // Saludo simplificado para evitar overflow
-                                  return const Text(
-                                    "Hola, Coordinador 👋",
-                                    style: TextStyle(
-                                      color: AppTheme.textPrimary,
-                                      fontSize: 26,
-                                      fontWeight: FontWeight.bold,
+                                    IconButton(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const CoordinatorSettingsScreen(),
+                                          ),
+                                        );
+                                      },
+                                      icon: Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.backgroundLight,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: const Color(0xFFE2E8F0),
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.settings_outlined,
+                                          color: AppTheme.iconColor,
+                                          size: 22,
+                                        ),
+                                      ),
                                     ),
-                                  );
-                                },
+                                  ],
+                                ),
                               ),
-                            ],
-                          ),
 
-                          IconButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const CoordinatorSettingsScreen(),
-                                ),
-                              );
-                            },
-                            icon: Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: const BoxDecoration(
-                                color: _white05,
-                                shape: BoxShape.circle,
-                                border: Border.fromBorderSide(
-                                  BorderSide(color: _white10),
+                              // 2. TARJETAS KPI (Primera fila)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 24),
+                                child: Row(
+                                  children: [
+                                    _InteractiveKpiCard(
+                                      title: "Solicitudes",
+                                      stream: _applicationsKpiStream,
+                                      countFilter: (docs) => docs
+                                          .where((doc) => doc['status'] == 'Pendiente')
+                                          .length,
+                                      icon: Icons.people_alt_rounded,
+                                      accentColor: Colors.orangeAccent,
+                                      gradientColors: [
+                                        primaryOrange.withValues(alpha: 0.8),
+                                        Colors.orange[800]!,
+                                      ],
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const CoordinatorApplicationsScreen(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                    const SizedBox(width: 15),
+                                    _InteractiveKpiCard(
+                                      title: "Ofertas Activas",
+                                      stream: _offersKpiStream,
+                                      countFilter: (docs) => docs
+                                          .where((doc) => doc['isActive'] == true)
+                                          .length,
+                                      icon: Icons.business_center_rounded,
+                                      accentColor: Colors.blueAccent,
+                                      gradientColors: [
+                                        Colors.blueAccent.withValues(alpha: 0.8),
+                                        Colors.blue[800]!,
+                                      ],
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                const ManageOffersScreen(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
                                 ),
                               ),
-                              child: const Icon(
-                                Icons.settings_outlined,
-                                color: AppTheme.iconColor,
-                                size: 22,
-                              ),
-                            ),
+
+                              const SizedBox(height: 15),
+
+                              // 3. TARJETA KPI (Notificaciones)
+                              if (_notificationsStream != null)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                                  child: Row(
+                                    children: [
+                                      _InteractiveKpiCard(
+                                        title: "Notificaciones Pendientes",
+                                        stream: _notificationsStream!,
+                                        countFilter: (docs) => docs.length,
+                                        icon: Icons.notifications_active_rounded,
+                                        accentColor: Colors.purpleAccent,
+                                        gradientColors: [
+                                          Colors.purpleAccent.withValues(alpha: 0.8),
+                                          Colors.purple[800]!,
+                                        ],
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  const NotificationsScreen(),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                              const SizedBox(height: 35), // Espacio final del panel
+                            ],
                           ),
                         ],
                       ),
                     ),
                   ),
 
-                  const SliverToBoxAdapter(child: SizedBox(height: 35)),
-
-                  // TARJETAS KPI (Primera fila: 2 columnas)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Row(
-                        children: [
-                          _InteractiveKpiCard(
-                            title: "Solicitudes",
-                            stream: _applicationsKpiStream,
-                            countFilter: (docs) => docs
-                                .where((doc) => doc['status'] == 'Pendiente')
-                                .length,
-                            icon: Icons.people_alt_rounded,
-                            accentColor: Colors.orangeAccent,
-                            gradientColors: [
-                              primaryOrange.withValues(alpha: 0.8),
-                              Colors.orange[800]!,
-                            ],
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const CoordinatorApplicationsScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                          const SizedBox(width: 15),
-                          _InteractiveKpiCard(
-                            title: "Ofertas Activas",
-                            stream: _offersKpiStream,
-                            countFilter: (docs) => docs
-                                .where((doc) => doc['isActive'] == true)
-                                .length,
-                            icon: Icons.business_center_rounded,
-                            accentColor: Colors.blueAccent,
-                            gradientColors: [
-                              Colors.blueAccent.withValues(alpha: 0.8),
-                              Colors.blue[800]!,
-                            ],
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      const ManageOffersScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SliverToBoxAdapter(child: SizedBox(height: 15)),
-
-                  // TARJETA KPI (Segunda fila: 1 columna completa para Notificaciones)
-                  if (_notificationsStream != null)
-                    SliverToBoxAdapter(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        child: Row(
-                          children: [
-                            _InteractiveKpiCard(
-                              title: "Notificaciones Pendientes",
-                              stream: _notificationsStream!,
-                              countFilter: (docs) => docs.length,
-                              icon: Icons.notifications_active_rounded,
-                              accentColor: Colors.purpleAccent,
-                              gradientColors: [
-                                Colors.purpleAccent.withValues(alpha: 0.8),
-                                Colors.purple[800]!,
-                              ],
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const NotificationsScreen(),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                  const SliverToBoxAdapter(child: SizedBox(height: 35)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 25)),
 
                   // TÍTULO SECCIÓN + MENU DE FILTRO
                   SliverToBoxAdapter(
@@ -733,7 +771,6 @@ class _CoordinatorHomeState extends State<CoordinatorHome>
                 ],
               ),
             ),
-          ),
 
           if (_isDialOpen)
             GestureDetector(
@@ -1334,12 +1371,12 @@ class _InteractiveKpiCardState extends State<_InteractiveKpiCard>
                 child: Stack(
                   children: [
                     Positioned(
-                      right: -20,
-                      bottom: -20,
+                      right: -15, // Un poco más hacia adentro
+                      bottom: -15,
                       child: Icon(
                         widget.icon,
-                        size: 100,
-                        color: widget.accentColor.withValues(alpha: 0.05),
+                        size: 110, // Un poco más grande
+                        color: widget.accentColor.withValues(alpha: 0.08), // Más visible
                       ),
                     ),
                     Padding(

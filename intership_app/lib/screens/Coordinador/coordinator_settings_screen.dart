@@ -240,13 +240,6 @@ class _CoordinatorSettingsScreenState extends State<CoordinatorSettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundLight,
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text("Perfil de Coordinación"),
-      ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('users')
@@ -265,132 +258,211 @@ class _CoordinatorSettingsScreenState extends State<CoordinatorSettingsScreen> {
           final String email =
               userData?['email'] ?? user?.email ?? 'Sin correo';
 
-          return Stack(
+          return Column(
             children: [
-              Scrollbar(
-                controller: _scrollController,
-                thumbVisibility: true,
-                thickness: 6,
-                radius: const Radius.circular(10),
-                child: SingleChildScrollView(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(25.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // --- ENCABEZADO DE PERFIL ---
-                      _buildProfileHeader(firstName, lastName, email),
-
-                      const SizedBox(height: 35),
-
-                      // --- SECCIÓN: PERSONALIZACIÓN ---
-                      _buildSectionTitle("Personalización"),
-                      const SizedBox(height: 15),
-                      _buildSwitchTile(
-                        title: "Notificaciones",
-                        subtitle: "Recibir alertas de nuevas solicitudes",
-                        icon: Icons.notifications_none_rounded,
-                        value: _notificationsEnabled,
-                        onChanged: (val) =>
-                            setState(() => _notificationsEnabled = val),
+              // --- HEADER PREMIUM (Estilo Flat & Integrated) ---
+              Container(
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceLight,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    // Glow Blob
+                    Positioned(
+                      top: -60,
+                      right: -40,
+                      child: Container(
+                        width: 180,
+                        height: 180,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppTheme.primaryOrange.withValues(alpha: 0.12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primaryOrange.withValues(alpha: 0.2),
+                              blurRadius: 60,
+                              spreadRadius: 20,
+                            ),
+                          ],
+                        ),
                       ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.only(
+                        top: MediaQuery.of(context).padding.top + 10,
+                        bottom: 15,
+                        left: 10,
+                        right: 10,
+                      ),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              color: AppTheme.iconColor,
+                              size: 20,
+                            ),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                          const Expanded(
+                            child: Text(
+                              "Perfil de Coordinación",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: AppTheme.textPrimary,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 48), // Balance
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
 
-                      const SizedBox(height: 30),
+              Expanded(
+                child: Stack(
+                  children: [
+                    Scrollbar(
+                      controller: _scrollController,
+                      thumbVisibility: true,
+                      thickness: 6,
+                      radius: const Radius.circular(10),
+                      child: SingleChildScrollView(
+                        controller: _scrollController,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 25,
+                          vertical: 25,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // --- ENCABEZADO DE PERFIL ---
+                            _buildProfileHeader(firstName, lastName, email),
 
-                      // --- SECCIÓN: SEGURIDAD ---
-                      _buildSectionTitle("Seguridad"),
-                      const SizedBox(height: 15),
-                      _AnimatedSettingsTile(
-                        title: "Editar Perfil",
-                        subtitle: "Cambia tu nombre y datos básicos",
-                        icon: Icons.person_outline_rounded,
-                        iconColor: Colors.blueAccent,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                const EditCoordinatorProfileScreen(),
+                            const SizedBox(height: 35),
+
+                            // --- SECCIÓN: PERSONALIZACIÓN ---
+                            _buildSectionTitle("Personalización"),
+                            const SizedBox(height: 15),
+                            _buildSwitchTile(
+                              title: "Notificaciones",
+                              subtitle: "Recibir alertas de nuevas solicitudes",
+                              icon: Icons.notifications_none_rounded,
+                              value: _notificationsEnabled,
+                              onChanged: (val) =>
+                                  setState(() => _notificationsEnabled = val),
+                            ),
+
+                            const SizedBox(height: 30),
+
+                            // --- SECCIÓN: SEGURIDAD ---
+                            _buildSectionTitle("Seguridad"),
+                            const SizedBox(height: 15),
+                            _AnimatedSettingsTile(
+                              title: "Editar Perfil",
+                              subtitle: "Cambia tu nombre y datos básicos",
+                              icon: Icons.person_outline_rounded,
+                              iconColor: Colors.blueAccent,
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const EditCoordinatorProfileScreen(),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 15),
+                            _AnimatedSettingsTile(
+                              title: "Cambiar Contraseña",
+                              subtitle: "Enlace de recuperación a tu correo",
+                              icon: Icons.lock_reset_rounded,
+                              iconColor: AppTheme.primaryOrange,
+                              onTap: _resetPassword,
+                            ),
+
+                            const SizedBox(height: 30),
+
+                            // --- SECCIÓN: LEGAL Y ASISTENCIA ---
+                            _buildSectionTitle("Legal y Asistencia"),
+                            const SizedBox(height: 15),
+                            _AnimatedSettingsTile(
+                              title: "Mensajes con Estudiantes",
+                              subtitle: "Chats y consultas de alumnos",
+                              icon: Icons.chat_bubble_rounded,
+                              iconColor: Colors.blueAccent,
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const ListaUsuariosScreen(),
+                                  ),
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 15),
+                            _AnimatedSettingsTile(
+                              title: "Términos y Condiciones",
+                              subtitle: "Uso legal de la plataforma",
+                              icon: Icons.description_outlined,
+                              iconColor: Colors.amberAccent,
+                              onTap: () => _showLegalSheet(
+                                "Términos y Condiciones",
+                                "Al usar esta plataforma de pasantías de la UNIMET, el personal se compromete a gestionar fielmente las solicitudes de los estudiantes. La institución actúa como mediador oficial entre las empresas y los estudiantes.",
+                              ),
+                            ),
+                            const SizedBox(height: 15),
+                            _AnimatedSettingsTile(
+                              title: "Privacidad",
+                              subtitle: "Tratamiento de datos personales",
+                              icon: Icons.privacy_tip_outlined,
+                              iconColor: Colors.greenAccent,
+                              onTap: () => _showLegalSheet(
+                                "Política de Privacidad",
+                                "Toda la información académica y profesional gestionada en esta aplicación está protegida bajo los protocolos de la UNIMET. Solo el coordinador autorizado y el administrador tienen acceso a los datos sensibles.",
+                              ),
+                            ),
+
+                            const SizedBox(height: 30),
+
+                            // --- SECCIÓN: SESIÓN ---
+                            _buildSectionTitle("Sesión"),
+                            const SizedBox(height: 15),
+                            _AnimatedSettingsTile(
+                              title: "Cerrar Sesión",
+                              subtitle: "Salir de tu panel de control",
+                              icon: Icons.logout_rounded,
+                              iconColor: Colors.redAccent,
+                              isDestructive: true,
+                              onTap: () => _logout(context),
+                            ),
+                            const SizedBox(height: 40),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (_isLoading)
+                      Container(
+                        color: Colors.black45,
+                        child: const Center(
+                          child: CircularProgressIndicator(
+                            color: AppTheme.primaryOrange,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 15),
-                      _AnimatedSettingsTile(
-                        title: "Cambiar Contraseña",
-                        subtitle: "Enlace de recuperación a tu correo",
-                        icon: Icons.lock_reset_rounded,
-                        iconColor: AppTheme.primaryOrange,
-                        onTap: _resetPassword,
-                      ),
-
-                      const SizedBox(height: 30),
-
-                      // --- SECCIÓN: LEGAL Y ASISTENCIA ---
-                      _buildSectionTitle("Legal y Asistencia"),
-                      const SizedBox(height: 15),
-                      _AnimatedSettingsTile(
-                        title: "Mensajes con Estudiantes",
-                        subtitle: "Chats y consultas de alumnos",
-                        icon: Icons.chat_bubble_rounded,
-                        iconColor: Colors.blueAccent,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const ListaUsuariosScreen(),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 15),
-                      _AnimatedSettingsTile(
-                        title: "Términos y Condiciones",
-                        subtitle: "Uso legal de la plataforma",
-                        icon: Icons.description_outlined,
-                        iconColor: Colors.amberAccent,
-                        onTap: () => _showLegalSheet(
-                          "Términos y Condiciones",
-                          "Al usar esta plataforma de pasantías de la UNIMET, el personal se compromete a gestionar fielmente las solicitudes de los estudiantes. La institución actúa como mediador oficial entre las empresas y los estudiantes.",
-                        ),
-                      ),
-                      const SizedBox(height: 15),
-                      _AnimatedSettingsTile(
-                        title: "Privacidad",
-                        subtitle: "Tratamiento de datos personales",
-                        icon: Icons.privacy_tip_outlined,
-                        iconColor: Colors.greenAccent,
-                        onTap: () => _showLegalSheet(
-                          "Política de Privacidad",
-                          "Toda la información académica y profesional gestionada en esta aplicación está protegida bajo los protocolos de la UNIMET. Solo el coordinador autorizado y el administrador tienen acceso a los datos sensibles.",
-                        ),
-                      ),
-
-                      const SizedBox(height: 30),
-
-                      // --- SECCIÓN: SESIÓN ---
-                      _buildSectionTitle("Sesión"),
-                      const SizedBox(height: 15),
-                      _AnimatedSettingsTile(
-                        title: "Cerrar Sesión",
-                        subtitle: "Salir de tu panel de control",
-                        icon: Icons.logout_rounded,
-                        iconColor: Colors.redAccent,
-                        isDestructive: true,
-                        onTap: () => _logout(context),
-                      ),
-                      const SizedBox(height: 40),
-                    ],
-                  ),
+                  ],
                 ),
               ),
-              if (_isLoading)
-                Container(
-                  color: Colors.black45,
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      color: AppTheme.primaryOrange,
-                    ),
-                  ),
-                ),
             ],
           );
         },

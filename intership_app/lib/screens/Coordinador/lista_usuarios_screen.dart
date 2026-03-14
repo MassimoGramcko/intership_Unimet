@@ -56,54 +56,148 @@ class _ListaUsuariosScreenState extends State<ListaUsuariosScreen> {
 
     return Scaffold(
       backgroundColor: AppTheme.backgroundLight,
-      appBar: AppBar(title: const Text('Estudiantes')),
       body: Column(
         children: [
-          // --- 3. BARRA DE BÚSQUEDA ---
+          // --- HEADER PREMIUM (Estilo UniBot IA) ---
           Container(
-            color:
-                AppTheme.surfaceLight, // Fondo para que se mezcle con el AppBar
-            padding: const EdgeInsets.fromLTRB(15, 5, 15, 15),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppTheme.backgroundLight,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF1A237E), Color(0xFF283593)], // Indigo/Blue Premium
               ),
-              child: TextField(
-                controller: _searchController,
-                style: const TextStyle(color: AppTheme.textPrimary),
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value.toLowerCase();
-                  });
-                },
-                decoration: InputDecoration(
-                  hintText: "Buscar por nombre o carrera...",
-                  hintStyle: const TextStyle(color: AppTheme.textSecondary),
-                  prefixIcon: const Icon(
-                    Icons.search_rounded,
-                    color: Colors.blueAccent,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.indigo.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Glow Blob (Aesthetic touch)
+                Positioned(
+                  top: -50,
+                  right: -30,
+                  child: Container(
+                    width: 150,
+                    height: 150,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.blueAccent.withValues(alpha: 0.1),
+                    ),
                   ),
-                  // Botón para borrar el texto si hay algo escrito
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
+                ),
+                SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 8, 16, 20),
+                    child: Row(
+                      children: [
+                        IconButton(
                           icon: const Icon(
-                            Icons.close_rounded,
-                            color: AppTheme.textSecondary,
+                            Icons.arrow_back_ios_new_rounded,
+                            color: Colors.white,
+                            size: 20,
                           ),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() {
-                              _searchQuery = '';
-                            });
-                          },
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 14,
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        const SizedBox(width: 4),
+                        // Avatar Icon estilo UniBot
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.1),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.2),
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.people_alt_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Mensajes",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              "Directorio de Estudiantes",
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // --- BARRA DE BÚSQUEDA FLOTANTE ---
+          Transform.translate(
+            offset: const Offset(0, -15),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  style: const TextStyle(color: AppTheme.textPrimary),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value.toLowerCase();
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: "Buscar por nombre o carrera...",
+                    hintStyle: TextStyle(
+                      color: AppTheme.textSecondary.withValues(alpha: 0.5),
+                      fontSize: 14,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      color: Colors.blueAccent,
+                    ),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.close_rounded, size: 20),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = '');
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 15,
+                    ),
                   ),
                 ),
               ),

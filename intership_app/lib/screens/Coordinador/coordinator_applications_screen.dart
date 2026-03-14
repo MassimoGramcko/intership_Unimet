@@ -138,34 +138,102 @@ class _CoordinatorApplicationsScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.backgroundLight,
-      appBar: AppBar(
-        title: const Text("Solicitudes"),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Container(
-              height: 50,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _buildFilterChip('Todas', 'Todas'),
-                    const SizedBox(width: 8),
-                    _buildFilterChip('Pendientes', 'Pendiente'),
-                    const SizedBox(width: 8),
-                    _buildFilterChip('Aceptadas', 'Aceptado'),
-                    const SizedBox(width: 8),
-                    _buildFilterChip('Rechazadas', 'Rechazado'),
-                  ],
+      body: Column(
+        children: [
+          // --- HEADER INTEGRADO (Clean & Premium) ---
+          Container(
+            decoration: BoxDecoration(
+              color: AppTheme.surfaceLight,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
                 ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Glow Blob (Aesthetic touch - Updated for better visibility)
+                Positioned(
+                  top: -60,
+                  right: -40,
+                  child: Container(
+                    width: 180,
+                    height: 180,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppTheme.primaryOrange.withValues(alpha: 0.15),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryOrange.withValues(alpha: 0.35),
+                          blurRadius: 60,
+                          spreadRadius: 25,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(
+                            Icons.arrow_back_ios_new_rounded,
+                            color: AppTheme.textPrimary,
+                            size: 20,
+                          ),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        const Expanded(
+                          child: Text(
+                            "Solicitudes",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        // Espacio para equilibrar el leading
+                        const SizedBox(width: 48),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // --- FILTROS ---
+          Container(
+            height: 50,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildFilterChip('Todas', 'Todas'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Pendientes', 'Pendiente'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Aceptadas', 'Aceptado'),
+                  const SizedBox(width: 8),
+                  _buildFilterChip('Rechazadas', 'Rechazado'),
+                ],
               ),
             ),
+          ),
 
             // --- BARRA DE BÚSQUEDA ---
             Padding(
@@ -277,7 +345,6 @@ class _CoordinatorApplicationsScreenState
             ),
           ],
         ),
-      ),
     );
   }
 
