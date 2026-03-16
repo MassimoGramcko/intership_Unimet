@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../config/theme.dart';
 
 class StudentOfferDetailScreen extends StatefulWidget {
   final String offerId;
@@ -13,7 +14,8 @@ class StudentOfferDetailScreen extends StatefulWidget {
   });
 
   @override
-  State<StudentOfferDetailScreen> createState() => _StudentOfferDetailScreenState();
+  State<StudentOfferDetailScreen> createState() =>
+      _StudentOfferDetailScreenState();
 }
 
 class _StudentOfferDetailScreenState extends State<StudentOfferDetailScreen> {
@@ -38,7 +40,10 @@ class _StudentOfferDetailScreenState extends State<StudentOfferDetailScreen> {
       if (existingApp.docs.isNotEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Ya te has postulado a esta oferta anteriormente."), backgroundColor: Colors.orange),
+            const SnackBar(
+              content: Text("Ya te has postulado a esta oferta anteriormente."),
+              backgroundColor: Colors.orange,
+            ),
           );
           setState(() => _isApplying = false);
         }
@@ -57,14 +62,20 @@ class _StudentOfferDetailScreenState extends State<StudentOfferDetailScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("¡Postulación enviada con éxito! 🚀"), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text("¡Postulación enviada con éxito! 🚀"),
+            backgroundColor: Colors.green,
+          ),
         );
         Navigator.pop(context); // Volver al inicio
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error al postular: $e"), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text("Error al postular: $e"),
+            backgroundColor: Colors.red,
+          ),
         );
         setState(() => _isApplying = false);
       }
@@ -74,11 +85,8 @@ class _StudentOfferDetailScreenState extends State<StudentOfferDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.data['company'] ?? "Detalle"),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-      ),
+      backgroundColor: AppTheme.backgroundLight,
+      appBar: AppBar(title: Text(widget.data['company'] ?? "Detalle")),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -97,34 +105,49 @@ class _StudentOfferDetailScreenState extends State<StudentOfferDetailScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            
+
             // Título
             Text(
               widget.data['title'] ?? "Puesto sin título",
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               widget.data['company'] ?? "Empresa",
-              style: TextStyle(fontSize: 18, color: Colors.grey[700]),
+              style: const TextStyle(
+                fontSize: 18,
+                color: AppTheme.textSecondary,
+              ),
             ),
-            
+
             const Divider(height: 40),
-            
+
             const Text(
               "Descripción del puesto",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
+              ),
             ),
             const SizedBox(height: 10),
             Expanded(
               child: SingleChildScrollView(
                 child: Text(
                   widget.data['description'] ?? "Sin descripción disponible.",
-                  style: const TextStyle(fontSize: 16, height: 1.5),
+                  style: const TextStyle(
+                    fontSize: 16,
+                    height: 1.5,
+                    color: AppTheme.textSecondary,
+                  ),
                 ),
               ),
             ),
-            
+
             // Botón Postularme
             SizedBox(
               width: double.infinity,
@@ -132,13 +155,21 @@ class _StudentOfferDetailScreenState extends State<StudentOfferDetailScreen> {
               child: ElevatedButton(
                 onPressed: _isApplying ? null : _applyToJob,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
+                  backgroundColor: AppTheme.primaryOrange,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-                child: _isApplying 
-                  ? const CircularProgressIndicator(color: Colors.white)
-                  : const Text("POSTULARME AHORA", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                child: _isApplying
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        "POSTULARME AHORA",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
               ),
             ),
           ],

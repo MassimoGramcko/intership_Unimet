@@ -8,6 +8,7 @@ import 'applications_tab.dart';
 import 'settings_screen.dart';
 import 'package:intership_app/services/chat_utils.dart';
 import '../notifications_screen.dart';
+import '../Chat/ai_chatbot_screen.dart';
 
 class StudentHomeScreen extends StatefulWidget {
   const StudentHomeScreen({super.key});
@@ -18,11 +19,9 @@ class StudentHomeScreen extends StatefulWidget {
 
 class _StudentHomeScreenState extends State<StudentHomeScreen> {
   // --- COLORES PRE-COMPUTADOS ---
-  static const Color _white05 = Color(0x0DFFFFFF);
   static const Color _white10 = Color(0x1AFFFFFF);
   static const Color _white08 = Color(0x14FFFFFF);
   static const Color _white50 = Color(0x80FFFFFF);
-  static const Color _white60 = Color(0x99FFFFFF);
   static const Color _white90 = Color(0xE6FFFFFF);
 
   // --- STREAMS CACHEADOS ---
@@ -30,7 +29,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
   late final Stream<DocumentSnapshot>? _userDataStream;
   late final Stream<QuerySnapshot>? _notificationsStream;
   late final Stream<QuerySnapshot>? _applicationsStream;
-  final ScrollController _scrollController = ScrollController(); // <-- NUEVO: Controlador para el Scrollbar
+  final ScrollController _scrollController =
+      ScrollController(); // <-- NUEVO: Controlador para el Scrollbar
 
   @override
   void initState() {
@@ -60,14 +60,21 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
     }
   }
 
-  void _showApplicationSummary(BuildContext context, List<QueryDocumentSnapshot> docs) {
+  void _showApplicationSummary(
+    BuildContext context,
+    List<QueryDocumentSnapshot> docs,
+  ) {
     int accepted = 0;
     int pending = 0;
     int rejected = 0;
     int reviewing = 0;
 
     for (var doc in docs) {
-      final status = (doc.data() as Map<String, dynamic>)['status']?.toString().toLowerCase() ?? '';
+      final status =
+          (doc.data() as Map<String, dynamic>)['status']
+              ?.toString()
+              .toLowerCase() ??
+          '';
       if (status.contains('aceptado') || status.contains('accepted')) {
         accepted++;
       } else if (status.contains('revisión') || status.contains('reviewing')) {
@@ -81,12 +88,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.backgroundLight,
       isScrollControlled: true,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.35, // Altura reducida
         decoration: const BoxDecoration(
-          color: Color(0xFF1E293B),
+          color: AppTheme.surfaceLight,
           borderRadius: BorderRadius.only(
             topLeft: Radius.circular(30),
             topRight: Radius.circular(30),
@@ -109,19 +116,28 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             const SizedBox(height: 30),
             const Text(
               "Estado de tus Postulaciones",
-              style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: AppTheme.textPrimary,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 10),
             const Text(
               "Resumen rápido de tus postulaciones actuales.",
-              style: TextStyle(color: _white60, fontSize: 14),
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
             ),
             const SizedBox(height: 40),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround, // Mejor distribución
+              mainAxisAlignment:
+                  MainAxisAlignment.spaceAround, // Mejor distribución
               children: [
                 _buildInsightItem("Aceptadas", accepted, Colors.greenAccent),
-                _buildInsightItem("Pendientes", pending + reviewing, Colors.orangeAccent),
+                _buildInsightItem(
+                  "Pendientes",
+                  pending + reviewing,
+                  Colors.orangeAccent,
+                ),
                 _buildInsightItem("Rechazadas", rejected, Colors.redAccent),
               ],
             ),
@@ -142,11 +158,18 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           ),
           child: Text(
             "$count",
-            style: TextStyle(color: color, fontSize: 22, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              color: color,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
         const SizedBox(height: 10),
-        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        Text(
+          label,
+          style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+        ),
       ],
     );
   }
@@ -165,7 +188,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
           ? const Center(
               child: Text(
                 "No hay sesión activa",
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: AppTheme.textPrimary),
               ),
             )
           : StreamBuilder<DocumentSnapshot>(
@@ -212,42 +235,55 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
         child: Column(
           children: [
             // --- HEADER CON EFECTO DE LUZ ---
-            Stack(
-              children: [
-                Positioned(
-                  top: -100,
-                  right: -100,
-                  child: Container(
-                    width: 300,
-                    height: 300,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppTheme.primaryOrange.withValues(alpha: 0.15),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.primaryOrange.withValues(alpha: 0.3),
-                          blurRadius: 100,
-                          spreadRadius: 50,
-                        ),
-                      ],
-                    ),
+            Container(
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceLight,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
                   ),
+                ],
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(40),
+                  bottomRight: Radius.circular(40),
                 ),
-                Container(
-                  padding: const EdgeInsets.only(
-                    top: 60, // Antes 70
-                    left: 25,
-                    right: 25,
-                    bottom: 30, // Antes 40
-                  ),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF0F172A),
-                    borderRadius: BorderRadius.only(
-                      bottomLeft: Radius.circular(40),
-                      bottomRight: Radius.circular(40),
+              ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(40),
+                  bottomRight: Radius.circular(40),
+                ),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      top: -100,
+                      right: -100,
+                      child: Container(
+                        width: 300,
+                        height: 300,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppTheme.primaryOrange.withValues(alpha: 0.15),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primaryOrange.withValues(alpha: 0.3),
+                              blurRadius: 100,
+                              spreadRadius: 50,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                  child: Column(
+                    Padding(
+                      padding: const EdgeInsets.only(
+                        top: 60, // Antes 70
+                        left: 25,
+                        right: 25,
+                        bottom: 30, // Antes 40
+                      ),
+                      child: Column(
                     children: [
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -258,7 +294,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                               Text(
                                 "¡Hola, $name!",
                                 style: const TextStyle(
-                                  color: Colors.white,
+                                  color: AppTheme.textPrimary,
                                   fontSize: 28,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -270,13 +306,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: _white10,
+                                  color: AppTheme.primaryOrange,
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
                                   career.toUpperCase(),
                                   style: const TextStyle(
-                                    color: AppTheme.primaryOrange,
+                                    color: Colors.white,
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                     letterSpacing: 1,
@@ -301,15 +337,15 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                                 icon: Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: const BoxDecoration(
-                                    color: _white05,
+                                    color: AppTheme.surfaceLight,
                                     shape: BoxShape.circle,
                                     border: Border.fromBorderSide(
-                                      BorderSide(color: _white10),
+                                      BorderSide(color: Color(0xFFE2E8F0)),
                                     ),
                                   ),
                                   child: const Icon(
                                     Icons.settings_outlined,
-                                    color: Colors.white,
+                                    color: AppTheme.iconColor,
                                     size: 22,
                                   ),
                                 ),
@@ -322,34 +358,37 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
 
                       Row(
                         children: [
-                          // Tarjeta 1: Postulaciones
                           Expanded(
                             child: StreamBuilder<QuerySnapshot>(
                               stream: _applicationsStream,
                               builder: (context, snapshot) {
                                 String countStr = "0";
                                 if (snapshot.hasData) {
-                                  countStr = snapshot.data!.docs.length.toString();
+                                  countStr = snapshot.data!.docs.length
+                                      .toString();
                                 }
-                                return GestureDetector(
+                                return _InteractiveStatCard(
+                                  value: countStr,
+                                  label: "Postulaciones",
+                                  icon: Icons.send_rounded,
+                                  color: AppTheme.primaryOrange,
                                   onTap: () {
-                                    if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-                                      _showApplicationSummary(context, snapshot.data!.docs);
+                                    if (snapshot.hasData &&
+                                        snapshot.data!.docs.isNotEmpty) {
+                                      _showApplicationSummary(
+                                        context,
+                                        snapshot.data!.docs,
+                                      );
                                     } else {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => const ApplicationsTab(),
+                                          builder: (context) =>
+                                              const ApplicationsTab(),
                                         ),
                                       );
                                     }
                                   },
-                                  child: _buildPremiumStatCard(
-                                    countStr,
-                                    "Postulaciones",
-                                    Icons.send_rounded,
-                                    AppTheme.primaryOrange,
-                                  ),
                                 );
                               },
                             ),
@@ -362,23 +401,23 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                               builder: (context, snapshot) {
                                 String countStr = "0";
                                 if (snapshot.hasData) {
-                                  countStr = snapshot.data!.docs.length.toString();
+                                  countStr = snapshot.data!.docs.length
+                                      .toString();
                                 }
-                                return GestureDetector(
+                                return _InteractiveStatCard(
+                                  value: countStr,
+                                  label: "Notificaciones",
+                                  icon: Icons.notifications_active_rounded,
+                                  color: Colors.blueAccent,
                                   onTap: () {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => const NotificationsScreen(),
+                                        builder: (context) =>
+                                            const NotificationsScreen(),
                                       ),
                                     );
                                   },
-                                  child: _buildPremiumStatCard(
-                                    countStr,
-                                    "Notificaciones",
-                                    Icons.notifications_active_rounded,
-                                    Colors.blueAccent,
-                                  ),
                                 );
                               },
                             ),
@@ -390,23 +429,28 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 ),
               ],
             ),
+          ),
+        ),
 
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 15), // Antes all(25)
+        Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 25,
+                vertical: 15,
+              ), // Antes all(25)
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
                     "Tu Próximo Paso",
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.textPrimary,
                       fontSize: 18, // Antes 20
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 12), // Antes 20
 
-                  GestureDetector(
+                  _InteractiveExploreCard(
                     onTap: () {
                       Navigator.push(
                         context,
@@ -415,78 +459,13 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         ),
                       );
                     },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20), // Antes all(25)
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppTheme.primaryOrange,
-                            AppTheme.primaryOrange.withValues(alpha: 0.7),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primaryOrange.withValues(alpha: 0.3),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(
-                            Icons.rocket_launch_rounded,
-                            color: Colors.white,
-                            size: 30, // Antes 40
-                          ),
-                          const SizedBox(height: 15), // Antes 20
-                          const Text(
-                            "Explorar Ofertas",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20, // Antes 24
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            "Encuentra la pasantía ideal para tu carrera hoy mismo.",
-                            style: TextStyle(color: _white90, fontSize: 14),
-                          ),
-                          const SizedBox(height: 20), // Antes 25
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 18, // Antes 20
-                              vertical: 10, // Antes 12
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12), // Antes 15
-                            ),
-                            child: const Text(
-                              "Buscar Ahora",
-                              style: TextStyle(
-                                color: AppTheme.primaryOrange,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 13, // Nuevo
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
 
                   const SizedBox(height: 30),
                   const Text(
                     "Accesos Rápidos",
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppTheme.textPrimary,
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
@@ -497,8 +476,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                     spacing: 20,
                     runSpacing: 20,
                     children: [
-                      _buildActionCard(
-                        context,
+                      _InteractiveActionCard(
                         width: halfCardWidth,
                         title: "Mis Solicitudes",
                         subtitle: "Ver estado",
@@ -513,8 +491,7 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                           );
                         },
                       ),
-                      _buildActionCard(
-                        context,
+                      _InteractiveActionCard(
                         width: halfCardWidth,
                         title: "Mi Perfil y CV",
                         subtitle: "Editar datos",
@@ -530,8 +507,27 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                         },
                       ),
 
-                      _buildActionCard(
-                        context,
+                      // 🤖 UNIBOT - Asistente IA
+                      _InteractiveActionCard(
+                        width: double.infinity,
+                        title: "UniBot IA ✨",
+                        subtitle: "Asistente inteligente de pasantías",
+                        icon: Icons.auto_awesome_rounded,
+                        accentColor: const Color(0xFFFF6F00),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AiChatbotScreen(
+                                userRole: 'student',
+                                userName: name,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      _InteractiveActionCard(
                         width: double.infinity,
                         title: "Soporte Técnico",
                         subtitle: "Consultas directas y ayuda",
@@ -545,7 +541,8 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                           );
 
                           try {
-                            final querySnapshot = await FirebaseFirestore.instance
+                            final querySnapshot = await FirebaseFirestore
+                                .instance
                                 .collection('users')
                                 .where(
                                   'role',
@@ -565,7 +562,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                                       .trim();
                               if (coordName.isEmpty) coordName = "Coordinador";
 
-                              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                              ScaffoldMessenger.of(
+                                context,
+                              ).hideCurrentSnackBar();
 
                               iniciarOabrirChat(
                                 context: context,
@@ -584,9 +583,9 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                             }
                           } catch (e) {
                             if (!context.mounted) return;
-                            ScaffoldMessenger.of(
-                              context,
-                            ).showSnackBar(SnackBar(content: Text("Error: $e")));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Error: $e")),
+                            );
                           }
                         },
                       ),
@@ -601,127 +600,393 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       ),
     );
   }
+}
 
-  // --- WIDGETS DE APOYO ---
-  Widget _buildPremiumStatCard(
-    String value,
-    String label,
-    IconData icon,
-    Color color,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(12), // Antes 16
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [const Color(0xFF1E293B), color.withValues(alpha: 0.2)],
-        ),
-        borderRadius: BorderRadius.circular(18), // Antes 20
-        border: Border.all(color: _white08),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8), // Antes 10
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
+// --- CLASES INTERACTIVAS (ANIMADAS) ---
+
+class _InteractiveStatCard extends StatefulWidget {
+  final String value;
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _InteractiveStatCard({
+    required this.value,
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  State<_InteractiveStatCard> createState() => _InteractiveStatCardState();
+}
+
+class _InteractiveStatCardState extends State<_InteractiveStatCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  bool _isHovering = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) {
+        _controller.forward();
+        setState(() => _isHovering = true);
+      },
+      onTapUp: (_) {
+        _controller.reverse();
+        setState(() => _isHovering = false);
+        widget.onTap();
+      },
+      onTapCancel: () {
+        _controller.reverse();
+        setState(() => _isHovering = false);
+      },
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceLight,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: _isHovering
+                  ? widget.color.withValues(alpha: 0.5)
+                  : const Color(0xFFE2E8F0),
             ),
-            child: Icon(icon, color: Colors.white, size: 20), // Antes 22
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18, // Antes 20
-                  fontWeight: FontWeight.bold,
+            boxShadow: [
+              if (_isHovering)
+                BoxShadow(
+                  color: widget.color.withValues(alpha: 0.2),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
                 ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: widget.color.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(widget.icon, color: widget.color, size: 22),
               ),
-              Text(
-                label,
-                style: const TextStyle(color: _white60, fontSize: 10), // Antes 11
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.value,
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    widget.label,
+                    style: const TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
+}
 
-  Widget _buildActionCard(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color accentColor,
-    required VoidCallback onTap,
-    double? width,
-  }) {
+class _InteractiveExploreCard extends StatefulWidget {
+  final VoidCallback onTap;
+
+  const _InteractiveExploreCard({required this.onTap});
+
+  @override
+  State<_InteractiveExploreCard> createState() =>
+      _InteractiveExploreCardState();
+}
+
+class _InteractiveExploreCardState extends State<_InteractiveExploreCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  bool _isHovering = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: width,
-        height: 160,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color(0xFF1E293B),
-              accentColor.withValues(alpha: 0.15),
+      onTapDown: (_) {
+        _controller.forward();
+        setState(() => _isHovering = true);
+      },
+      onTapUp: (_) {
+        _controller.reverse();
+        setState(() => _isHovering = false);
+        widget.onTap();
+      },
+      onTapCancel: () {
+        _controller.reverse();
+        setState(() => _isHovering = false);
+      },
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                _isHovering
+                    ? AppTheme.primaryOrange
+                    : AppTheme.primaryOrange.withValues(alpha: 0.9),
+                _isHovering
+                    ? AppTheme.primaryOrange.withValues(alpha: 0.8)
+                    : AppTheme.primaryOrange.withValues(alpha: 0.7),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryOrange.withValues(
+                  alpha: _isHovering ? 0.4 : 0.3,
+                ),
+                blurRadius: _isHovering ? 30 : 20,
+                offset: Offset(0, _isHovering ? 15 : 10),
+              ),
             ],
           ),
-          borderRadius: BorderRadius.circular(25),
-          border: Border.all(color: _white08),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(
+                Icons.rocket_launch_rounded,
+                color: Colors.white,
+                size: 30,
               ),
-              child: Icon(icon, color: Colors.white, size: 26),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
+              const SizedBox(height: 15),
+              const Text(
+                "Explorar Ofertas",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                "Encuentra la pasantía ideal para tu carrera hoy mismo.",
+                style: TextStyle(color: Colors.white, fontSize: 14),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  "Buscar Ahora",
+                  style: TextStyle(
+                    color: AppTheme.primaryOrange,
                     fontWeight: FontWeight.bold,
+                    fontSize: 13,
                   ),
-                  maxLines: 1,
                 ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Text(
-                      subtitle,
-                      style: const TextStyle(color: _white50, fontSize: 12),
-                    ),
-                    const Spacer(),
-                    const Icon(
-                      Icons.arrow_forward_rounded,
-                      color: Color(0x4DFFFFFF),
-                      size: 16,
-                    ),
-                  ],
-                ),
-              ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InteractiveActionCard extends StatefulWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color accentColor;
+  final VoidCallback onTap;
+  final double? width;
+
+  const _InteractiveActionCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.accentColor,
+    required this.onTap,
+    this.width,
+  });
+
+  @override
+  State<_InteractiveActionCard> createState() => _InteractiveActionCardState();
+}
+
+class _InteractiveActionCardState extends State<_InteractiveActionCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  bool _isHovering = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.94,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) {
+        _controller.forward();
+        setState(() => _isHovering = true);
+      },
+      onTapUp: (_) {
+        _controller.reverse();
+        setState(() => _isHovering = false);
+        widget.onTap();
+      },
+      onTapCancel: () {
+        _controller.reverse();
+        setState(() => _isHovering = false);
+      },
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: widget.width,
+          height: 160,
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceLight,
+            borderRadius: BorderRadius.circular(25),
+            border: Border.all(
+              color: _isHovering
+                  ? widget.accentColor.withValues(alpha: 0.4)
+                  : const Color(0xFFE2E8F0),
             ),
-          ],
+            boxShadow: [
+              if (_isHovering)
+                BoxShadow(
+                  color: widget.accentColor.withValues(alpha: 0.2),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
+                ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: widget.accentColor.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(widget.icon, color: widget.accentColor, size: 26),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.title,
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Text(
+                        widget.subtitle,
+                        style: const TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const Spacer(),
+                      const Icon(
+                        Icons.arrow_forward_rounded,
+                        color: AppTheme.textSecondary,
+                        size: 16,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
