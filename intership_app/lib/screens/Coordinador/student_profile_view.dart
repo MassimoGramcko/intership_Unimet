@@ -29,102 +29,29 @@ class StudentProfileView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
-      body: Column(
-        children: [
-          // --- HEADER INTEGRADO (Clean & Premium) ---
-          Container(
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceLight,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: Stack(
-              children: [
-                // Glow Blob (Aesthetic touch - Updated for better visibility)
-                Positioned(
-                  top: -60,
-                  right: -40,
-                  child: Container(
-                    width: 180,
-                    height: 180,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppTheme.primaryOrange.withValues(alpha: 0.15),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.primaryOrange.withValues(alpha: 0.35),
-                          blurRadius: 60,
-                          spreadRadius: 25,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back_ios_new_rounded,
-                            color: AppTheme.textPrimary,
-                            size: 20,
-                          ),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                        const Expanded(
-                          child: Text(
-                            "Perfil del Candidato",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: AppTheme.textPrimary,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        // Espacio para equilibrar el leading
-                        const SizedBox(width: 48),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          Expanded(
-            child: FutureBuilder<DocumentSnapshot>(
-        future: FirebaseFirestore.instance
-            .collection('users')
-            .doc(studentId)
-            .get(),
+      backgroundColor: AppTheme.backgroundDark,
+      appBar: AppBar(
+        title: const Text("Perfil del Candidato", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: FutureBuilder<DocumentSnapshot>(
+        future: FirebaseFirestore.instance.collection('users').doc(studentId).get(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppTheme.primaryOrange),
-            );
+            return const Center(child: CircularProgressIndicator(color: AppTheme.primaryOrange));
           }
 
-          if (snapshot.hasError ||
-              !snapshot.hasData ||
-              !snapshot.data!.exists) {
+          if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
             return const Center(
               child: Text(
                 "Error al cargar el perfil del estudiante.",
-                style: TextStyle(color: AppTheme.textSecondary),
+                style: TextStyle(color: Colors.white54),
               ),
             );
           }
@@ -135,10 +62,8 @@ class StudentProfileView extends StatelessWidget {
           final rawFirstName = data['firstName'] ?? '';
           final rawLastName = data['lastName'] ?? '';
           final fullName = "$rawFirstName $rawLastName".trim();
-
-          final displayFullName = fullName.isEmpty
-              ? "Dato no registrado"
-              : fullName;
+          
+          final displayFullName = fullName.isEmpty ? "Dato no registrado" : fullName;
           final displayEmail = _getValidString(data['email']);
           final displayCareer = _getValidString(data['career']);
           final displaySemester = _getValidString(data['semester']);
@@ -194,7 +119,7 @@ class StudentProfileView extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimary,
+                    color: Colors.white,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -203,46 +128,31 @@ class StudentProfileView extends StatelessWidget {
                   displayEmail,
                   style: const TextStyle(
                     fontSize: 14,
-                    color: AppTheme.textSecondary,
+                    color: Colors.white60,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 25),
-                const Divider(color: Color(0xFFE2E8F0)),
+                const Divider(color: Colors.white10),
                 const SizedBox(height: 25),
 
                 // --- DETALLES ACADÉMICOS ---
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildStatCard(
-                      "Carrera",
-                      displayCareer,
-                      Icons.school,
-                      Colors.blueAccent,
-                    ),
+                    _buildStatCard("Carrera", displayCareer, Icons.school, Colors.blueAccent),
                     const SizedBox(width: 12),
-                    _buildStatCard(
-                      "Semestre",
-                      displaySemester,
-                      Icons.calendar_today,
-                      Colors.orangeAccent,
-                    ),
+                    _buildStatCard("Semestre", displaySemester, Icons.calendar_today, Colors.orangeAccent),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    _buildStatCard(
-                      "Índice Académico",
-                      displayIndex,
-                      Icons.workspace_premium,
-                      Colors.greenAccent,
-                    ),
+                    _buildStatCard("Índice Académico", displayIndex, Icons.workspace_premium, Colors.greenAccent),
                   ],
                 ),
-
+                
                 const SizedBox(height: 35),
 
                 // --- SECCIÓN: SOBRE MÍ ---
@@ -262,11 +172,7 @@ class StudentProfileView extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   child: Text(
                     displayAbout,
-                    style: const TextStyle(
-                      color: AppTheme.textSecondary,
-                      height: 1.5,
-                      fontSize: 14,
-                    ),
+                    style: const TextStyle(color: Colors.white70, height: 1.5, fontSize: 14),
                   ),
                 ),
 
@@ -288,16 +194,11 @@ class StudentProfileView extends StatelessWidget {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: displaySkills.isEmpty
-                      ? const Text(
-                          "Dato no registrado",
-                          style: TextStyle(color: AppTheme.textSecondary),
-                        )
+                      ? const Text("Dato no registrado", style: TextStyle(color: Colors.white70))
                       : Wrap(
                           spacing: 8,
                           runSpacing: 8,
-                          children: displaySkills
-                              .map((skill) => _buildSkillChip(skill))
-                              .toList(),
+                          children: displaySkills.map((skill) => _buildSkillChip(skill)).toList(),
                         ),
                 ),
 
@@ -309,32 +210,21 @@ class StudentProfileView extends StatelessWidget {
                   height: 55,
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      Navigator.pop(context); // Feedback rápido
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text("Volviendo a Solicitudes..."),
-                          backgroundColor: Colors.white24,
-                        ),
+                       Navigator.pop(context); // Feedback rápido
+                       ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Volviendo a Solicitudes..."), backgroundColor: Colors.white24),
                       );
                     },
-                    icon: const Icon(
-                      Icons.arrow_back_rounded,
-                      color: AppTheme.iconColor,
-                    ),
+                    icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
                     label: const Text(
                       "Volver a Evaluaciones",
-                      style: TextStyle(
-                        color: AppTheme.textPrimary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          AppTheme.surfaceLight, // Un color muy neutro/dark
+                      backgroundColor: Colors.white10, // Un color muy neutro/dark
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(15),
-                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        side: const BorderSide(color: Colors.white24),
                       ),
                     ),
                   ),
@@ -342,28 +232,20 @@ class StudentProfileView extends StatelessWidget {
                 const SizedBox(height: 20),
               ],
             ),
-            );
-          },
-        ),
+          );
+        },
       ),
-    ],
-  ),
-);
-}
+    );
+  }
 
-  Widget _buildStatCard(
-    String label,
-    String value,
-    IconData icon,
-    Color color,
-  ) {
+  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
         decoration: BoxDecoration(
-          color: AppTheme.surfaceLight,
+          color: const Color(0xFF1E202B),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+          border: Border.all(color: Colors.white10),
         ),
         child: Column(
           children: [
@@ -372,20 +254,13 @@ class StudentProfileView extends StatelessWidget {
             Text(
               value,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-                color: AppTheme.textPrimary,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
             ),
             const SizedBox(height: 4),
             Text(
               label,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 12,
-              ),
+              style: const TextStyle(color: Colors.white54, fontSize: 12),
             ),
           ],
         ),
@@ -397,17 +272,13 @@ class StudentProfileView extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: AppTheme.surfaceLight,
+        color: Colors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: Colors.white10),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: AppTheme.textPrimary,
-          fontWeight: FontWeight.w500,
-          fontSize: 13,
-        ),
+        style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w500, fontSize: 13),
       ),
     );
   }

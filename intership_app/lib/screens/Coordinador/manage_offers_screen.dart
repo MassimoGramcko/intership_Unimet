@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../config/theme.dart';
 import 'edit_offer_screen.dart';
-import 'candidates_screen.dart';
 
 class ManageOffersScreen extends StatefulWidget {
   const ManageOffersScreen({super.key});
@@ -13,23 +11,16 @@ class ManageOffersScreen extends StatefulWidget {
 
 class _ManageOffersScreenState extends State<ManageOffersScreen> {
   // --- COLORES PRE-COMPUTADOS ---
-  static const Color _surfaceDark = AppTheme.surfaceLight;
-  static const Color _bgDark = AppTheme.backgroundLight;
-  static const Color _white10 = Color(0xFFE2E8F0);
-  static const Color _white50 = AppTheme.textSecondary;
+  static const Color _surfaceDark = Color(0xFF1E293B);
+  static const Color _bgDark = Color(0xFF0F172A);
+  static const Color _white10 = Color(0x1AFFFFFF);
+  static const Color _white50 = Color(0x80FFFFFF);
 
-  // --- CONTROLADORES ---
-  late final Stream<QuerySnapshot> _offersStream;
-  final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    _searchController.dispose();
-    super.dispose();
-  }
+  // --- STREAM CACHEADO ---
+  late final Stream<QuerySnapshot> _offersStream;
 
   @override
   void initState() {
@@ -49,224 +40,140 @@ class _ManageOffersScreenState extends State<ManageOffersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
-      body: Column(
-        children: [
-          // --- HEADER INTEGRADO (Clean & Premium) ---
-          Container(
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceLight,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-            ),
-            child: Stack(
-              children: [
-                // Glow Blob (Aesthetic touch - Updated for better visibility)
-                Positioned(
-                  top: -60,
-                  right: -40,
-                  child: Container(
-                    width: 180,
-                    height: 180,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppTheme.primaryOrange.withValues(alpha: 0.15),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.primaryOrange.withValues(alpha: 0.35),
-                          blurRadius: 60,
-                          spreadRadius: 25,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back_ios_new_rounded,
-                            color: AppTheme.textPrimary,
-                            size: 20,
-                          ),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                        const Expanded(
-                          child: Text(
-                            "Mis Ofertas Activas",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: AppTheme.textPrimary,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        // Espacio para equilibrar el leading
-                        const SizedBox(width: 48),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
+      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          "Mis Ofertas Activas",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1,
           ),
-
-          Expanded(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment.topLeft,
-                  radius: 1.3,
-                  colors: [_surfaceDark, _bgDark],
-                ),
-              ),
-              child: Column(
-                children: [
-              // --- BUSCADOR ---
+        ),
+        leading: Container(
+          margin: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: _white10, shape: BoxShape.circle),
+          child: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios_new_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment.topLeft,
+            radius: 1.3,
+            colors: [_surfaceDark, _bgDark],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              // BARRA DE BÚSQUEDA
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-                child: Container(
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: _white10,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: _white10),
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 14,
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value.toLowerCase();
+                    });
+                  },
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: "Buscar por título de oferta...",
+                    hintStyle: const TextStyle(color: _white50, fontSize: 14),
+                    prefixIcon: const Icon(Icons.search, color: _white50, size: 20),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.close, color: _white50, size: 18),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() {
+                                _searchQuery = '';
+                              });
+                            },
+                          )
+                        : null,
+                    filled: true,
+                    fillColor: _white10,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: const BorderSide(color: Colors.transparent),
                     ),
-                    onChanged: (value) =>
-                        setState(() => _searchQuery = value.toLowerCase()),
-                    decoration: InputDecoration(
-                      hintText: 'Buscar oferta o empresa...',
-                      hintStyle: const TextStyle(color: _white50, fontSize: 14),
-                      prefixIcon: const Icon(
-                        Icons.search_rounded,
-                        color: _white50,
-                        size: 20,
-                      ),
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(
-                                Icons.close_rounded,
-                                color: _white50,
-                                size: 18,
-                              ),
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() => _searchQuery = '');
-                              },
-                            )
-                          : null,
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: const BorderSide(color: Colors.transparent),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(20),
+                      borderSide: const BorderSide(color: Colors.orangeAccent),
                     ),
                   ),
                 ),
               ),
 
-              // --- LISTA ---
               Expanded(
                 child: StreamBuilder<QuerySnapshot>(
-                  stream: _offersStream,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator(
-                          color: Colors.orangeAccent,
-                        ),
-                      );
-                    }
+            stream: _offersStream,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(color: Colors.orangeAccent),
+                );
+              }
 
-                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                      return _buildEmptyState();
-                    }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return _buildEmptyState();
+              }
 
-                    // Filtrar por búsqueda
-                    var docs = snapshot.data!.docs.where((doc) {
-                      if (_searchQuery.isEmpty) return true;
-                      final data = doc.data() as Map<String, dynamic>;
-                      final title = (data['title'] ?? '')
-                          .toString()
-                          .toLowerCase();
-                      final company = (data['company'] ?? '')
-                          .toString()
-                          .toLowerCase();
-                      return title.contains(_searchQuery) ||
-                          company.contains(_searchQuery);
-                    }).toList();
+              final allDocs = snapshot.data!.docs;
+              
+              // Filtrado Local por título
+              final docs = allDocs.where((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                final title = (data['title'] ?? '').toString().toLowerCase();
+                return title.contains(_searchQuery);
+              }).toList();
 
-                    if (docs.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.search_off_rounded,
-                              size: 60,
-                              color: _white10,
-                            ),
-                            const SizedBox(height: 15),
-                            Text(
-                              'Sin resultados para "$_searchQuery"',
-                              style: const TextStyle(
-                                color: _white50,
-                                fontSize: 14,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      );
-                    }
+              if (docs.isEmpty) {
+                return const Center(
+                  child: Text(
+                    "No se encontraron resultados",
+                    style: TextStyle(color: _white50, fontSize: 16),
+                  ),
+                );
+              }
 
-                    return Scrollbar(
-                      controller: _scrollController,
-                      thumbVisibility: true,
-                      trackVisibility: true,
-                      thickness: 6,
-                      radius: const Radius.circular(10),
-                      child: ListView.separated(
-                        controller: _scrollController,
-                        padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-                        itemCount: docs.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 20),
-                        itemBuilder: (context, index) {
-                          final data =
-                              docs[index].data() as Map<String, dynamic>;
-                          final docId = docs[index].id;
-                          return _OfferCard(data: data, docId: docId);
-                        },
-                      ),
-                    );
-                  },
-                ),
-              ),
+              return ListView.separated(
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                itemCount: docs.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 20),
+                itemBuilder: (context, index) {
+                  final data = docs[index].data() as Map<String, dynamic>;
+                  final docId = docs[index].id;
+                  return _OfferCard(data: data, docId: docId);
+                },
+              );
+            },
+          ),
+        ),
             ],
           ),
         ),
       ),
-    ],
-  ),
-);
-}
+    );
+  }
 
   Widget _buildEmptyState() {
     return Center(
@@ -278,7 +185,7 @@ class _ManageOffersScreenState extends State<ManageOffersScreen> {
           const Text(
             "No tienes ofertas creadas",
             style: TextStyle(
-              color: AppTheme.textPrimary,
+              color: Color(0xB3FFFFFF),
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -299,10 +206,11 @@ class _OfferCard extends StatelessWidget {
   final String docId;
 
   // --- COLORES PRE-COMPUTADOS ---
-  static const Color _surfaceDark = AppTheme.surfaceLight;
-  static const Color _white10 = Color(0xFFE2E8F0);
-  static const Color _white40 = AppTheme.textSecondary;
-  static const Color _white60 = AppTheme.textSecondary;
+  static const Color _surfaceDark = Color(0xFF1E293B);
+  static const Color _white08 = Color(0x14FFFFFF);
+  static const Color _white10 = Color(0x1AFFFFFF);
+  static const Color _white40 = Color(0x66FFFFFF);
+  static const Color _white60 = Color(0x99FFFFFF);
 
   const _OfferCard({required this.data, required this.docId});
 
@@ -350,11 +258,11 @@ class _OfferCard extends StatelessWidget {
             ),
             title: const Text(
               "¿Eliminar oferta?",
-              style: TextStyle(color: AppTheme.textPrimary),
+              style: TextStyle(color: Colors.white),
             ),
             content: const Text(
               "Esta acción borrará la oferta permanentemente y no se puede deshacer.",
-              style: TextStyle(color: AppTheme.textSecondary),
+              style: TextStyle(color: Color(0xB3FFFFFF)),
             ),
             actions: [
               TextButton(
@@ -389,13 +297,16 @@ class _OfferCard extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [_surfaceDark, _surfaceDark],
+            colors: [
+              const Color(0xFF2C3E50).withValues(alpha: 0.9),
+              _surfaceDark.withValues(alpha: 0.95),
+            ],
             stops: const [0.1, 0.9],
           ),
-          border: Border.all(color: _white10, width: 1.5),
+          border: Border.all(color: _white08, width: 1.5),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x1A000000),
+              color: Color(0x4D000000),
               blurRadius: 20,
               offset: Offset(0, 8),
             ),
@@ -427,7 +338,7 @@ class _OfferCard extends StatelessWidget {
                       Text(
                         title,
                         style: const TextStyle(
-                          color: AppTheme.textPrimary,
+                          color: Colors.white,
                           fontSize: 19,
                           fontWeight: FontWeight.bold,
                         ),
@@ -471,12 +382,10 @@ class _OfferCard extends StatelessWidget {
                   .where('offerId', isEqualTo: docId)
                   .snapshots(),
               builder: (context, snapshot) {
-                int applicantsCount = snapshot.hasData
-                    ? snapshot.data!.docs.length
-                    : 0;
-                int vacancies = data['vacancies'] ?? 0;
-                bool isFull = vacancies > 0 && applicantsCount >= vacancies;
-
+                int applicantsCount = 0;
+                if (snapshot.hasData) {
+                  applicantsCount = snapshot.data!.docs.length;
+                }
                 return Row(
                   children: [
                     _buildTag(
@@ -485,38 +394,17 @@ class _OfferCard extends StatelessWidget {
                       color: Colors.blueAccent,
                     ),
                     const SizedBox(width: 10),
-                    InkWell(
-                      onTap: applicantsCount > 0
-                          ? () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      AdminOfferCandidatesScreen(
-                                        offerId: docId,
-                                        offerTitle: title,
-                                      ),
-                                ),
-                              );
-                            }
-                          : null,
-                      borderRadius: BorderRadius.circular(20),
-                      child: _buildTag(
-                        text: vacancies > 0
-                            ? "$applicantsCount / $vacancies Postulados"
-                            : applicantsCount > 0
-                            ? "$applicantsCount Postulados"
-                            : "Sin postulantes",
-                        icon: applicantsCount > 0
-                            ? Icons.people_alt_rounded
-                            : Icons.person_off_outlined,
-                        color: isFull
-                            ? Colors.redAccent
-                            : (applicantsCount > 0
-                                  ? Colors.orangeAccent
-                                  : const Color(0x61FFFFFF)),
-                        isFilled: isFull,
-                      ),
+                    _buildTag(
+                      text: applicantsCount > 0
+                          ? "$applicantsCount Postulados"
+                          : "Sin postulantes",
+                      icon: applicantsCount > 0
+                          ? Icons.people_alt_rounded
+                          : Icons.person_off_outlined,
+                      color: applicantsCount > 0
+                          ? Colors.orangeAccent
+                          : const Color(0x61FFFFFF),
+                      isFilled: false,
                     ),
                   ],
                 );
@@ -524,7 +412,7 @@ class _OfferCard extends StatelessWidget {
             ),
 
             const SizedBox(height: 20),
-            const Divider(color: _white10, thickness: 1),
+            const Divider(color: Color(0x1AFFFFFF), thickness: 1),
             const SizedBox(height: 10),
 
             Row(
@@ -621,12 +509,12 @@ class _OfferCard extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: finalColor, size: 16),
+          Icon(icon, color: isFilled ? Colors.white : finalColor, size: 16),
           const SizedBox(width: 8),
           Text(
             text,
             style: TextStyle(
-              color: finalColor,
+              color: isFilled ? Colors.white : finalColor,
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),

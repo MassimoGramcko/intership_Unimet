@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import '../../config/theme.dart';
 
 class ApplicationsTab extends StatefulWidget {
   const ApplicationsTab({super.key});
@@ -16,10 +15,14 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = "";
   final ScrollController _scrollController = ScrollController();
-  final ScrollController _filtersScrollController =
-      ScrollController(); // para los chips horizontales
 
   // --- COLORES PRE-COMPUTADOS ---
+  static const Color _white05 = Color(0x0DFFFFFF);
+  static const Color _white10 = Color(0x1AFFFFFF);
+  static const Color _white20 = Color(0x33FFFFFF);
+  static const Color _white40 = Color(0x66FFFFFF);
+  static const Color _white50 = Color(0x80FFFFFF);
+  static const Color _white60 = Color(0x99FFFFFF);
   static const Color _black20 = Color(0x33000000);
 
   final Map<String, dynamic> statusConfig = {
@@ -59,7 +62,6 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
   void dispose() {
     _searchController.dispose();
     _scrollController.dispose();
-    _filtersScrollController.dispose();
     super.dispose();
   }
 
@@ -84,246 +86,308 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
     const Color primaryColor = Color(0xFFFF6B00);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundLight,
-      body: Column(
-        children: [          // --- HEADER INTEGRADO (Clean & Premium) ---
-          Container(
-            decoration: BoxDecoration(
-              color: AppTheme.surfaceLight,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
+      backgroundColor: const Color(0xFF0F172A),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: Colors.white,
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          "Mis Postulaciones",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+          // 1. BARRA DE BÚSQUEDA
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: _white05,
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: _white10),
+              ),
+              child: TextField(
+                controller: _searchController,
+                style: const TextStyle(color: Colors.white),
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value.toLowerCase();
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: "Buscar por cargo o empresa...",
+                  hintStyle: const TextStyle(color: _white40, fontSize: 14),
+                  prefixIcon: const Icon(Icons.search_rounded, color: _white40),
+                  suffixIcon: _searchQuery.isNotEmpty 
+                    ? IconButton(
+                        icon: const Icon(Icons.close_rounded, color: _white40),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = "");
+                        },
+                      )
+                    : null,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 15),
                 ),
+              ),
+            ),
+          ),
+
+          // 2. FILTROS (CHIPS)
+          Container(
+            height: 60,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              children: [
+                _buildFilterChip("Todos", primaryColor),
+                const SizedBox(width: 10),
+                _buildFilterChip("Pendiente", primaryColor, dbKey: "pending"),
+                const SizedBox(width: 10),
+                _buildFilterChip("Aceptado", primaryColor, dbKey: "accepted"),
+                const SizedBox(width: 10),
+                _buildFilterChip("Rechazado", primaryColor, dbKey: "rejected"),
               ],
             ),
-            child: Stack(
+          ),
+
+          // 3. LISTA CON SCROLLBAR
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: _applicationsStream,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: primaryColor),
+                  );
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return _buildEmptyState();
+                }
+
+                var docs = snapshot.data!.docs;
+
+                // Aplicar Filtro de Estado
+                if (_selectedFilter != 'Todos') {
+                  docs = docs.where((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    return _getStatusKey(data['status']) == _selectedFilter;
+                  }).toList();
+                }
+
+                // Aplicar Filtro de Búsqueda
+                if (_searchQuery.isNotEmpty) {
+                  docs = docs.where((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    final String jobTitle = (data['jobTitle'] ?? '').toString().toLowerCase();
+                    final String company = (data['company'] ?? '').toString().toLowerCase();
+                    return jobTitle.contains(_searchQuery) || company.contains(_searchQuery);
+                  }).toList();
+                }
+
+                if (docs.isEmpty) return _buildEmptyState();
+
+                return Scrollbar(
+                  controller: _scrollController,
+                  thumbVisibility: true,
+                  thickness: 6,
+                  radius: const Radius.circular(10),
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(20),
+                    itemCount: docs.length,
+                    itemBuilder: (context, index) {
+                      final data = docs[index].data() as Map<String, dynamic>;
+                      return _buildApplicationCard(data);
+                    },
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+  Widget _buildFilterChip(String label, Color activeColor, {String? dbKey}) {
+    final valueToSet = dbKey ?? 'Todos';
+    final isSelected = _selectedFilter == valueToSet;
+
+    return GestureDetector(
+      onTap: () => setState(() => _selectedFilter = valueToSet),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? activeColor : _white05,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: isSelected ? activeColor : _white10),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? Colors.white : _white60,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildApplicationCard(Map<String, dynamic> data) {
+    final statusKey = _getStatusKey(data['status']);
+
+    final config = statusConfig[statusKey]!;
+    final Color statusColor = config['color'];
+    final String statusLabel = config['label'];
+    final int currentStep = config['step'];
+
+    String dateStr = "Reciente";
+    if (data['appliedAt'] != null) {
+      try {
+        DateTime date = (data['appliedAt'] as Timestamp).toDate();
+        dateStr = DateFormat('dd MMM, hh:mm a').format(date);
+      } catch (e) {
+        dateStr = "Fecha desconocida";
+      }
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _white05),
+        boxShadow: const [
+          BoxShadow(color: _black20, blurRadius: 10, offset: Offset(0, 5)),
+        ],
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
               children: [
-                // Glow Blob (Aesthetic touch)
-                Positioned(
-                  top: -60,
-                  right: -40,
-                  child: Container(
-                    width: 180,
-                    height: 180,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppTheme.primaryOrange.withValues(alpha: 0.12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.primaryOrange.withValues(alpha: 0.2),
-                          blurRadius: 60,
-                          spreadRadius: 20,
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.business, color: statusColor, size: 28),
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        data['jobTitle'] ?? 'Puesto',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        data['company'] ?? 'Empresa',
+                        style: const TextStyle(color: _white60, fontSize: 13),
+                      ),
+                    ],
                   ),
                 ),
                 Container(
-                  padding: EdgeInsets.only(
-                    top: MediaQuery.of(context).padding.top + 15,
-                    bottom: 20,
-                    left: 10,
-                    right: 10,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
                   ),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(
-                          Icons.arrow_back_ios_new_rounded,
-                          color: AppTheme.iconColor,
-                          size: 20,
-                        ),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                      const Expanded(
-                        child: Text(
-                          "Mis Postulaciones",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: AppTheme.textPrimary,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 48), // Balance para el botón de atrás
-                    ],
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: statusColor.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Text(
+                    statusLabel,
+                    style: TextStyle(
+                      color: statusColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
 
-          Expanded(
+          const Divider(color: _white05, height: 1),
+
+          Padding(
+            padding: const EdgeInsets.all(16),
             child: Column(
-          children: [
-            // 1. BARRA DE BÚSQUEDA
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceLight,
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Progreso:",
+                      style: TextStyle(color: _white40, fontSize: 11),
+                    ),
+                    Text(
+                      dateStr,
+                      style: TextStyle(color: _white40, fontSize: 11),
+                    ),
+                  ],
                 ),
-                child: TextField(
-                  controller: _searchController,
-                  style: const TextStyle(color: AppTheme.textPrimary),
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value.toLowerCase();
-                    });
-                  },
-                  decoration: InputDecoration(
-                    hintText: "Buscar por cargo o empresa...",
-                    hintStyle: const TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 14,
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.search_rounded,
-                      color: AppTheme.textSecondary,
-                    ),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(
-                              Icons.close_rounded,
-                              color: AppTheme.textSecondary,
-                            ),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() => _searchQuery = "");
-                            },
-                          )
-                        : null,
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 6,
+                  child: Row(
+                    children: [
+                      _buildProgressSegment(
+                        isActive: currentStep >= 1,
+                        color: statusColor,
+                        isFirst: true,
+                      ),
+                      const SizedBox(width: 4),
+                      _buildProgressSegment(
+                        isActive: currentStep >= 2,
+                        color: statusColor,
+                      ),
+                      const SizedBox(width: 4),
+                      _buildProgressSegment(
+                        isActive: currentStep >= 3,
+                        color: statusColor,
+                        isLast: true,
+                      ),
+                    ],
                   ),
                 ),
-              ),
+              ],
             ),
-
-            // 2. FILTROS (CHIPS) con scrollbar horizontal
-            Container(
-              height: 52,
-              child: ListView(
-                controller: _filtersScrollController,
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 6,
-                ),
-                children: [
-                  _buildInteractiveFilterChip("Todos", primaryColor),
-                  const SizedBox(width: 8),
-                  _buildInteractiveFilterChip(
-                    "Pendiente",
-                    primaryColor,
-                    dbKey: "pending",
-                  ),
-                  const SizedBox(width: 8),
-                  _buildInteractiveFilterChip(
-                    "Aceptado",
-                    primaryColor,
-                    dbKey: "accepted",
-                  ),
-                  const SizedBox(width: 8),
-                  _buildInteractiveFilterChip(
-                    "Rechazado",
-                    primaryColor,
-                    dbKey: "rejected",
-                  ),
-                ],
-              ),
-            ),
-
-            // 3. LISTA CON SCROLLBAR
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: _applicationsStream,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(color: primaryColor),
-                    );
-                  }
-
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return _buildEmptyState();
-                  }
-
-                  var docs = snapshot.data!.docs;
-
-                  // Aplicar Filtro de Estado
-                  if (_selectedFilter != 'Todos') {
-                    docs = docs.where((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      return _getStatusKey(data['status']) == _selectedFilter;
-                    }).toList();
-                  }
-
-                  // Aplicar Filtro de Búsqueda
-                  if (_searchQuery.isNotEmpty) {
-                    docs = docs.where((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      final String jobTitle = (data['jobTitle'] ?? '')
-                          .toString()
-                          .toLowerCase();
-                      final String company = (data['company'] ?? '')
-                          .toString()
-                          .toLowerCase();
-                      return jobTitle.contains(_searchQuery) ||
-                          company.contains(_searchQuery);
-                    }).toList();
-                  }
-
-                  if (docs.isEmpty) return _buildEmptyState();
-
-                  return Scrollbar(
-                    controller: _scrollController,
-                    thumbVisibility: true,
-                    thickness: 6,
-                    radius: const Radius.circular(10),
-                    child: ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.all(20),
-                      itemCount: docs.length,
-                      itemBuilder: (context, index) {
-                        final data = docs[index].data() as Map<String, dynamic>;
-                        return _InteractiveApplicationCard(
-                          data: data,
-                          statusConfig: statusConfig,
-                          getStatusKey: _getStatusKey,
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
-    ],
-  ),
-);
-  }
-
-  Widget _buildInteractiveFilterChip(
-    String label,
-    Color activeColor, {
-    String? dbKey,
-  }) {
-    final valueToSet = dbKey ?? 'Todos';
-    final isSelected = _selectedFilter == valueToSet;
-
-    return _AnimatedFilterChip(
-      label: label,
-      isSelected: isSelected,
-      activeColor: activeColor,
-      onTap: () => setState(() => _selectedFilter = valueToSet),
     );
   }
 
@@ -337,7 +401,7 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 500),
         decoration: BoxDecoration(
-          color: isActive ? color : const Color(0xFFE2E8F0),
+          color: isActive ? color : _white10,
           borderRadius: BorderRadius.horizontal(
             left: isFirst ? const Radius.circular(5) : Radius.zero,
             right: isLast ? const Radius.circular(5) : Radius.zero,
@@ -352,360 +416,16 @@ class _ApplicationsTabState extends State<ApplicationsTab> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.folder_off_outlined,
-            size: 80,
-            color: AppTheme.textSecondary,
-          ),
+          Icon(Icons.folder_off_outlined, size: 80, color: _white20),
           const SizedBox(height: 15),
           Text(
-            _searchQuery.isEmpty
-                ? "No hay solicitudes aquí"
-                : "No se encontraron coincidencias para '$_searchQuery'",
-            style: const TextStyle(color: AppTheme.textSecondary),
+            _searchQuery.isEmpty 
+              ? "No hay solicitudes aquí" 
+              : "No se encontraron coincidencias para '$_searchQuery'", 
+            style: const TextStyle(color: _white50),
             textAlign: TextAlign.center,
           ),
         ],
-      ),
-    );
-  }
-}
-
-// --- CLASES INTERACTIVAS (ANIMADAS) ---
-
-class _AnimatedFilterChip extends StatefulWidget {
-  final String label;
-  final bool isSelected;
-  final Color activeColor;
-  final VoidCallback onTap;
-
-  const _AnimatedFilterChip({
-    required this.label,
-    required this.isSelected,
-    required this.activeColor,
-    required this.onTap,
-  });
-
-  @override
-  State<_AnimatedFilterChip> createState() => _AnimatedFilterChipState();
-}
-
-class _AnimatedFilterChipState extends State<_AnimatedFilterChip>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.9,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _controller.forward(),
-      onTapUp: (_) {
-        _controller.reverse();
-        widget.onTap();
-      },
-      onTapCancel: () => _controller.reverse(),
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: widget.isSelected
-                ? widget.activeColor
-                : AppTheme.surfaceLight,
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(
-              color: widget.isSelected
-                  ? widget.activeColor
-                  : const Color(0xFFE2E8F0),
-            ),
-            boxShadow: [
-              if (widget.isSelected)
-                BoxShadow(
-                  color: widget.activeColor.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-            ],
-          ),
-          child: Center(
-            child: Text(
-              widget.label,
-              style: TextStyle(
-                color: widget.isSelected
-                    ? Colors.white
-                    : AppTheme.textSecondary,
-                fontSize: 13,
-                fontWeight: widget.isSelected
-                    ? FontWeight.bold
-                    : FontWeight.normal,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _InteractiveApplicationCard extends StatefulWidget {
-  final Map<String, dynamic> data;
-  final Map<String, dynamic> statusConfig;
-  final String Function(String?) getStatusKey;
-
-  const _InteractiveApplicationCard({
-    required this.data,
-    required this.statusConfig,
-    required this.getStatusKey,
-  });
-
-  @override
-  State<_InteractiveApplicationCard> createState() =>
-      _InteractiveApplicationCardState();
-}
-
-class _InteractiveApplicationCardState
-    extends State<_InteractiveApplicationCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  bool _isPressed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.96,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final statusKey = widget.getStatusKey(widget.data['status']);
-    final config = widget.statusConfig[statusKey]!;
-    final Color statusColor = config['color'];
-    final String statusLabel = config['label'];
-    final int currentStep = config['step'];
-
-    String dateStr = "Reciente";
-    if (widget.data['appliedAt'] != null) {
-      try {
-        DateTime date = (widget.data['appliedAt'] as Timestamp).toDate();
-        dateStr = DateFormat('dd MMM, hh:mm a').format(date);
-      } catch (e) {
-        dateStr = "Fecha desconocida";
-      }
-    }
-
-    return GestureDetector(
-      onTapDown: (_) {
-        _controller.forward();
-        setState(() => _isPressed = true);
-      },
-      onTapUp: (_) {
-        _controller.reverse();
-        setState(() => _isPressed = false);
-      },
-      onTapCancel: () {
-        _controller.reverse();
-        setState(() => _isPressed = false);
-      },
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.only(bottom: 20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                _isPressed ? const Color(0xFFF1F5F9) : AppTheme.surfaceLight,
-                statusColor.withValues(alpha: _isPressed ? 0.15 : 0.05),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: _isPressed
-                  ? statusColor.withValues(alpha: 0.3)
-                  : const Color(0xFFE2E8F0),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: _isPressed ? 0.1 : 0.05),
-                blurRadius: _isPressed ? 15 : 10,
-                offset: Offset(0, _isPressed ? 8 : 5),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(Icons.business, color: statusColor, size: 28),
-                    ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.data['jobTitle'] ?? 'Puesto',
-                            style: const TextStyle(
-                              color: AppTheme.textPrimary,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            widget.data['company'] ?? 'Empresa',
-                            style: const TextStyle(
-                              color: AppTheme.textSecondary,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: statusColor.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: Text(
-                        statusLabel,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(color: Color(0xFFE2E8F0), height: 1),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          "Progreso:",
-                          style: TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 11,
-                          ),
-                        ),
-                        Text(
-                          dateStr,
-                          style: const TextStyle(
-                            color: AppTheme.textSecondary,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      height: 6,
-                      child: Row(
-                        children: [
-                          _buildSegment(
-                            isActive: currentStep >= 1,
-                            color: statusColor,
-                            isFirst: true,
-                          ),
-                          const SizedBox(width: 4),
-                          _buildSegment(
-                            isActive: currentStep >= 2,
-                            color: statusColor,
-                          ),
-                          const SizedBox(width: 4),
-                          _buildSegment(
-                            isActive: currentStep >= 3,
-                            color: statusColor,
-                            isLast: true,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSegment({
-    required bool isActive,
-    required Color color,
-    bool isFirst = false,
-    bool isLast = false,
-  }) {
-    return Expanded(
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 500),
-        decoration: BoxDecoration(
-          color: isActive ? color : const Color(0xFFE2E8F0),
-          borderRadius: BorderRadius.horizontal(
-            left: isFirst ? const Radius.circular(5) : Radius.zero,
-            right: isLast ? const Radius.circular(5) : Radius.zero,
-          ),
-        ),
       ),
     );
   }
