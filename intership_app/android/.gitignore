@@ -12,3 +12,7 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+
+
+# Variables de entorno secretas (nunca subir a GitHub)
+.env
