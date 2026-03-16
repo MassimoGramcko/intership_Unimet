@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 // Importación usando el nombre del paquete para evitar errores de ruta
 import 'package:intership_app/services/chat_utils.dart';
+import '../../config/theme.dart';
 
 // 1. CAMBIAMOS A STATEFUL WIDGET PARA MANEJAR EL ESTADO DEL BUSCADOR
 class ListaUsuariosScreen extends StatefulWidget {
@@ -14,7 +15,9 @@ class ListaUsuariosScreen extends StatefulWidget {
 
 class _ListaUsuariosScreenState extends State<ListaUsuariosScreen> {
   // 2. CONTROLADORES PARA LA BÚSQUEDA
+  // 2. CONTROLADORES
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   String _searchQuery = '';
 
   // Stream cacheado
@@ -30,6 +33,7 @@ class _ListaUsuariosScreenState extends State<ListaUsuariosScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -51,66 +55,149 @@ class _ListaUsuariosScreenState extends State<ListaUsuariosScreen> {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
-      appBar: AppBar(
-        title: const Text(
-          'Estudiantes',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: const Color(0xFF1E293B),
-        iconTheme: const IconThemeData(color: Colors.white),
-        elevation: 0,
-      ),
+      backgroundColor: AppTheme.backgroundLight,
       body: Column(
         children: [
-          // --- 3. BARRA DE BÚSQUEDA ---
+          // --- HEADER PREMIUM (Estilo UniBot IA) ---
           Container(
-            color: const Color(
-              0xFF1E293B,
-            ), // Fondo para que se mezcle con el AppBar
-            padding: const EdgeInsets.fromLTRB(15, 5, 15, 15),
-            child: Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFF0F172A),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF1A237E), Color(0xFF283593)], // Indigo/Blue Premium
               ),
-              child: TextField(
-                controller: _searchController,
-                style: const TextStyle(color: Colors.white),
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value.toLowerCase();
-                  });
-                },
-                decoration: InputDecoration(
-                  hintText: "Buscar por nombre o carrera...",
-                  hintStyle: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.indigo.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                // Glow Blob (Aesthetic touch)
+                Positioned(
+                  top: -50,
+                  right: -30,
+                  child: Container(
+                    width: 150,
+                    height: 150,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.blueAccent.withValues(alpha: 0.1),
+                    ),
                   ),
-                  prefixIcon: const Icon(
-                    Icons.search_rounded,
-                    color: Colors.blueAccent,
-                  ),
-                  // Botón para borrar el texto si hay algo escrito
-                  suffixIcon: _searchQuery.isNotEmpty
-                      ? IconButton(
+                ),
+                SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 8, 16, 20),
+                    child: Row(
+                      children: [
+                        IconButton(
                           icon: const Icon(
-                            Icons.close_rounded,
-                            color: Colors.white54,
+                            Icons.arrow_back_ios_new_rounded,
+                            color: Colors.white,
+                            size: 20,
                           ),
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() {
-                              _searchQuery = '';
-                            });
-                          },
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 14,
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        const SizedBox(width: 4),
+                        // Avatar Icon estilo UniBot
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.1),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.2),
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.people_alt_rounded,
+                            color: Colors.white,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Mensajes",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              "Directorio de Estudiantes",
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // --- BARRA DE BÚSQUEDA FLOTANTE ---
+          Transform.translate(
+            offset: const Offset(0, -15),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  style: const TextStyle(color: AppTheme.textPrimary),
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value.toLowerCase();
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: "Buscar por nombre o carrera...",
+                    hintStyle: TextStyle(
+                      color: AppTheme.textSecondary.withValues(alpha: 0.5),
+                      fontSize: 14,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search_rounded,
+                      color: Colors.blueAccent,
+                    ),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.close_rounded, size: 20),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchQuery = '');
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 15,
+                    ),
                   ),
                 ),
               ),
@@ -160,7 +247,7 @@ class _ListaUsuariosScreenState extends State<ListaUsuariosScreen> {
                         Icon(
                           Icons.search_off_rounded,
                           size: 60,
-                          color: Colors.white.withValues(alpha: 0.2),
+                          color: AppTheme.textSecondary,
                         ),
                         const SizedBox(height: 15),
                         Text(
@@ -168,7 +255,7 @@ class _ListaUsuariosScreenState extends State<ListaUsuariosScreen> {
                               ? "No se encontraron resultados"
                               : "No hay estudiantes registrados.",
                           style: const TextStyle(
-                            color: Colors.white70,
+                            color: AppTheme.textSecondary,
                             fontSize: 16,
                           ),
                         ),
@@ -177,84 +264,90 @@ class _ListaUsuariosScreenState extends State<ListaUsuariosScreen> {
                   );
                 }
 
-                return ListView.builder(
-                  itemCount: users.length,
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  itemBuilder: (context, index) {
-                    final userDoc = users[index];
+                return Scrollbar(
+                  controller: _scrollController,
+                  thumbVisibility: true,
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    itemCount: users.length,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    itemBuilder: (context, index) {
+                      final userDoc = users[index];
 
-                    final Map<String, dynamic> data =
-                        userDoc.data() as Map<String, dynamic>;
+                      final Map<String, dynamic> data =
+                          userDoc.data() as Map<String, dynamic>;
 
-                    final String firstName =
-                        data['firstName']?.toString() ?? '';
-                    final String lastName = data['lastName']?.toString() ?? '';
-                    final String userName =
-                        '$firstName $lastName'.trim().isEmpty
-                        ? 'Estudiante'
-                        : '$firstName $lastName'.trim();
-                    final String career =
-                        data['career']?.toString() ?? 'Sin carrera';
-                    final String iniciales = _getTwoInitials(userName);
+                      final String firstName =
+                          data['firstName']?.toString() ?? '';
+                      final String lastName =
+                          data['lastName']?.toString() ?? '';
+                      final String userName =
+                          '$firstName $lastName'.trim().isEmpty
+                          ? 'Estudiante'
+                          : '$firstName $lastName'.trim();
+                      final String career =
+                          data['career']?.toString() ?? 'Sin carrera';
+                      final String iniciales = _getTwoInitials(userName);
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4.0),
-                      child: ListTile(
-                        leading: Container(
-                          width: 50,
-                          height: 50,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                Colors.blueAccent.shade400,
-                                Colors.purpleAccent.shade400,
-                              ],
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4.0),
+                        child: ListTile(
+                          leading: Container(
+                            width: 50,
+                            height: 50,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Colors.blueAccent.shade400,
+                                  Colors.purpleAccent.shade400,
+                                ],
+                              ),
+                            ),
+                            child: Text(
+                              iniciales,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
                             ),
                           ),
-                          child: Text(
-                            iniciales,
+                          title: Text(
+                            userName,
                             style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
+                              color: AppTheme.textPrimary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 16,
                             ),
                           ),
-                        ),
-                        title: Text(
-                          userName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
+                          subtitle: Text(
+                            career,
+                            style: const TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 13,
+                            ),
                           ),
-                        ),
-                        subtitle: Text(
-                          career,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.6),
-                            fontSize: 13,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 5,
                           ),
+                          onTap: () {
+                            // Abrir chat usando la utilidad
+                            iniciarOabrirChat(
+                              context: context,
+                              currentUserId: currentUserId,
+                              otherUserId: userDoc.id,
+                              otherUserName: userName,
+                            );
+                          },
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 5,
-                        ),
-                        onTap: () {
-                          // Abrir chat usando la utilidad
-                          iniciarOabrirChat(
-                            context: context,
-                            currentUserId: currentUserId,
-                            otherUserId: userDoc.id,
-                            otherUserName: userName,
-                          );
-                        },
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 );
               },
             ),

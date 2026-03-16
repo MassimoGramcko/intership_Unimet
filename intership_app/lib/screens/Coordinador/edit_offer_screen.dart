@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../config/theme.dart';
 
 class EditOfferScreen extends StatefulWidget {
   final String docId;
@@ -24,6 +25,7 @@ class _EditOfferScreenState extends State<EditOfferScreen> {
   late TextEditingController _locationController;
   late TextEditingController _wageController;
   late TextEditingController _descriptionController;
+  late TextEditingController _limitController; // Nuevo
 
   // Variables de estado para selectores
   String _selectedModality = 'Presencial';
@@ -48,6 +50,9 @@ class _EditOfferScreenState extends State<EditOfferScreen> {
     _descriptionController = TextEditingController(
       text: widget.currentData['description'] ?? '',
     );
+    _limitController = TextEditingController(
+      text: (widget.currentData['vacancies'] ?? 0).toString(),
+    );
 
     _selectedModality = widget.currentData['modality'] ?? 'Presencial';
     _isActive = widget.currentData['isActive'] ?? true;
@@ -60,6 +65,7 @@ class _EditOfferScreenState extends State<EditOfferScreen> {
     _locationController.dispose();
     _wageController.dispose();
     _descriptionController.dispose();
+    _limitController.dispose();
     super.dispose();
   }
 
@@ -75,6 +81,7 @@ class _EditOfferScreenState extends State<EditOfferScreen> {
               'location': _locationController.text.trim(),
               'wage': _wageController.text.trim(),
               'description': _descriptionController.text.trim(),
+              'vacancies': int.tryParse(_limitController.text) ?? 0,
               'modality': _selectedModality,
               'isActive': _isActive,
               // 'updatedAt': FieldValue.serverTimestamp(), // Opcional: si quieres rastrear ediciones
@@ -100,14 +107,14 @@ class _EditOfferScreenState extends State<EditOfferScreen> {
         await showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            backgroundColor: const Color(0xFF1E293B),
+            backgroundColor: AppTheme.surfaceLight,
             title: const Text(
               "¿Eliminar definitivamente?",
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(color: AppTheme.textPrimary),
             ),
             content: const Text(
               "Esta acción no se puede deshacer.",
-              style: TextStyle(color: Colors.white70),
+              style: TextStyle(color: AppTheme.textSecondary),
             ),
             actions: [
               TextButton(
@@ -138,32 +145,17 @@ class _EditOfferScreenState extends State<EditOfferScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppTheme.backgroundLight,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: const Text(
-          "Editar Oferta",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
+        title: const Text("Editar Oferta"),
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: Colors.white,
-          ),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Container(
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: RadialGradient(
-            center: Alignment.topLeft,
-            radius: 1.3,
-            colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
-          ),
-        ),
+        decoration: const BoxDecoration(color: AppTheme.backgroundLight),
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 100, 24, 40),
           child: Form(
@@ -202,10 +194,26 @@ class _EditOfferScreenState extends State<EditOfferScreen> {
                   ],
                 ),
                 const SizedBox(height: 15),
-                _buildCustomTextField(
-                  controller: _wageController,
-                  label: "Remuneración (Opcional)",
-                  icon: Icons.attach_money_rounded,
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: _buildCustomTextField(
+                        controller: _wageController,
+                        label: "Remuneración",
+                        icon: Icons.attach_money_rounded,
+                      ),
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: _buildCustomTextField(
+                        controller: _limitController,
+                        label: "Cupos",
+                        icon: Icons.people_outline,
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
                 ),
 
                 const SizedBox(height: 30),
@@ -290,7 +298,7 @@ class _EditOfferScreenState extends State<EditOfferScreen> {
     return Text(
       title,
       style: const TextStyle(
-        color: Colors.white70,
+        color: AppTheme.textSecondary,
         fontSize: 14,
         fontWeight: FontWeight.bold,
         letterSpacing: 1.0,
@@ -304,22 +312,24 @@ class _EditOfferScreenState extends State<EditOfferScreen> {
     required String label,
     required IconData icon,
     int maxLines = 1,
+    TextInputType keyboardType = TextInputType.text,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: AppTheme.surfaceLight,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: TextFormField(
         controller: controller,
         maxLines: maxLines,
-        style: const TextStyle(color: Colors.white),
+        keyboardType: keyboardType,
+        style: const TextStyle(color: AppTheme.textPrimary),
         validator: (value) => value!.isEmpty ? "Campo requerido" : null,
         decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: Colors.white54),
+          prefixIcon: Icon(icon, color: AppTheme.iconColor),
           labelText: label,
-          labelStyle: const TextStyle(color: Colors.white54),
+          labelStyle: const TextStyle(color: AppTheme.textSecondary),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 20,
@@ -334,19 +344,19 @@ class _EditOfferScreenState extends State<EditOfferScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: AppTheme.surfaceLight,
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: _selectedModality,
-          dropdownColor: const Color(0xFF1E293B),
+          dropdownColor: AppTheme.surfaceLight,
           icon: const Icon(
             Icons.keyboard_arrow_down_rounded,
-            color: Colors.white54,
+            color: AppTheme.iconColor,
           ),
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: AppTheme.textPrimary),
           items: ["Presencial", "Remoto", "Híbrido"].map((String val) {
             return DropdownMenuItem<String>(value: val, child: Text(val));
           }).toList(),
