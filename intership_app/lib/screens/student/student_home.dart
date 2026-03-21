@@ -215,13 +215,19 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                 final String firstName = userData['firstName'] ?? 'Estudiante';
                 final String career = userData['career'] ?? 'UNIMET';
 
-                return _buildDashboardUI(context, firstName, career);
+                final skills = userData['skills'];
+                final bool isProfileComplete = (userData['semester'] != null && userData['semester'].toString().isNotEmpty) &&
+                    (userData['academicIndex'] != null && userData['academicIndex'].toString().isNotEmpty) &&
+                    (userData['aboutMe'] != null && userData['aboutMe'].toString().isNotEmpty) &&
+                    (skills != null && skills is List && skills.isNotEmpty);
+
+                return _buildDashboardUI(context, firstName, career, isProfileComplete: isProfileComplete);
               },
             ),
     );
   }
 
-  Widget _buildDashboardUI(BuildContext context, String name, String career) {
+  Widget _buildDashboardUI(BuildContext context, String name, String career, {bool isProfileComplete = true}) {
     final double screenWidth = MediaQuery.of(context).size.width;
     final double halfCardWidth = (screenWidth - 70) / 2;
 
@@ -450,6 +456,11 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
                   ),
                   const SizedBox(height: 12), // Antes 20
 
+                  if (!isProfileComplete) ...[
+                    _buildIncompleteProfileBanner(context),
+                    const SizedBox(height: 20),
+                  ],
+
                   _InteractiveExploreCard(
                     onTap: () {
                       Navigator.push(
@@ -597,6 +608,80 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildIncompleteProfileBanner(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceLight,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.primaryOrange.withValues(alpha: 0.5), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primaryOrange.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryOrange.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.warning_amber_rounded, color: AppTheme.primaryOrange, size: 24),
+              ),
+              const SizedBox(width: 15),
+              const Expanded(
+                child: Text(
+                  "Perfil Incompleto",
+                  style: TextStyle(
+                    color: AppTheme.textPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            "Debes completar tu perfil para poder postularte a las pasantías. Añade tu semestre, índice, habilidades y descripción.",
+            style: TextStyle(color: AppTheme.textSecondary, fontSize: 13, height: 1.4),
+          ),
+          const SizedBox(height: 15),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProfileTab()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryOrange,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: const Text(
+                "Completar Mi Perfil",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

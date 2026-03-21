@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/services.dart';
 import '../../config/theme.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -116,9 +117,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
           });
 
       if (mounted) {
-        _showMessage("¡Cuenta creada con éxito!", isError: false);
-        // Volver al Login o ir al Home (Decidimos ir al Login para que se loguee limpio)
-        Navigator.pop(context);
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            backgroundColor: AppTheme.surfaceLight,
+            title: const Text(
+              "¡Registro Exitoso!",
+              style: TextStyle(
+                color: AppTheme.textPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: const Text(
+              "Tu cuenta ha sido creada con éxito.\n\n"
+              "Recuerda que debes completar tu perfil para poder postularte a las pasantías.\n\n"
+              "Para hacerlo, una vez inicies sesión ve a la pestaña 'Perfil' y presiona el botón de editar la información.",
+              style: TextStyle(color: AppTheme.textSecondary),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context), // Cierra el diálogo
+                child: const Text(
+                  "Entendido",
+                  style: TextStyle(
+                    color: AppTheme.primaryOrange,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+
+        if (mounted) {
+          // Volver al Login
+          Navigator.pop(context);
+        }
       }
     } on FirebaseAuthException catch (e) {
       String message = e.message ?? "Error al registrarse.";
@@ -249,6 +284,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     label: "Cédula de Identidad",
                     icon: Icons.badge_outlined,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   ),
 
                   const SizedBox(height: 30),
@@ -261,6 +297,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     label: "Carnet Unimet",
                     icon: Icons.card_membership,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   ),
                   const SizedBox(height: 15),
 
@@ -405,11 +442,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     required IconData icon,
     bool isPassword = false,
     TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
   }) {
     return TextField(
       controller: controller,
       obscureText: isPassword,
       keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
       style: const TextStyle(color: AppTheme.textPrimary),
       decoration: InputDecoration(
         labelText: label,
